@@ -24,35 +24,44 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await req.json();
-  const parsed = goalSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+    const body = await req.json();
+    const parsed = goalSchema.safeParse(body);
+    if (!parsed.success) {
+      console.error("Validation error:", parsed.error.issues);
+      return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+    }
+
+    const d = parsed.data;
+    
+    const goalType = d.goalType || (d.targetAmount ? 'target' : 'monthly');
+    
+    const [row] = await db
+      .insert(goals)
+      .values({
+        userId,
+        name: d.name,
+        targetAmount: d.targetAmount ? String(d.targetAmount) : null,
+        currentAmount: String(d.currentAmount),
+        startDate: d.startDate,
+        endDate: d.endDate ?? null,
+        goalType: goalType,
+        monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
+        priority: d.priority,
+        status: d.status,
+        notes: d.notes ?? null,
+      })
+      .returning();
+
+    return NextResponse.json(row, { status: 201 });
+  } catch (error) {
+    console.error("Error creating goal:", error);
+    return NextResponse.json({ 
+      error: "Erro ao criar meta",
+      details: error instanceof Error ? error.message : "Erro desconhecido"
+    }, { status: 500 });
   }
-
-  const d = parsed.data;
-  
-  const goalType = d.targetAmount ? 'target' : 'monthly';
-  
-  const [row] = await db
-    .insert(goals)
-    .values({
-      userId,
-      name: d.name,
-      targetAmount: d.targetAmount ? String(d.targetAmount) : null,
-      currentAmount: String(d.currentAmount),
-      startDate: d.startDate,
-      endDate: d.endDate ?? null,
-      goalType: goalType,
-      monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
-      priority: d.priority,
-      status: d.status,
-      notes: d.notes ?? null,
-    })
-    .returning();
-
-  return NextResponse.json(row, { status: 201 });
 }
