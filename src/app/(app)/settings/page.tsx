@@ -24,27 +24,28 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
 
-      <div className="flex gap-6">
-        <div className="w-64 shrink-0">
-          <nav className="space-y-1">
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        {/* Tab nav - horizontal scrollable on mobile, vertical sidebar on desktop */}
+        <div className="lg:w-64 lg:shrink-0">
+          <nav className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:space-y-1 lg:overflow-x-visible lg:pb-0">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:w-full ${
                   activeTab === tab.id
                     ? "bg-emerald-600 text-white"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
-                <tab.icon className="h-5 w-5" />
-                {tab.label}
+                <tab.icon className="h-4 w-4 lg:h-5 lg:w-5" />
+                <span className="whitespace-nowrap">{tab.label}</span>
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {activeTab === "profile" && (
             <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
               <h2 className="text-lg font-semibold text-slate-900">Perfil do Usuário</h2>

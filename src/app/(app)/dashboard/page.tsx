@@ -25,7 +25,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-8 w-48 rounded bg-slate-200" />
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-28 rounded-xl bg-slate-200" />
           ))}
@@ -51,7 +51,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 1: Summary cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
           <div className="flex items-center justify-between">
             <div>

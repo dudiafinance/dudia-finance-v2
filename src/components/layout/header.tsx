@@ -1,10 +1,12 @@
 "use client";
 
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search, User, Menu } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useMobileNav } from "./mobile-nav-context";
 
 export function Header() {
   const { data: session } = useSession();
+  const { setOpen } = useMobileNav();
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
   const initials = name
@@ -15,9 +17,20 @@ export function Header() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
-      <div className="flex items-center gap-4">
-        <div className="relative">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
+      {/* Left: hamburger (mobile) + search (desktop) */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={() => setOpen(true)}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden"
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
+        {/* Search — desktop only */}
+        <div className="relative hidden lg:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -27,14 +40,16 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Right: bell + user */}
+      <div className="flex items-center gap-2 lg:gap-4">
         <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100">
           <Bell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
+          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="text-right">
+          {/* Name/email — desktop only */}
+          <div className="hidden text-right lg:block">
             <p className="text-sm font-medium text-slate-900">{name}</p>
             <p className="text-xs text-slate-500">{email}</p>
           </div>

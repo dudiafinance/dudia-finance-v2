@@ -1,5 +1,6 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
+import { MobileNavProvider } from "@/components/layout/mobile-nav-context";
 
 export default function AppLayout({
   children,
@@ -7,12 +8,15 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Sidebar />
-      <div className="pl-64">
-        <Header />
-        <main className="p-6">{children}</main>
+    <MobileNavProvider>
+      <div className="min-h-screen bg-slate-50">
+        <Sidebar />
+        {/* Desktop: left padding for sidebar. Mobile: no left padding, bottom padding for bottom nav */}
+        <div className="lg:pl-64 pb-20 lg:pb-0">
+          <Header />
+          <main className="p-4 lg:p-6">{children}</main>
+        </div>
       </div>
-    </div>
+    </MobileNavProvider>
   );
 }

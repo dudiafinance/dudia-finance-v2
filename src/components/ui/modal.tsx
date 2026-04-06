@@ -14,10 +14,10 @@ interface ModalProps {
 }
 
 const sizes = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-2xl",
+  sm: "lg:max-w-sm",
+  md: "lg:max-w-md",
+  lg: "lg:max-w-lg",
+  xl: "lg:max-w-2xl",
 };
 
 export function Modal({ open, onClose, title, description, children, size = "md" }: ModalProps) {
@@ -39,14 +39,14 @@ export function Modal({ open, onClose, title, description, children, size = "md"
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-0 lg:p-4"
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
 
       {/* Panel */}
-      <div className={cn("relative w-full rounded-2xl bg-white shadow-2xl", sizes[size])}>
+      <div className={cn("relative w-full rounded-t-2xl lg:rounded-2xl bg-white shadow-2xl", sizes[size])}>
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
           <div>

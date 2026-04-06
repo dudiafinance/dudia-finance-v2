@@ -138,13 +138,13 @@ export default function BudgetsPage() {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
           ))}
         </div>
         <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-36 animate-pulse rounded-xl bg-slate-200" />
           ))}
@@ -166,7 +166,7 @@ export default function BudgetsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[
           { label: "Total Orçado", value: fmt(totalBudget), sub: "planejado", icon: TrendingUp, color: "blue" },
           { label: "Total Gasto", value: fmt(totalSpent), sub: `${((totalSpent / totalBudget) * 100 || 0).toFixed(1)}% do orçamento`, icon: TrendingUp, color: totalSpent > totalBudget ? "red" : "emerald" },

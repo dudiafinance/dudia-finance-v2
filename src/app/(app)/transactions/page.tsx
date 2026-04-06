@@ -205,7 +205,7 @@ export default function TransactionsPage() {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-200" />
           ))}
@@ -229,7 +229,7 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[
           { label: "Receitas", value: totalIncome, pos: true },
           { label: "Despesas", value: totalExpense, pos: false },
@@ -266,7 +266,7 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 w-fit">
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1 w-full sm:w-fit overflow-x-auto">
           {[
             { key: "all", label: "Todas" },
             { key: "income", label: "Receitas" },
