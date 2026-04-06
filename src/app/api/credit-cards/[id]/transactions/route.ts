@@ -47,6 +47,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: cardId } = await params;
   const body = await req.json();
 
+  console.log("📝 Card transaction POST request:", {
+    userId,
+    cardId,
+    body: JSON.stringify(body, null, 2)
+  });
+
   const {
     description,
     amount,
@@ -63,12 +69,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   } = body;
 
   if (!description || !amount || !date || !launchType || !invoiceMonth || !invoiceYear) {
+    console.error("❌ Missing required fields:", { description, amount, date, launchType, invoiceMonth, invoiceYear });
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
   }
 
   const records: typeof cardTransactions.$inferInsert[] = [];
 
   if (launchType === "single") {
+    console.log("✅ Creating single transaction");
     records.push({
       cardId,
       userId,
@@ -94,17 +102,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const perInstallment = Number(amount) / n;
     const groupId = crypto.randomUUID();
 
+    console.log("✅ Creating installment transaction:", {
+      totalInstallments: n,
+      startInstallment: start,
+      totalAmount: amount,
+      perInstallment: perInstallment,
+      groupId
+    });
+
     let m = Number(invoiceMonth);
     let y = Number(invoiceYear);
 
-    // advance to the correct starting month based on startInstallment
-    for (let i = 1; i < start; i++) {
-      m++;
-      if (m > 12) { m = 1; y++; }
-    }
-
     for (let i = start; i <= n; i++) {
-      records.push({
+      const record = {
         cardId,
         userId,
         categoryId: categoryId ?? null,
@@ -114,7 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         date,
         invoiceMonth: m,
         invoiceYear: y,
-        launchType: "installment",
+        launchType: "installment" as const,
         totalInstallments: n,
         currentInstallment: i,
         groupId,
@@ -122,12 +132,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         isPending,
         isFixed: false,
         notes: notes ?? null,
+      };
+      
+      console.log(`  📦 Installment ${i}/${n}:`, {
+        invoiceMonth: m,
+        invoiceYear: y,
+        amount: perInstallment.toFixed(2)
       });
+      
+      records.push(record);
 
       m++;
       if (m > 12) { m = 1; y++; }
     }
   } else if (launchType === "fixed") {
+    console.log("✅ Creating fixed transaction");
     records.push({
       cardId,
       userId,
@@ -148,9 +167,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       notes: notes ?? null,
     });
   } else {
+    console.error("❌ Invalid launchType:", launchType);
     return NextResponse.json({ error: "launchType inválido" }, { status: 400 });
   }
 
-  const inserted = await db.insert(cardTransactions).values(records).returning();
-  return NextResponse.json(inserted, { status: 201 });
+  console.log(`💾 Inserting ${records.length} transaction(s)...`);
+  
+  try {
+    const inserted = await db.insert(cardTransactions).values(records).returning();
+    console.log(`✅ Successfully inserted ${inserted.length} transaction(s):`, {
+      first: inserted[0] ? {
+        id: inserted[0].id,
+        cardId: inserted[0].cardId,
+        description: inserted[0].description,
+        invoiceMonth: inserted[0].invoiceMonth,
+        invoiceYear: inserted[0].invoiceYear,
+        amount: inserted[0].amount,
+        totalAmount: inserted[0].totalAmount,
+        launchType: inserted[0].launchType,
+        currentInstallment: inserted[0].currentInstallment,
+        totalInstallments: inserted[0].totalInstallments,
+      } : null
+    });
+    return NextResponse.json(inserted, { status: 201 });
+  } catch (error) {
+    console.error("❌ Error inserting transactions:", error);
+    return NextResponse.json({ 
+      error: "Erro ao salvar transações",
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
+  }
 }
