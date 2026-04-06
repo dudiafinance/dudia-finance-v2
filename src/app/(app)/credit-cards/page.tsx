@@ -555,13 +555,19 @@ function LaunchFormModal({
               )}
             </div>
             <div className="space-y-1">
-              {installmentPreview.map((p, idx) => (
-                <p key={p.installment} className={cn("text-xs", idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 ? "text-amber-600 font-medium" : "text-slate-500")}>
-                  Parcela {p.installment}/{form.totalInstallments} → Fatura {MONTH_NAMES[p.month - 1]}/{p.year}
-                  {form.amount ? ` · ${fmt(Number(form.amount) / Number(form.totalInstallments))}` : ""}
-                  {idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 && " (próxima)"}
-                </p>
-              ))}
+              {installmentPreview.map((p, idx) => {
+                const installmentValue = form.amountType === "total" && form.amount
+                  ? Number(form.amount) / Number(form.totalInstallments)
+                  : Number(form.amount);
+                
+                return (
+                  <p key={p.installment} className={cn("text-xs", idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 ? "text-amber-600 font-medium" : "text-slate-500")}>
+                    Parcela {p.installment}/{form.totalInstallments} → Fatura {MONTH_NAMES[p.month - 1]}/{p.year}
+                    {form.amount ? ` · ${fmt(installmentValue)}` : ""}
+                    {idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 && " (próxima)"}
+                  </p>
+                );
+              })}
             </div>
             {form.amountType === "total" && form.amount && (
               <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-200">
