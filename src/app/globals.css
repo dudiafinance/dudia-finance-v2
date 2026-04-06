@@ -128,3 +128,18 @@
     @apply font-sans;
   }
 }
+
+/* Dark mode global styles - force dark background everywhere */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+}
+
+.dark body {
+  background-color: oklch(0.145 0 0);
+  color: oklch(0.985 0 0);
+}
+
+.dark > * {
+  border-color: oklch(1 0 0 / 10%);
+}

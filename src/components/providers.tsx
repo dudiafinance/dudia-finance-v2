@@ -11,7 +11,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 30 * 1000, // 30 seconds
+            staleTime: 30 * 1000,
             retry: 1,
           },
         },
@@ -21,7 +21,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <div className="dark:bg-slate-950 dark:text-white">
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </div>
       </ThemeProvider>
     </SessionProvider>
   );
