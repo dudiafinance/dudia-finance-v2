@@ -1,0 +1,53 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { creditCards } from "@/lib/db/schema";
+import { eq, asc } from "drizzle-orm";
+
+async function getUserId(): Promise<string | null> {
+  const session = await auth();
+  return (session?.user as any)?.id ?? null;
+}
+
+export async function GET() {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const rows = await db
+    .select()
+    .from(creditCards)
+    .where(eq(creditCards.userId, userId))
+    .orderBy(asc(creditCards.createdAt));
+
+  return NextResponse.json(rows);
+}
+
+export async function POST(req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await req.json();
+  const { name, bank, lastDigits, limit, dueDay, closingDay, color, gradient, network } = body;
+
+  if (!name || !bank || !limit || !dueDay || !closingDay) {
+    return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
+  }
+
+  const [row] = await db
+    .insert(creditCards)
+    .values({
+      userId,
+      name,
+      bank,
+      lastDigits: lastDigits ?? null,
+      limit: String(limit),
+      dueDay: Number(dueDay),
+      closingDay: Number(closingDay),
+      color: color ?? '#820AD1',
+      gradient: gradient ?? 'from-[#820AD1] to-[#4B0082]',
+      network: network ?? 'mastercard',
+    })
+    .returning();
+
+  return NextResponse.json(row, { status: 201 });
+}

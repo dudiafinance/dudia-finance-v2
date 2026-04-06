@@ -15,6 +15,13 @@
       "when": 1775436050061,
       "tag": "0001_noisy_toro",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1775440625467,
+      "tag": "0002_shocking_tinkerer",
+      "breakpoints": true
     }
   ]
 }

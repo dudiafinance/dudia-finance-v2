@@ -201,3 +201,57 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   category: one(categories, { fields: [transactions.categoryId], references: [categories.id] }),
 }));
 
+// Cartões de Crédito
+export const creditCards = pgTable('credit_cards', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(),
+  bank: varchar('bank', { length: 100 }).notNull(),
+  lastDigits: varchar('last_digits', { length: 4 }),
+  limit: decimal('limit', { precision: 15, scale: 2 }).notNull(),
+  usedAmount: decimal('used_amount', { precision: 15, scale: 2 }).default('0'),
+  dueDay: integer('due_day').notNull(),
+  closingDay: integer('closing_day').notNull(),
+  color: varchar('color', { length: 7 }).default('#820AD1'),
+  gradient: varchar('gradient', { length: 100 }).default('from-[#820AD1] to-[#4B0082]'),
+  network: varchar('network', { length: 20 }).default('mastercard'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Lançamentos de Cartão
+export const cardTransactions = pgTable('card_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  cardId: uuid('card_id').references(() => creditCards.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  categoryId: uuid('category_id').references(() => categories.id),
+  description: varchar('description', { length: 255 }).notNull(),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  totalAmount: decimal('total_amount', { precision: 15, scale: 2 }).notNull(),
+  date: date('date').notNull(),
+  invoiceMonth: integer('invoice_month').notNull(),
+  invoiceYear: integer('invoice_year').notNull(),
+  launchType: varchar('launch_type', { length: 20 }).notNull(),
+  totalInstallments: integer('total_installments'),
+  currentInstallment: integer('current_installment'),
+  groupId: uuid('group_id'),
+  tags: jsonb('tags').$type<string[]>(),
+  isPending: boolean('is_pending').default(false),
+  isFixed: boolean('is_fixed').default(false),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const creditCardsRelations = relations(creditCards, ({ one, many }) => ({
+  user: one(users, { fields: [creditCards.userId], references: [users.id] }),
+  transactions: many(cardTransactions),
+}));
+
+export const cardTransactionsRelations = relations(cardTransactions, ({ one }) => ({
+  card: one(creditCards, { fields: [cardTransactions.cardId], references: [creditCards.id] }),
+  user: one(users, { fields: [cardTransactions.userId], references: [users.id] }),
+  category: one(categories, { fields: [cardTransactions.categoryId], references: [categories.id] }),
+}));
+

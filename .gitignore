@@ -49,3 +49,5 @@ HISTORICO_DESENVOLVIMENTO.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
