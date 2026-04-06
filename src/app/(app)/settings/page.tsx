@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { User, Bell, Shield, Palette, Globe, Key, Save } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const { theme, setTheme } = useTheme();
   const userName = session?.user?.name ?? "";
   const userEmail = session?.user?.email ?? "";
   const [activeTab, setActiveTab] = useState("profile");
@@ -153,23 +155,31 @@ export default function SettingsPage() {
 
           {activeTab === "appearance" && (
             <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
-              <h2 className="text-lg font-semibold text-slate-900">Aparência</h2>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Aparência</h2>
               <p className="mt-1 text-sm text-slate-500">Personalize a interface do aplicativo</p>
               
               <div className="mt-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-3">Tema</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Tema</label>
                   <div className="flex gap-3">
-                    {["light", "dark", "system"].map((theme) => (
+                    {(["light", "dark", "system"] as const).map((t) => (
                       <button
-                        key={theme}
+                        key={t}
+                        onClick={() => setTheme(t)}
                         className={`flex-1 rounded-lg border-2 p-4 text-center transition-colors ${
-                          theme === "light" 
-                            ? "border-emerald-500 bg-emerald-50" 
-                            : "border-slate-200 hover:border-slate-300"
+                          theme === t || (t === "system" && !theme)
+                            ? t === "light" 
+                              ? "border-emerald-500 bg-emerald-50"
+                              : t === "dark"
+                                ? "border-emerald-500 bg-emerald-900/20"
+                                : "border-emerald-500 bg-emerald-50"
+                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
                         }`}
                       >
-                        <span className="text-sm font-medium capitalize">{theme}</span>
+                        {t === "light" && "☀️"}
+                        {t === "dark" && "🌙"}
+                        {t === "system" && "💻"}
+                        <span className="block text-sm font-medium capitalize mt-1 text-slate-900 dark:text-white">{t}</span>
                       </button>
                     ))}
                   </div>
