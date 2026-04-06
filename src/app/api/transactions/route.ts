@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, or, isNull, lte } from "drizzle-orm";
 import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 
@@ -15,10 +15,35 @@ export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Only show transactions whose effective date is not in a future month.
+  // Effective date: dueDate for expenses, receiveDate for income, date otherwise.
+  const today = new Date().toISOString().split("T")[0];
+
   const rows = await db
     .select()
     .from(transactions)
-    .where(eq(transactions.userId, userId))
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        or(
+          // Expenses: use dueDate if set, else date
+          and(
+            eq(transactions.type, "expense"),
+            or(isNull(transactions.dueDate), lte(transactions.dueDate, today))
+          ),
+          // Income: use receiveDate if set, else date
+          and(
+            eq(transactions.type, "income"),
+            or(isNull(transactions.receiveDate), lte(transactions.receiveDate, today))
+          ),
+          // Transfers: use date
+          and(
+            eq(transactions.type, "transfer"),
+            lte(transactions.date, today)
+          )
+        )
+      )
+    )
     .orderBy(desc(transactions.date), desc(transactions.createdAt));
 
   return NextResponse.json(rows);

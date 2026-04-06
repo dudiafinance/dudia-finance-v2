@@ -44,18 +44,18 @@ export async function GET() {
     .filter((t) => t.type === "expense")
     .reduce((s, t) => s + Number(t.amount), 0);
 
-  // Recent activity: last 5 combining transactions + card transactions
+  // Recent activity: last 5 combining transactions + card transactions (no future dates)
   const [recentTx, recentCard] = await Promise.all([
     db
       .select()
       .from(transactions)
-      .where(eq(transactions.userId, userId))
+      .where(and(eq(transactions.userId, userId), lte(transactions.date, endOfMonth)))
       .orderBy(desc(transactions.date), desc(transactions.createdAt))
       .limit(5),
     db
       .select()
       .from(cardTransactions)
-      .where(eq(cardTransactions.userId, userId))
+      .where(and(eq(cardTransactions.userId, userId), lte(cardTransactions.date, endOfMonth)))
       .orderBy(desc(cardTransactions.date), desc(cardTransactions.createdAt))
       .limit(5),
   ]);

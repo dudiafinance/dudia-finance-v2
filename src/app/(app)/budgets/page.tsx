@@ -54,9 +54,18 @@ export default function BudgetsPage() {
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+
   const getSpent = (categoryId: string | undefined) =>
     transactions
-      .filter((t: any) => t.type === "expense" && t.categoryId === categoryId)
+      .filter((t: any) =>
+        t.type === "expense" &&
+        t.categoryId === categoryId &&
+        t.date >= startOfMonth &&
+        t.date <= endOfMonth
+      )
       .reduce((s: number, t: any) => s + Number(t.amount), 0);
 
   const openCreate = () => {
