@@ -1,37 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { budgets } from "@/lib/db/schema";
 import { eq, asc, and, lte, gte, or, isNull } from "drizzle-orm";
 import { budgetSchema } from "@/lib/validations";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
 
-  const rows = await db
-    .select()
-    .from(budgets)
-    .where(
-      and(
-        eq(budgets.userId, userId),
-        eq(budgets.isActive, true),
-        lte(budgets.startDate, endOfMonth),
-        or(isNull(budgets.endDate), gte(budgets.endDate, startOfMonth))
+    const rows = await db
+      .select()
+      .from(budgets)
+      .where(
+        and(
+          eq(budgets.userId, userId),
+          eq(budgets.isActive, true),
+          lte(budgets.startDate, endOfMonth),
+          or(isNull(budgets.endDate), gte(budgets.endDate, startOfMonth))
+        )
       )
-    )
-    .orderBy(asc(budgets.createdAt));
+      .orderBy(asc(budgets.createdAt));
 
-  return NextResponse.json(rows);
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Error fetching budgets:", error);
+    return NextResponse.json({ error: "Erro ao buscar orçamentos" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { cardTransactions } from "@/lib/db/schema";
+import { cardTransactions, creditCards } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { recalculateUsedAmount, generateFixedFutureTransactions } from "@/lib/credit-card-utils";
 import { cardTransactionSchema } from "@/lib/validations";
@@ -42,6 +42,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id: cardId } = await params;
+
+  // Verify card belongs to the authenticated user
+  const [card] = await db
+    .select({ id: creditCards.id })
+    .from(creditCards)
+    .where(and(eq(creditCards.id, cardId), eq(creditCards.userId, userId)))
+    .limit(1);
+  if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
   const body = await req.json();
 
   const parsed = cardTransactionSchema.safeParse(body);

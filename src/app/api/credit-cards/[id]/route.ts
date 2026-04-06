@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
+import { creditCardSchema } from "@/lib/validations";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -16,22 +12,26 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const body = await req.json();
 
-  const updateData: Record<string, unknown> = {};
-  const allowed = ["name", "bank", "lastDigits", "limit", "dueDay", "closingDay", "color", "gradient", "network", "isActive", "usedAmount"];
-  for (const key of allowed) {
-    if (key in body) {
-      if (key === "limit" || key === "usedAmount") {
-        updateData[key] = String(body[key]);
-      } else {
-        updateData[key] = body[key];
-      }
-    }
+  const parsed = creditCardSchema.partial().safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
-  updateData.updatedAt = new Date();
+
+  const d = parsed.data;
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
+  if (d.name !== undefined) updateData.name = d.name;
+  if (d.bank !== undefined) updateData.bank = d.bank;
+  if (d.lastDigits !== undefined) updateData.lastDigits = d.lastDigits;
+  if (d.limit !== undefined) updateData.limit = String(d.limit);
+  if (d.dueDay !== undefined) updateData.dueDay = d.dueDay;
+  if (d.closingDay !== undefined) updateData.closingDay = d.closingDay;
+  if (d.color !== undefined) updateData.color = d.color;
+  if (d.gradient !== undefined) updateData.gradient = d.gradient;
+  if (d.network !== undefined) updateData.network = d.network;
 
   const [row] = await db
     .update(creditCards)
-    .set(updateData as any)
+    .set(updateData)
     .where(and(eq(creditCards.id, id), eq(creditCards.userId, userId)))
     .returning();
 

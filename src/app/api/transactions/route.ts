@@ -1,52 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { eq, desc, and, or, isNull, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
-
-export async function GET() {
+export async function GET(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Only show transactions whose effective date is not in a future month.
-  // Effective date: dueDate for expenses, receiveDate for income, date otherwise.
-  const today = new Date().toISOString().split("T")[0];
+  const { searchParams } = new URL(req.url);
+  const month = searchParams.get("month");
+  const year = searchParams.get("year");
 
-  const rows = await db
-    .select()
-    .from(transactions)
-    .where(
-      and(
-        eq(transactions.userId, userId),
-        or(
-          // Expenses: use dueDate if set, else date
-          and(
-            eq(transactions.type, "expense"),
-            or(isNull(transactions.dueDate), lte(transactions.dueDate, today))
-          ),
-          // Income: use receiveDate if set, else date
-          and(
-            eq(transactions.type, "income"),
-            or(isNull(transactions.receiveDate), lte(transactions.receiveDate, today))
-          ),
-          // Transfers: use date
-          and(
-            eq(transactions.type, "transfer"),
-            lte(transactions.date, today)
-          )
-        )
-      )
-    )
-    .orderBy(desc(transactions.date), desc(transactions.createdAt));
+  let conditions = eq(transactions.userId, userId);
 
-  return NextResponse.json(rows);
+  if (month && year) {
+    const startOfMonth = new Date(Number(year), Number(month) - 1, 1).toISOString().split("T")[0];
+    const endOfMonth = new Date(Number(year), Number(month), 0).toISOString().split("T")[0];
+    
+    conditions = and(
+      conditions,
+      gte(transactions.date, startOfMonth),
+      lte(transactions.date, endOfMonth)
+    ) as typeof conditions;
+  }
+
+  try {
+    const rows = await db
+      .select()
+      .from(transactions)
+      .where(conditions)
+      .orderBy(desc(transactions.date), desc(transactions.createdAt));
+
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    return NextResponse.json({ error: "Erro ao buscar transações" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -93,6 +85,10 @@ export async function POST(req: NextRequest) {
     const inserted = await db.insert(transactions).values(rows).returning();
     return NextResponse.json(inserted, { status: 201 });
   }
+
+  // Handle fixed logic for standard transactions if needed, though they weren't explicitly requested. 
+  // Normally fixed transactions are generated similarly to recurring but potentially indefinitely.
+  // For now, fixed = single, just a subtype flag.
 
   const [row] = await db
     .insert(transactions)

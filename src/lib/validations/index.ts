@@ -59,7 +59,10 @@ export const budgetSchema = z.object({
   endDate: z.string().optional().nullable(),
   alertsEnabled: z.boolean().default(true),
   alertThreshold: z.coerce.number().min(50).max(100).default(80),
-});
+}).refine((data) => {
+  if (data.endDate && data.endDate <= data.startDate) return false;
+  return true;
+}, { message: "Data de fim deve ser posterior à data de início", path: ["endDate"] });
 
 export const goalSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
@@ -73,13 +76,14 @@ export const goalSchema = z.object({
   status: z.enum(["active", "completed", "cancelled"]).default("active"),
   notes: z.string().max(1000).optional().nullable(),
 }).refine((data) => {
-  if (!data.targetAmount && !data.monthlyContribution) {
-    return false;
-  }
+  if (!data.targetAmount && !data.monthlyContribution) return false;
   return true;
 }, {
   message: "Preencha o valor alvo ou o valor mensal",
-});
+}).refine((data) => {
+  if (data.endDate && data.startDate && data.endDate <= data.startDate) return false;
+  return true;
+}, { message: "Data de fim deve ser posterior à data de início", path: ["endDate"] });
 
 export const cardTransactionSchema = z.object({
   description: z.string().min(1, "Descrição obrigatória").max(255),

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Wallet,
   TrendingUp,
@@ -8,6 +9,8 @@ import {
   ArrowDownRight,
   DollarSign,
   CreditCard,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useDashboard } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
@@ -15,11 +18,33 @@ import { cn } from "@/lib/utils";
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-export default function DashboardPage() {
-  const { data, isLoading } = useDashboard();
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
 
+export default function DashboardPage() {
   const now = new Date();
-  const month = now.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const { data, isLoading } = useDashboard(month, year);
+
+  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
+
+  const navigateMonth = (dir: -1 | 1) => {
+    let m = month + dir;
+    let y = year;
+    if (m > 12) { m = 1; y++; }
+    if (m < 1) { m = 12; y--; }
+    setMonth(m);
+    setYear(y);
+  };
+
+  const goToCurrentMonth = () => {
+    setMonth(now.getMonth() + 1);
+    setYear(now.getFullYear());
+  };
 
   if (isLoading) {
     return (
@@ -37,17 +62,46 @@ export default function DashboardPage() {
   const totalBalance = data?.totalBalance ?? 0;
   const totalIncome = data?.totalIncome ?? 0;
   const totalExpense = data?.totalExpense ?? 0;
+  const totalCardInvoice = data?.totalCardInvoice ?? 0;
   const monthlyVariation = data?.monthlyVariation ?? 0;
   const recentActivity: any[] = data?.recentActivity ?? [];
   const goals: any[] = data?.goals ?? [];
   const topExpenses: any[] = data?.topExpenses ?? [];
   const maxExpense = topExpenses.length > 0 ? Math.max(...topExpenses.map((e: any) => e.total)) : 1;
 
+  // Total de despesas somando contas + fatura do cartão
+  const totalAllExpenses = totalExpense + totalCardInvoice;
+
   return (
     <div className="space-y-6">
+      {/* Header with month navigation */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 capitalize">{month}</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigateMonth(-1)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={goToCurrentMonth}
+            className={cn(
+              "rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors",
+              isCurrentMonth
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+            )}
+          >
+            {MONTH_NAMES[month - 1]} {year}
+          </button>
+          <button
+            onClick={() => navigateMonth(1)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 transition-colors"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Row 1: Summary cards */}
@@ -71,7 +125,7 @@ export default function DashboardPage() {
             <span className={`text-sm font-medium ${monthlyVariation >= 0 ? "text-emerald-600" : "text-red-600"}`}>
               {monthlyVariation > 0 ? "+" : ""}{monthlyVariation.toFixed(1)}%
             </span>
-            <span className="text-sm text-slate-500">este mês</span>
+            <span className="text-sm text-slate-500">variação</span>
           </div>
         </div>
 
@@ -86,7 +140,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-sm text-slate-500">Este mês</span>
+            <span className="text-sm text-slate-500">{MONTH_NAMES[month - 1]}</span>
           </div>
         </div>
 
@@ -94,14 +148,17 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">Despesas</p>
-              <p className="mt-1 text-2xl font-bold text-red-600">{fmt(totalExpense)}</p>
+              <p className="mt-1 text-2xl font-bold text-red-600">{fmt(totalAllExpenses)}</p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100">
               <TrendingDown className="h-6 w-6 text-red-600" />
             </div>
           </div>
-          <div className="mt-4">
-            <span className="text-sm text-slate-500">Este mês</span>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs text-slate-400">Contas: {fmt(totalExpense)}</span>
+            {totalCardInvoice > 0 && (
+              <span className="text-xs text-violet-500">Cartão: {fmt(totalCardInvoice)}</span>
+            )}
           </div>
         </div>
 
@@ -109,8 +166,8 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-slate-500">Economia</p>
-              <p className={`mt-1 text-2xl font-bold ${totalIncome - totalExpense >= 0 ? "text-blue-600" : "text-red-600"}`}>
-                {fmt(totalIncome - totalExpense)}
+              <p className={`mt-1 text-2xl font-bold ${totalIncome - totalAllExpenses >= 0 ? "text-blue-600" : "text-red-600"}`}>
+                {fmt(totalIncome - totalAllExpenses)}
               </p>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
@@ -126,9 +183,9 @@ export default function DashboardPage() {
       {/* Row 2: Top expenses + recent activity */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl bg-white p-6 shadow-sm border border-slate-100">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Top 5 Gastos do Mês</h2>
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Top 5 Gastos – {MONTH_NAMES[month - 1]}</h2>
           {topExpenses.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhuma despesa categorizada este mês.</p>
+            <p className="text-sm text-slate-400">Nenhuma despesa categorizada neste mês.</p>
           ) : (
             <div className="space-y-4">
               {topExpenses.map((e: any) => (
@@ -163,7 +220,7 @@ export default function DashboardPage() {
             </a>
           </div>
           {recentActivity.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhum lançamento recente.</p>
+            <p className="text-sm text-slate-400">Nenhum lançamento neste mês.</p>
           ) : (
             <div className="space-y-3">
               {recentActivity.map((t: any) => (

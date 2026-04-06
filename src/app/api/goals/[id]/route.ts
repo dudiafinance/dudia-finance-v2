@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { goalSchema } from "@/lib/validations";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -24,7 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const d = parsed.data;
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (d.name) updateData.name = d.name;
     if (d.targetAmount !== undefined) updateData.targetAmount = d.targetAmount ? String(d.targetAmount) : null;
     if (d.currentAmount !== undefined) updateData.currentAmount = String(d.currentAmount);
@@ -46,10 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json(row);
   } catch (error) {
     console.error("Error updating goal:", error);
-    return NextResponse.json({ 
-      error: "Erro ao atualizar meta",
-      details: error instanceof Error ? error.message : "Erro desconhecido"
-    }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao atualizar meta" }, { status: 500 });
   }
 }
 

@@ -11,13 +11,18 @@ export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
-    .select()
-    .from(goals)
-    .where(eq(goals.userId, userId))
-    .orderBy(asc(goals.createdAt));
+  try {
+    const rows = await db
+      .select()
+      .from(goals)
+      .where(eq(goals.userId, userId))
+      .orderBy(asc(goals.createdAt));
 
-  return NextResponse.json(rows);
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Error fetching goals:", error);
+    return NextResponse.json({ error: "Erro ao buscar metas" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

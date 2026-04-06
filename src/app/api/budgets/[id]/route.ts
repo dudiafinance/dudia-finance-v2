@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { budgets } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { budgetSchema } from "@/lib/validations";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();

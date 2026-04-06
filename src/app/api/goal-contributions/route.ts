@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { goalContributions } from "@/lib/db/schema";
+import { goalContributions, goals } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { goalContributionSchema } from "@/lib/validations";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -69,6 +65,15 @@ export async function POST(req: NextRequest) {
   }
 
   const d = parsed.data;
+
+  // Verify the goal belongs to the authenticated user
+  const [goal] = await db
+    .select({ id: goals.id })
+    .from(goals)
+    .where(and(eq(goals.id, d.goalId), eq(goals.userId, userId)))
+    .limit(1);
+  if (!goal) return NextResponse.json({ error: "Meta não encontrada" }, { status: 404 });
+
   const [row] = await db
     .insert(goalContributions)
     .values({

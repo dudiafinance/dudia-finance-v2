@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, budgets, goals, accounts } from "@/lib/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
-
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 function monthName(year: number, month: number): string {
   const d = new Date(year, month - 1, 1);
@@ -26,6 +21,7 @@ export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  try {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // 1-12
@@ -145,4 +141,8 @@ export async function GET() {
   }
 
   return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error generating forecast:", error);
+    return NextResponse.json({ error: "Erro ao gerar projeção" }, { status: 500 });
+  }
 }

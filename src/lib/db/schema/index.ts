@@ -112,7 +112,9 @@ export const budgets = pgTable('budgets', {
   alertThreshold: decimal('alert_threshold', { precision: 5, scale: 2 }).default('80'), // 80%
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('budgets_user_id_idx').on(table.userId),
+]);
 
 // Metas Financeiras
 export const goals = pgTable('goals', {
@@ -132,7 +134,9 @@ export const goals = pgTable('goals', {
   goalType: varchar('goal_type', { length: 20 }).default('target'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('goals_user_id_idx').on(table.userId),
+]);
 
 export const goalContributions = pgTable('goal_contributions', {
   id: uuid('id').defaultRandom().primaryKey(),

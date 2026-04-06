@@ -1,26 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { accounts } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const rows = await db
-    .select()
-    .from(accounts)
-    .where(eq(accounts.userId, userId))
-    .orderBy(asc(accounts.createdAt));
+  try {
+    const rows = await db
+      .select()
+      .from(accounts)
+      .where(eq(accounts.userId, userId))
+      .orderBy(asc(accounts.createdAt));
 
-  return NextResponse.json(rows);
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Error fetching accounts:", error);
+    return NextResponse.json({ error: "Erro ao buscar contas" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

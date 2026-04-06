@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { transactionSchema } from "@/lib/validations";
-
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -22,7 +17,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const d = parsed.data;
-  const updateData: any = { updatedAt: new Date() };
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (d.accountId !== undefined) updateData.accountId = d.accountId;
   if (d.categoryId !== undefined) updateData.categoryId = d.categoryId;
   if (d.amount !== undefined) updateData.amount = String(d.amount);

@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 const DEFAULT_CATEGORIES = [
   // === DESPESAS - MORADIA ===
