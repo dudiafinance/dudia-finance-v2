@@ -1,6 +1,69 @@
 # Correções e Melhorias — 2026-04-06
 
-Baseado na auditoria do SYSTEM_REPORTS.md, todos os itens críticos e de alta prioridade foram corrigidos, além de melhorias adicionais identificadas durante a revisão.
+Baseado na auditoria do SYSTEM_REPORTS.md e varredura completa posterior do código, todos os itens críticos, de alta e média prioridade foram corrigidos.
+
+---
+
+## Varredura Completa — Rodada 2 (2026-04-06)
+
+### Segurança (CRITICAL — IDOR)
+
+#### 13. Verificação de ownership do cartão antes de criar transações
+**Arquivo:** `src/app/api/credit-cards/[id]/transactions/route.ts`  
+**Problema:** POST não validava se o `cardId` da URL pertencia ao usuário autenticado. Qualquer usuário podia lançar transações no cartão de outro usuário conhecendo o UUID.  
+**Correção:** Adicionada query de verificação `SELECT id FROM credit_cards WHERE id = cardId AND user_id = userId` antes de qualquer inserção.
+
+#### 14. Verificação de ownership da meta antes de criar contribuições
+**Arquivo:** `src/app/api/goal-contributions/route.ts`  
+**Problema:** POST não validava se o `goalId` do body pertencia ao usuário. Permitia manipulação financeira de metas de outros usuários.  
+**Correção:** Adicionada query de verificação `SELECT id FROM goals WHERE id = goalId AND user_id = userId` antes do insert.
+
+#### 15. Remoção de `as any` em código de autenticação
+**Arquivos:** `src/auth.ts`, `src/lib/auth-utils.ts`  
+**Problema:** `(session.user as any).id` e `(session?.user as any)?.id` — tipo inseguro em código crítico de autenticação. O tipo já estava declarado corretamente em `src/types/next-auth.d.ts`.  
+**Correção:** Removidos os casts, código usa tipos corretos diretamente.
+
+### Validação (HIGH)
+
+#### 16. Validação de ordem de datas em orçamentos e metas
+**Arquivo:** `src/lib/validations/index.ts`  
+**Problema:** Schemas de `budgetSchema` e `goalSchema` não validavam se `endDate > startDate`. Usuários podiam criar registros com datas invertidas.  
+**Correção:** Adicionados refinements Zod com mensagem de erro clara em ambos os schemas.
+
+#### 17. Validação Zod no PUT de cartão de crédito
+**Arquivo:** `src/app/api/credit-cards/[id]/route.ts`  
+**Problema:** Atualização usava whitelist manual com `updateData as any`, sem validação de tipos ou ranges (dueDay/closingDay).  
+**Correção:** Substituído por `creditCardSchema.partial().safeParse()`, incluindo validação 1–31 nos dias.
+
+### Qualidade de Código (MEDIUM)
+
+#### 18. `updateData: any` substituído por `Record<string, unknown>`
+**Arquivos:** `src/app/api/goals/[id]/route.ts`, `src/app/api/goal-contributions/[id]/route.ts`, `src/app/api/transactions/[id]/route.ts`  
+**Correção:** Tipo explícito e seguro em todos os objetos de update parcial.
+
+#### 19. `error.message` restante removido de goals/[id]
+**Arquivo:** `src/app/api/goals/[id]/route.ts`  
+**Correção:** Substituído por mensagem genérica.
+
+#### 20. Try/catch adicionado em todos os GET routes
+**Arquivos:** `accounts/route.ts`, `categories/route.ts`, `budgets/route.ts`, `goals/route.ts`, `transactions/route.ts`, `forecast/route.ts`  
+**Problema:** Erros de banco retornavam 500 sem tratamento.  
+**Correção:** Try/catch com `console.error` no servidor e mensagem genérica ao cliente.
+
+#### 21. Parâmetro `email` não utilizado removido do debug endpoint
+**Arquivo:** `src/app/api/debug/transactions/route.ts`  
+**Correção:** Parâmetro removido, função simplificada, `userId` não mais exposto na resposta.
+
+### Banco de Dados
+
+#### 22. Tabela `goal_contributions` criada em produção
+**Problema:** A tabela existia no schema Drizzle mas nunca havia sido criada no banco de dados de produção.  
+**Correção:** Tabela criada via SQL direto com todas as colunas, constraints e índices.
+
+#### 23. Índices adicionados para `budgets` e `goals`
+**Schema + Banco:** `budgets_user_id_idx`, `goals_user_id_idx`, `goal_contributions_goal_id_idx`, `goal_contributions_user_id_idx`, `goal_contributions_month_year_idx`
+
+---
 
 ---
 
