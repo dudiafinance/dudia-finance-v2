@@ -42,7 +42,7 @@ export function Header() {
 
       {/* Right: bell + user */}
       <div className="flex items-center gap-2 lg:gap-4">
-        <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100">
+        <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">
           <Bell className="h-5 w-5" />
           <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
         </button>
@@ -50,8 +50,8 @@ export function Header() {
         <div className="flex items-center gap-3">
           {/* Name/email — desktop only */}
           <div className="hidden text-right lg:block">
-            <p className="text-sm font-medium text-slate-900">{name}</p>
-            <p className="text-xs text-slate-500">{email}</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{name}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{email}</p>
           </div>
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold select-none">
             {initials || <User className="h-5 w-5" />}

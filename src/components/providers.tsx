@@ -20,10 +20,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <SessionProvider>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        <div className="dark:bg-slate-950 dark:text-white">
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        </div>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
       </ThemeProvider>
     </SessionProvider>
   );

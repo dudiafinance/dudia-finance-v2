@@ -46,16 +46,16 @@ export function Modal({ open, onClose, title, description, children, size = "md"
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" />
 
       {/* Panel */}
-      <div className={cn("relative w-full rounded-t-2xl lg:rounded-2xl bg-white shadow-2xl", sizes[size])}>
+      <div className={cn("relative w-full rounded-t-2xl lg:rounded-2xl bg-white dark:bg-slate-800 shadow-2xl", sizes[size])}>
         {/* Header */}
-        <div className="flex items-start justify-between border-b border-slate-100 px-6 py-4">
+        <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-700 px-6 py-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+            {description && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
           </div>
           <button
             onClick={onClose}
-            className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+            className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>

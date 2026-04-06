@@ -129,17 +129,39 @@
   }
 }
 
-/* Dark mode global styles - force dark background everywhere */
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-}
+/* ── Dark mode: override hardcoded Tailwind color utilities ──────── */
 
-.dark body {
-  background-color: oklch(0.145 0 0);
+/* Backgrounds */
+.dark .bg-white        { background-color: oklch(0.205 0 0); }
+.dark .bg-slate-50     { background-color: oklch(0.178 0 0); }
+.dark .bg-slate-100    { background-color: oklch(0.269 0 0); }
+.dark .bg-slate-200    { background-color: oklch(0.32  0 0); }
+
+/* Text */
+.dark .text-slate-900  { color: oklch(0.985 0 0); }
+.dark .text-slate-800  { color: oklch(0.922 0 0); }
+.dark .text-slate-700  { color: oklch(0.87  0 0); }
+.dark .text-slate-600  { color: oklch(0.708 0 0); }
+.dark .text-slate-500  { color: oklch(0.556 0 0); }
+.dark .text-slate-400  { color: oklch(0.48  0 0); }
+
+/* Borders */
+.dark .border-slate-100 { border-color: oklch(1 0 0 / 8%);  }
+.dark .border-slate-200 { border-color: oklch(1 0 0 / 12%); }
+
+/* Hover states */
+.dark .hover\:bg-slate-100:hover { background-color: oklch(0.269 0 0); }
+.dark .hover\:bg-slate-50:hover  { background-color: oklch(0.225 0 0); }
+
+/* Form inputs */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.dark select,
+.dark textarea {
+  background-color: oklch(0.269 0 0);
+  border-color: oklch(1 0 0 / 12%);
   color: oklch(0.985 0 0);
 }
-
-.dark > * {
-  border-color: oklch(1 0 0 / 10%);
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: oklch(0.556 0 0);
 }
