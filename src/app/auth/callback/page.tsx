@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Loader2, X } from "lucide-react";
 
 function CallbackHandler() {
@@ -14,14 +13,28 @@ function CallbackHandler() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        const email = searchParams.get("email");
+        // Pega os parâmetros do Supabase
+        const accessToken = searchParams.get("access_token");
+        const refreshToken = searchParams.get("refresh_token");
+        const type = searchParams.get("type");
 
-        if (!email) {
+        if (!accessToken) {
           setStatus("error");
-          setMessage("Email não encontrado");
+          setMessage("Token de confirmação não encontrado");
           return;
         }
 
+        // Decodifica o JWT para pegar o email
+        const payload = JSON.parse(atob(accessToken.split(".")[1]));
+        const email = payload.email;
+
+        if (!email) {
+          setStatus("error");
+          setMessage("Email não encontrado no token");
+          return;
+        }
+
+        // Sincroniza com nosso banco
         const response = await fetch("/api/auth/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
