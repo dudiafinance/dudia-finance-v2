@@ -63,14 +63,23 @@ export const budgetSchema = z.object({
 
 export const goalSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
-  targetAmount: z.coerce.number().positive("Valor alvo deve ser positivo"),
+  targetAmount: z.coerce.number().positive("Valor alvo deve ser positivo").optional().nullable(),
   currentAmount: z.coerce.number().min(0).default(0),
   startDate: z.string().min(1, "Data de início obrigatória"),
   endDate: z.string().optional().nullable(),
+  goalType: z.enum(["target", "monthly"]).default("target"),
+  monthlyContribution: z.coerce.number().positive("Valor mensal deve ser positivo").optional().nullable(),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   status: z.enum(["active", "completed", "cancelled"]).default("active"),
   notes: z.string().max(1000).optional().nullable(),
-  monthlyContribution: z.coerce.number().positive().optional().nullable(),
+}).refine((data) => {
+  if (data.targetAmount === null || data.targetAmount === undefined) {
+    return data.monthlyContribution !== null && data.monthlyContribution !== undefined && data.monthlyContribution > 0;
+  }
+  return true;
+}, {
+  message: "Se não houver valor alvo, o valor mensal é obrigatório",
+  path: ["monthlyContribution"],
 });
 
 export const goalContributionSchema = z.object({

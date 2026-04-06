@@ -114,7 +114,7 @@ export const goals = pgTable('goals', {
   userId: uuid('user_id').references(() => users.id).notNull(),
   accountId: uuid('account_id').references(() => accounts.id),
   name: varchar('name', { length: 255 }).notNull(),
-  targetAmount: decimal('target_amount', { precision: 15, scale: 2 }).notNull(),
+  targetAmount: decimal('target_amount', { precision: 15, scale: 2 }),
   currentAmount: decimal('current_amount', { precision: 15, scale: 2 }).default('0'),
   startDate: date('start_date').notNull(),
   endDate: date('end_date'),
@@ -123,6 +123,7 @@ export const goals = pgTable('goals', {
   priority: varchar('priority', { length: 10 }).default('medium'),
   notes: text('notes'),
   monthlyContribution: decimal('monthly_contribution', { precision: 15, scale: 2 }),
+  goalType: varchar('goal_type', { length: 20 }).default('target'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

@@ -88,7 +88,7 @@ export type Goal = {
   userId: string;
   accountId?: string;
   name: string;
-  targetAmount: number;
+  targetAmount?: number;
   currentAmount: number;
   startDate: Date;
   endDate?: Date;
@@ -97,6 +97,7 @@ export type Goal = {
   priority: 'low' | 'medium' | 'high';
   notes?: string;
   monthlyContribution?: number;
+  goalType: 'target' | 'monthly';
   createdAt: Date;
   updatedAt: Date;
 };

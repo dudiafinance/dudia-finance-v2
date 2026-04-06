@@ -14,6 +14,7 @@ const fmt = (v: number) =>
 
 type FormData = {
   name: string;
+  goalType: string;
   targetAmount: string;
   currentAmount: string;
   startDate: string;
@@ -26,6 +27,7 @@ type FormData = {
 
 const emptyForm = (): FormData => ({
   name: "",
+  goalType: "target",
   targetAmount: "",
   currentAmount: "0",
   startDate: new Date().toISOString().split("T")[0],
@@ -79,7 +81,8 @@ export default function GoalsPage() {
     setEditingId(g.id);
     setForm({
       name: g.name,
-      targetAmount: String(Number(g.targetAmount)),
+      goalType: g.goalType || "target",
+      targetAmount: g.targetAmount ? String(Number(g.targetAmount)) : "",
       currentAmount: String(Number(g.currentAmount)),
       startDate: g.startDate ? new Date(g.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: g.endDate ? new Date(g.endDate).toISOString().split("T")[0] : "",
@@ -95,7 +98,17 @@ export default function GoalsPage() {
   const validate = () => {
     const e: typeof errors = {};
     if (!form.name.trim()) e.name = "Nome obrigatório";
-    if (!form.targetAmount || Number(form.targetAmount) <= 0) e.targetAmount = "Valor obrigatório";
+    
+    if (form.goalType === "target") {
+      if (!form.targetAmount || Number(form.targetAmount) <= 0) {
+        e.targetAmount = "Valor alvo obrigatório para meta com valor total";
+      }
+    } else if (form.goalType === "monthly") {
+      if (!form.monthlyContribution || Number(form.monthlyContribution) <= 0) {
+        e.monthlyContribution = "Valor mensal obrigatório para meta mensal";
+      }
+    }
+    
     if (!form.startDate) e.startDate = "Data de início obrigatória";
     if (form.endDate && form.startDate && new Date(form.endDate) <= new Date(form.startDate)) {
       e.endDate = "Data final deve ser posterior à data de início";
@@ -106,17 +119,26 @@ export default function GoalsPage() {
 
   const save = async () => {
     if (!validate()) return;
-    const formPayload = {
+    
+    const formPayload: any = {
       name: form.name,
-      targetAmount: Number(form.targetAmount),
+      goalType: form.goalType,
       currentAmount: Number(form.currentAmount),
       startDate: form.startDate,
       endDate: form.endDate || undefined,
-      monthlyContribution: form.monthlyContribution ? Number(form.monthlyContribution) : undefined,
       priority: form.priority,
       status: form.status,
       notes: form.notes,
     };
+    
+    if (form.goalType === "target") {
+      formPayload.targetAmount = Number(form.targetAmount);
+      formPayload.monthlyContribution = form.monthlyContribution ? Number(form.monthlyContribution) : undefined;
+    } else if (form.goalType === "monthly") {
+      formPayload.targetAmount = undefined;
+      formPayload.monthlyContribution = Number(form.monthlyContribution);
+    }
+    
     try {
       if (editingId) {
         await updateGoal.mutateAsync({ id: editingId, ...formPayload });
@@ -278,25 +300,46 @@ export default function GoalsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-2xl font-bold text-slate-900">{fmt(currentAmount)}</span>
-                  <span className="text-sm text-slate-400 self-end">de {fmt(targetAmount)}</span>
-                </div>
-                <div className="h-2.5 w-full rounded-full bg-slate-100">
-                  <div
-                    className={cn("h-2.5 rounded-full transition-all",
-                      g.status === "completed" ? "bg-emerald-500" : pct >= 75 ? "bg-blue-500" : "bg-slate-400"
+<div className="space-y-3">
+                {g.goalType === 'target' && g.targetAmount && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-2xl font-bold text-slate-900">{fmt(currentAmount)}</span>
+                      <span className="text-sm text-slate-400 self-end">de {fmt(targetAmount)}</span>
+                    </div>
+                    <div className="h-2.5 w-full rounded-full bg-slate-100">
+                      <div
+                        className={cn("h-2.5 rounded-full transition-all",
+                          g.status === "completed" ? "bg-emerald-500" : pct >= 75 ? "bg-blue-500" : "bg-slate-400"
+                        )}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-500 font-medium">{pct.toFixed(1)}%</span>
+                      {g.status !== "completed" && remaining > 0 && (
+                        <span className="text-slate-400">Faltam {fmt(remaining)}</span>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {g.goalType === 'monthly' && g.monthlyContribution && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-2xl font-bold text-blue-600">{fmt(Number(g.monthlyContribution))}</span>
+                      <span className="text-sm text-slate-400">por mês</span>
+                    </div>
+                    {currentAmount > 0 && (
+                      <div className="text-xs text-slate-500">
+                        Total guardado: <span className="font-medium text-slate-700">{fmt(currentAmount)}</span>
+                      </div>
                     )}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500 font-medium">{pct.toFixed(1)}%</span>
-                  {g.status !== "completed" && remaining > 0 && (
-                    <span className="text-slate-400">Faltam {fmt(remaining)}</span>
-                  )}
-                </div>
+                    <div className="text-xs text-blue-600 font-medium">
+                      {endDate ? "Meta com prazo definido" : "Meta mensal contínua"}
+                    </div>
+                  </>
+                )}
 
                 {(startDate || endDate || g.monthlyContribution) && (
                   <div className="flex flex-col gap-1 text-xs text-slate-400 border-t border-slate-100 pt-2 mt-1">
@@ -361,23 +404,50 @@ export default function GoalsPage() {
               onChange={(e) => set("name", e.target.value)} error={!!errors.name} />
           </Field>
 
-          <FormRow>
-            <Field label="Valor Alvo" required error={errors.targetAmount}>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-                <Input type="number" step="0.01" min="0" placeholder="0,00"
-                  value={form.targetAmount} onChange={(e) => set("targetAmount", e.target.value)}
-                  error={!!errors.targetAmount} className="pl-9" />
-              </div>
-            </Field>
-            <Field label="Valor Atual">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-                <Input type="number" step="0.01" min="0" placeholder="0,00"
-                  value={form.currentAmount} onChange={(e) => set("currentAmount", e.target.value)} className="pl-9" />
-              </div>
-            </Field>
-          </FormRow>
+          <Field label="Tipo de Meta">
+            <Select value={form.goalType} onChange={(e) => set("goalType", e.target.value)}>
+              <option value="target">Com Valor Total (ex: viagem, carro)</option>
+              <option value="monthly">Apenas Mensal (ex: guardar R$800/mês)</option>
+            </Select>
+          </Field>
+
+          {form.goalType === "target" && (
+            <>
+              <FormRow>
+                <Field label="Valor Alvo" required error={errors.targetAmount}>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                    <Input type="number" step="0.01" min="0" placeholder="0,00"
+                      value={form.targetAmount} onChange={(e) => set("targetAmount", e.target.value)}
+                      error={!!errors.targetAmount} className="pl-9" />
+                  </div>
+                </Field>
+                <Field label="Valor Atual">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                    <Input type="number" step="0.01" min="0" placeholder="0,00"
+                      value={form.currentAmount} onChange={(e) => set("currentAmount", e.target.value)} className="pl-9" />
+                  </div>
+                </Field>
+              </FormRow>
+            </>
+          )}
+
+          {form.goalType === "monthly" && (
+            <>
+              <Field label="Valor Mensal" required error={errors.monthlyContribution}>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                  <Input type="number" step="0.01" min="0" placeholder="0,00"
+                    value={form.monthlyContribution} onChange={(e) => set("monthlyContribution", e.target.value)}
+                    error={!!errors.monthlyContribution} className="pl-9" />
+                </div>
+              </Field>
+              <p className="text-xs text-slate-500 -mt-2">
+                Este valor será guardado todos os meses. Se definir uma data final, o valor total será calculado automaticamente.
+              </p>
+            </>
+          )}
 
           <FormRow>
             <Field label="Data de Início" required error={errors.startDate}>
@@ -387,6 +457,15 @@ export default function GoalsPage() {
               <Input type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} error={!!errors.endDate} />
             </Field>
           </FormRow>
+
+          {form.goalType === "monthly" && !form.endDate && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <Calendar className="inline h-4 w-4 mr-1" />
+                Meta mensal sem data final: continuará indefinidamente até você definir uma data de término.
+              </p>
+            </div>
+          )}
 
           <FormRow>
             <Field label="Valor Mensal (opcional)">

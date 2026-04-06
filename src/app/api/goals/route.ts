@@ -34,19 +34,23 @@ export async function POST(req: NextRequest) {
   }
 
   const d = parsed.data;
+  
+  const goalType = d.targetAmount ? 'target' : 'monthly';
+  
   const [row] = await db
     .insert(goals)
     .values({
       userId,
       name: d.name,
-      targetAmount: String(d.targetAmount),
+      targetAmount: d.targetAmount ? String(d.targetAmount) : null,
       currentAmount: String(d.currentAmount),
       startDate: d.startDate,
       endDate: d.endDate ?? null,
+      goalType: goalType,
+      monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
       priority: d.priority,
       status: d.status,
       notes: d.notes ?? null,
-      monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
     })
     .returning();
 

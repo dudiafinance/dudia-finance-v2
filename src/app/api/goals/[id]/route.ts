@@ -24,10 +24,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const d = parsed.data;
   const updateData: any = { updatedAt: new Date() };
   if (d.name) updateData.name = d.name;
-  if (d.targetAmount !== undefined) updateData.targetAmount = String(d.targetAmount);
+  if (d.targetAmount !== undefined) updateData.targetAmount = d.targetAmount ? String(d.targetAmount) : null;
   if (d.currentAmount !== undefined) updateData.currentAmount = String(d.currentAmount);
   if (d.startDate !== undefined) updateData.startDate = d.startDate;
   if (d.endDate !== undefined) updateData.endDate = d.endDate ?? null;
+  if (d.goalType) updateData.goalType = d.goalType;
   if (d.priority) updateData.priority = d.priority;
   if (d.status) updateData.status = d.status;
   if (d.notes !== undefined) updateData.notes = d.notes;
