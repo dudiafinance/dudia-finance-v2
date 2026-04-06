@@ -116,12 +116,27 @@ export const goals = pgTable('goals', {
   name: varchar('name', { length: 255 }).notNull(),
   targetAmount: decimal('target_amount', { precision: 15, scale: 2 }).notNull(),
   currentAmount: decimal('current_amount', { precision: 15, scale: 2 }).default('0'),
-  deadline: date('deadline'),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date'),
   categoryId: uuid('category_id').references(() => categories.id),
-  status: varchar('status', { length: 20 }).default('active'), // 'active', 'completed', 'cancelled'
-  priority: varchar('priority', { length: 10 }).default('medium'), // 'low', 'medium', 'high'
+  status: varchar('status', { length: 20 }).default('active'),
+  priority: varchar('priority', { length: 10 }).default('medium'),
   notes: text('notes'),
   monthlyContribution: decimal('monthly_contribution', { precision: 15, scale: 2 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const goalContributions = pgTable('goal_contributions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  goalId: uuid('goal_id').references(() => goals.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  month: integer('month').notNull(),
+  year: integer('year').notNull(),
+  amount: decimal('amount', { precision: 15, scale: 2 }).notNull(),
+  originalAmount: decimal('original_amount', { precision: 15, scale: 2 }).notNull(),
+  status: varchar('status', { length: 20 }).default('pending'),
+  notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -182,6 +197,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   categories: many(categories),
   budgets: many(budgets),
   goals: many(goals),
+  goalContributions: many(goalContributions),
   recurringTransactions: many(recurringTransactions),
   sessions: many(sessions),
   authAccounts: many(authAccounts),
@@ -191,6 +207,17 @@ export const accountsRelations = relations(accounts, ({ one, many }) => ({
   user: one(users, { fields: [accounts.userId], references: [users.id] }),
   transactions: many(transactions),
   goals: many(goals),
+}));
+
+export const goalsRelations = relations(goals, ({ one, many }) => ({
+  user: one(users, { fields: [goals.userId], references: [users.id] }),
+  account: one(accounts, { fields: [goals.accountId], references: [accounts.id] }),
+  contributions: many(goalContributions),
+}));
+
+export const goalContributionsRelations = relations(goalContributions, ({ one }) => ({
+  goal: one(goals, { fields: [goalContributions.goalId], references: [goals.id] }),
+  user: one(users, { fields: [goalContributions.userId], references: [users.id] }),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({

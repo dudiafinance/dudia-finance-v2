@@ -28,5 +28,8 @@ export type NewBudget = typeof schema.budgets.$inferInsert;
 export type Goal = typeof schema.goals.$inferSelect;
 export type NewGoal = typeof schema.goals.$inferInsert;
 
+export type GoalContribution = typeof schema.goalContributions.$inferSelect;
+export type NewGoalContribution = typeof schema.goalContributions.$inferInsert;
+
 export type RecurringTransaction = typeof schema.recurringTransactions.$inferSelect;
 export type NewRecurringTransaction = typeof schema.recurringTransactions.$inferInsert;

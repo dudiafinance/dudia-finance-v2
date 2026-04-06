@@ -41,10 +41,12 @@ export async function POST(req: NextRequest) {
       name: d.name,
       targetAmount: String(d.targetAmount),
       currentAmount: String(d.currentAmount),
-      deadline: d.deadline ?? null,
+      startDate: d.startDate,
+      endDate: d.endDate ?? null,
       priority: d.priority,
       status: d.status,
       notes: d.notes ?? null,
+      monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
     })
     .returning();
 

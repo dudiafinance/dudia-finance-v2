@@ -65,8 +65,19 @@ export const goalSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
   targetAmount: z.coerce.number().positive("Valor alvo deve ser positivo"),
   currentAmount: z.coerce.number().min(0).default(0),
-  deadline: z.string().optional().nullable(),
+  startDate: z.string().min(1, "Data de início obrigatória"),
+  endDate: z.string().optional().nullable(),
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   status: z.enum(["active", "completed", "cancelled"]).default("active"),
+  notes: z.string().max(1000).optional().nullable(),
+  monthlyContribution: z.coerce.number().positive().optional().nullable(),
+});
+
+export const goalContributionSchema = z.object({
+  goalId: z.string().uuid("Meta inválida"),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+  amount: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
+  status: z.enum(["pending", "paid", "cancelled"]).default("pending"),
   notes: z.string().max(1000).optional().nullable(),
 });

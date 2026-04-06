@@ -90,10 +90,26 @@ export type Goal = {
   name: string;
   targetAmount: number;
   currentAmount: number;
-  deadline?: Date;
+  startDate: Date;
+  endDate?: Date;
   categoryId?: string;
   status: 'active' | 'completed' | 'cancelled';
   priority: 'low' | 'medium' | 'high';
+  notes?: string;
+  monthlyContribution?: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type GoalContribution = {
+  id: string;
+  goalId: string;
+  userId: string;
+  month: number;
+  year: number;
+  amount: number;
+  originalAmount: number;
+  status: 'pending' | 'paid' | 'cancelled';
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
