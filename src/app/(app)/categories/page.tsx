@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, Tag } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Tag, Sparkles, Loader2 } from "lucide-react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -49,7 +49,7 @@ const emptyForm = (): FormData => ({
 
 export default function CategoriesPage() {
   const { toast } = useToast();
-  const { data: categories = [], isLoading } = useCategories();
+  const { data: categories = [], isLoading, refetch } = useCategories();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
@@ -61,6 +61,16 @@ export default function CategoriesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [seeding, setSeeding] = useState(false);
+
+  // Tags management
+  const [tagInput, setTagInput] = useState("");
+  const [allTags, setAllTags] = useState<string[]>([]);
+  const [tagModalOpen, setTagModalOpen] = useState(false);
+  const [editingTag, setEditingTag] = useState<string | null>(null);
+
+  // Extract all tags from categories
+  const extractedTags = Array.from(new Set(categories.flatMap((c: any) => c.tags ?? [])));
 
   const set = (key: keyof FormData, value: any) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -132,6 +142,37 @@ export default function CategoriesPage() {
     setDeleteId(null);
   };
 
+  const seedCategories = async () => {
+    setSeeding(true);
+    try {
+      const res = await fetch("/api/categories/seed", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Erro ao criar categorias", "error");
+        return;
+      }
+      toast(`${data.count} categorias criadas com sucesso!`);
+      refetch();
+    } catch {
+      toast("Erro ao criar categorias", "error");
+    } finally {
+      setSeeding(false);
+    }
+  };
+
+  const addTag = () => {
+    if (!tagInput.trim()) return;
+    const newTags = [...new Set([...allTags, tagInput.trim().toLowerCase()])];
+    setAllTags(newTags);
+    setTagInput("");
+    toast("Tag adicionada!");
+  };
+
+  const removeTag = (tag: string) => {
+    setAllTags(allTags.filter((t) => t !== tag));
+    toast("Tag removida.", "warning");
+  };
+
   const filtered = categories.filter((c: any) => {
     const matchSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.tags ?? []).some((t: string) => t.includes(searchTerm.toLowerCase()));
@@ -163,10 +204,18 @@ export default function CategoriesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Categorias</h1>
           <p className="text-sm text-slate-500">{categories.length} categorias · {incomeCount} receitas · {expenseCount} despesas</p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Categoria
-        </Button>
+        <div className="flex gap-2">
+          {categories.length === 0 && (
+            <Button variant="outline" onClick={seedCategories} disabled={seeding}>
+              {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              {seeding ? "Criando..." : "Gerar Categorias Padrão"}
+            </Button>
+          )}
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Categoria
+          </Button>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -194,6 +243,30 @@ export default function CategoriesPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Tags Section */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">Tags</h2>
+          <Button variant="outline" size="sm" onClick={() => setTagModalOpen(true)}>
+            <Tag className="mr-2 h-3 w-3" />
+            Gerenciar Tags
+          </Button>
+        </div>
+        {extractedTags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {extractedTags.map((tag) => (
+              <span key={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
+                <Tag className="h-3 w-3" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-slate-400">Nenhuma tag criada ainda</p>
+        )}
       </div>
 
       {/* Income section */}
@@ -226,7 +299,7 @@ export default function CategoriesPage() {
         </section>
       )}
 
-      {/* Modal */}
+      {/* Category Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
         title={editingId ? "Editar Categoria" : "Nova Categoria"}
         description="Configure a categoria" size="lg">
@@ -268,10 +341,10 @@ export default function CategoriesPage() {
             <ColorPicker value={form.color} onChange={(c) => set("color", c)} />
           </Field>
 
-          <Field label="Tags">
+          <Field label="Tags (para esta categoria)">
             <TagInput value={form.tags} onChange={(tags) => set("tags", tags)}
-              placeholder="mercado, fixo, necessário... (Enter para adicionar)" />
-            <p className="text-xs text-slate-400 mt-1">Use tags para agrupar e filtrar categorias</p>
+              placeholder="Ex: fixo, variável... (Enter para adicionar)" />
+            <p className="text-xs text-slate-400 mt-1">Tags específicas desta categoria</p>
           </Field>
 
           <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
@@ -328,11 +401,57 @@ export default function CategoriesPage() {
         </div>
       </Modal>
 
+      {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Categoria" size="sm">
         <p className="text-sm text-slate-600">Tem certeza que deseja excluir esta categoria?</p>
         <div className="mt-5 flex justify-end gap-3">
           <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
           <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+        </div>
+      </Modal>
+
+      {/* Tags Management Modal */}
+      <Modal open={tagModalOpen} onClose={() => setTagModalOpen(false)} title="Gerenciar Tags" size="md">
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            Tags são usadas para organizar e filtrar transações. Elas não estão vinculadas a categorias específicas.
+          </p>
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="Nova tag..."
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+              className="flex-1"
+            />
+            <Button onClick={addTag}>Adicionar</Button>
+          </div>
+
+          {extractedTags.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {extractedTags.map((tag) => (
+                <div key={tag} className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+                  <Tag className="h-3 w-3 text-slate-400" />
+                  <span className="text-sm text-slate-600">{tag}</span>
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="ml-1 text-slate-400 hover:text-red-500"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-400 text-center py-4">
+              Nenhuma tag criada ainda. Adicione tags às suas categorias para vê-las aqui.
+            </p>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setTagModalOpen(false)}>Fechar</Button>
+          </div>
         </div>
       </Modal>
     </div>
