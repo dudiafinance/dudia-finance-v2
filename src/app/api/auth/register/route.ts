@@ -45,8 +45,12 @@ export async function POST(req: NextRequest) {
       })
       .returning({ id: users.id, email: users.email, name: users.name });
 
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(user.email, user.name).catch(console.error);
+    // Send welcome email
+    try {
+      await sendWelcomeEmail(user.email, user.name);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+    }
 
     return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
   } catch (error) {

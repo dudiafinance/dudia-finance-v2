@@ -1,16 +1,27 @@
 import nodemailer from "nodemailer";
 
+const BrevoSMTPHost = process.env.BREVO_SMTP_HOST;
+const BrevoSMTPPort = parseInt(process.env.BREVO_SMTP_PORT || "587");
+const BrevoSMTPUser = process.env.BREVO_SMTP_USER;
+const BrevoSMTPPass = process.env.BREVO_SMTP_PASS;
+const FromEmail = process.env.FROM_EMAIL || "noreply@dudiafinance.com";
+
+if (!BrevoSMTPHost || !BrevoSMTPUser || !BrevoSMTPPass) {
+  console.error("Brevo SMTP credentials not configured. Email sending will fail.");
+}
+
 const transporter = nodemailer.createTransport({
-  host: process.env.BREVO_SMTP_HOST,
-  port: parseInt(process.env.BREVO_SMTP_PORT || "587"),
+  host: BrevoSMTPHost,
+  port: BrevoSMTPPort,
   secure: false,
   auth: {
-    user: process.env.BREVO_SMTP_USER,
-    pass: process.env.BREVO_SMTP_PASS,
+    user: BrevoSMTPUser,
+    pass: BrevoSMTPPass,
   },
+  logger: true,
+  debug: process.env.NODE_ENV === "development",
 });
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@dudiafinance.com";
 const APP_NAME = "DUD.IA Finance";
 
 export async function sendPasswordResetEmail(
@@ -20,9 +31,11 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
+  console.log(`Sending password reset email to ${to}`);
+
   await transporter.sendMail({
     to,
-    from: FROM_EMAIL,
+    from: FromEmail,
     subject: `${APP_NAME} — Redefinição de Senha`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -50,9 +63,11 @@ export async function sendWelcomeEmail(
   to: string,
   name: string
 ): Promise<void> {
+  console.log(`Sending welcome email to ${to} from ${FromEmail}`);
+
   await transporter.sendMail({
     to,
-    from: FROM_EMAIL,
+    from: FromEmail,
     subject: `Bem-vindo ao ${APP_NAME}! 🎉`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -72,4 +87,6 @@ export async function sendWelcomeEmail(
       </div>
     `,
   });
+
+  console.log(`Welcome email sent successfully to ${to}`);
 }
