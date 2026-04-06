@@ -1,8 +1,16 @@
-import sgMail from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+const transporter = nodemailer.createTransport({
+  host: process.env.BREVO_SMTP_HOST,
+  port: parseInt(process.env.BREVO_SMTP_PORT || "587"),
+  secure: false,
+  auth: {
+    user: process.env.BREVO_SMTP_USER,
+    pass: process.env.BREVO_SMTP_PASS,
+  },
+});
 
-const FROM_EMAIL = "dudiafinance@yahoo.com";
+const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@dudiafinance.com";
 const APP_NAME = "DUD.IA Finance";
 
 export async function sendPasswordResetEmail(
@@ -12,7 +20,7 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
-  await sgMail.send({
+  await transporter.sendMail({
     to,
     from: FROM_EMAIL,
     subject: `${APP_NAME} — Redefinição de Senha`,
@@ -42,7 +50,7 @@ export async function sendWelcomeEmail(
   to: string,
   name: string
 ): Promise<void> {
-  await sgMail.send({
+  await transporter.sendMail({
     to,
     from: FROM_EMAIL,
     subject: `Bem-vindo ao ${APP_NAME}! 🎉`,
