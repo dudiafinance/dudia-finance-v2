@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, Tag, Sparkles, Loader2 } from "lucide-react";
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-api";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useTags, useUpdateTags } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
@@ -53,6 +53,8 @@ export default function CategoriesPage() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const { data: globalTags = [] } = useTags();
+  const updateTags = useUpdateTags();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -65,12 +67,10 @@ export default function CategoriesPage() {
 
   // Tags management
   const [tagInput, setTagInput] = useState("");
-  const [allTags, setAllTags] = useState<string[]>([]);
   const [tagModalOpen, setTagModalOpen] = useState(false);
-  const [editingTag, setEditingTag] = useState<string | null>(null);
 
-  // Extract all tags from categories
-  const extractedTags = Array.from(new Set(categories.flatMap((c: any) => c.tags ?? [])));
+  // All tags = global tags + tags extracted from categories (deduplicated)
+  const extractedTags = Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])]));
 
   const set = (key: keyof FormData, value: any) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -160,17 +160,26 @@ export default function CategoriesPage() {
     }
   };
 
-  const addTag = () => {
-    if (!tagInput.trim()) return;
-    const newTags = [...new Set([...allTags, tagInput.trim().toLowerCase()])];
-    setAllTags(newTags);
-    setTagInput("");
-    toast("Tag adicionada!");
+  const addTag = async () => {
+    const newTag = tagInput.trim().toLowerCase();
+    if (!newTag) return;
+    if (globalTags.includes(newTag)) { setTagInput(""); return; }
+    try {
+      await updateTags.mutateAsync([...globalTags, newTag]);
+      setTagInput("");
+      toast("Tag adicionada!");
+    } catch {
+      toast("Erro ao salvar tag", "error");
+    }
   };
 
-  const removeTag = (tag: string) => {
-    setAllTags(allTags.filter((t) => t !== tag));
-    toast("Tag removida.", "warning");
+  const removeTag = async (tag: string) => {
+    try {
+      await updateTags.mutateAsync(globalTags.filter((t) => t !== tag));
+      toast("Tag removida.", "warning");
+    } catch {
+      toast("Erro ao remover tag", "error");
+    }
   };
 
   const filtered = categories.filter((c: any) => {
@@ -413,10 +422,10 @@ export default function CategoriesPage() {
       {/* Tags Management Modal */}
       <Modal open={tagModalOpen} onClose={() => setTagModalOpen(false)} title="Gerenciar Tags" size="md">
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
-            Tags são usadas para organizar e filtrar transações. Elas não estão vinculadas a categorias específicas.
+          <p className="text-sm text-slate-500">
+            Tags globais disponíveis para uso em transações e lançamentos.
           </p>
-          
+
           <div className="flex gap-2">
             <Input
               placeholder="Nova tag..."
@@ -425,15 +434,15 @@ export default function CategoriesPage() {
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
               className="flex-1"
             />
-            <Button onClick={addTag}>Adicionar</Button>
+            <Button onClick={addTag} disabled={updateTags.isPending}>Adicionar</Button>
           </div>
 
-          {extractedTags.length > 0 ? (
+          {globalTags.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {extractedTags.map((tag) => (
-                <div key={tag} className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+              {globalTags.map((tag: string) => (
+                <div key={tag} className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-700 px-3 py-1">
                   <Tag className="h-3 w-3 text-slate-400" />
-                  <span className="text-sm text-slate-600">{tag}</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-300">{tag}</span>
                   <button
                     onClick={() => removeTag(tag)}
                     className="ml-1 text-slate-400 hover:text-red-500"
@@ -445,11 +454,25 @@ export default function CategoriesPage() {
             </div>
           ) : (
             <p className="text-sm text-slate-400 text-center py-4">
-              Nenhuma tag criada ainda. Adicione tags às suas categorias para vê-las aqui.
+              Nenhuma tag criada ainda. Adicione tags acima para usá-las nas transações.
             </p>
           )}
 
-          <div className="flex justify-end pt-2 border-t border-slate-100">
+          {categories.some((c: any) => (c.tags ?? []).length > 0) && (
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+              <p className="text-xs font-medium text-slate-500 mb-2">Tags das categorias</p>
+              <div className="flex flex-wrap gap-2">
+                {Array.from(new Set(categories.flatMap((c: any) => c.tags ?? []))).map((tag: any) => (
+                  <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-400">
+                    <Tag className="h-3 w-3" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
             <Button variant="outline" onClick={() => setTagModalOpen(false)}>Fechar</Button>
           </div>
         </div>

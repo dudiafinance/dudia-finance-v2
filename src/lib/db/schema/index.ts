@@ -23,6 +23,7 @@ export const users = pgTable('users', {
   locale: varchar('locale', { length: 5 }).default('pt-BR'),
   timezone: varchar('timezone', { length: 50 }).default('America/Sao_Paulo'),
   emailVerified: timestamp('email_verified'),
+  tags: jsonb('tags').$type<string[]>().default([]),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

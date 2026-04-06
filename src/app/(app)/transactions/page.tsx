@@ -6,7 +6,7 @@ import {
   Edit, Trash2, Calendar, CheckCircle2, Clock, Filter, X, ChevronDown,
   RefreshCw, Repeat2,
 } from "lucide-react";
-import { useTransactions, useCategories, useAccounts, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from "@/hooks/use-api";
+import { useTransactions, useCategories, useAccounts, useCreateTransaction, useUpdateTransaction, useDeleteTransaction, useTags } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -72,6 +72,8 @@ export default function TransactionsPage() {
   const { data: transactions = [], isLoading: txLoading } = useTransactions();
   const { data: categories = [] } = useCategories();
   const { data: accountsData = [] } = useAccounts();
+  const { data: globalTags = [] } = useTags();
+  const allTagSuggestions = Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[];
   const createTransaction = useCreateTransaction();
   const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
@@ -569,6 +571,7 @@ export default function TransactionsPage() {
 
           <Field label="Tags">
             <TagInput value={form.tags} onChange={(tags) => set("tags", tags)}
+              suggestions={allTagSuggestions}
               placeholder="fixo, mensal, necessário... (Enter para adicionar)" />
           </Field>
 

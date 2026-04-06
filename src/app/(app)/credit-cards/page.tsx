@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { TagInput } from "@/components/ui/tag-input";
-import { useCategories } from "@/hooks/use-api";
+import { useCategories, useTags } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 import {
   BarChart,
@@ -252,6 +252,8 @@ function LaunchFormModal({
 }) {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
+  const { data: globalTags = [] } = useTags();
+  const allTagSuggestions = Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[];
   const [tab, setTab] = useState<"quick" | "manual">("quick");
   const [form, setForm] = useState({
     description: "", amount: "", date: new Date().toISOString().slice(0, 10),
@@ -362,7 +364,7 @@ function LaunchFormModal({
         {/* Tags */}
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Tags</label>
-          <TagInput value={form.tags} onChange={v => set("tags", v)} />
+          <TagInput value={form.tags} onChange={v => set("tags", v)} suggestions={allTagSuggestions} />
         </div>
 
         {/* Launch type */}

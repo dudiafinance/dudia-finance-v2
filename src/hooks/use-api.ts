@@ -64,6 +64,18 @@ export function useDeleteCategory() {
   });
 }
 
+// Global Tags
+export function useTags() {
+  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<string[]>("/api/tags") });
+}
+export function useUpdateTags() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (tags: string[]) => apiFetch<string[]>("/api/tags", { method: "PUT", body: JSON.stringify(tags) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
+  });
+}
+
 // Transactions
 export function useTransactions() {
   return useQuery({ queryKey: ["transactions"], queryFn: () => apiFetch<any[]>("/api/transactions") });
