@@ -9,7 +9,7 @@ export default function AppLayout({
 }) {
   return (
     <MobileNavProvider>
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <Sidebar />
         {/* Desktop: left padding for sidebar. Mobile: no left padding, bottom padding for bottom nav */}
         <div className="lg:pl-64 pb-20 lg:pb-0">

@@ -17,13 +17,13 @@ export function Header() {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 lg:px-6 dark:bg-slate-900 dark:border-slate-800">
       {/* Left: hamburger (mobile) + search (desktop) */}
       <div className="flex items-center gap-3">
         {/* Hamburger — mobile only */}
         <button
           onClick={() => setOpen(true)}
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 lg:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
           aria-label="Abrir menu"
         >
           <Menu className="h-5 w-5" />
@@ -35,7 +35,7 @@ export function Header() {
           <input
             type="text"
             placeholder="Buscar transações..."
-            className="h-9 w-64 rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="h-9 w-64 rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
           />
         </div>
       </div>

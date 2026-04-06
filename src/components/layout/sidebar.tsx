@@ -119,7 +119,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-800 lg:hidden">
         {bottomNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -128,10 +128,10 @@ export function Sidebar() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium transition-colors",
-                isActive ? "text-emerald-600" : "text-slate-500"
+                isActive ? "text-emerald-600" : "text-slate-500 dark:text-slate-400"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive ? "text-emerald-600" : "text-slate-500")} />
+              <item.icon className={cn("h-5 w-5", isActive ? "text-emerald-600" : "text-slate-500 dark:text-slate-400")} />
               <span>{item.label}</span>
             </Link>
           );
@@ -139,7 +139,7 @@ export function Sidebar() {
         {/* Mais button */}
         <button
           onClick={() => setOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium text-slate-500 transition-colors"
+          className="flex flex-col items-center gap-0.5 px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 transition-colors"
         >
           <MoreHorizontal className="h-5 w-5" />
           <span>Mais</span>
