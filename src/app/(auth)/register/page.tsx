@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Check } from "lucide-react";
-import { signIn } from "next-auth/react";
+import { Eye, EyeOff, Loader2, Check, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -45,27 +42,9 @@ export default function RegisterPage() {
       }
 
       setSuccess(true);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        setError("Conta criada, mas não foi possível fazer login automaticamente.");
-        setIsLoading(false);
-        setSuccess(false);
-      } else {
-        router.push("/dashboard");
-        router.refresh();
-      }
     } catch {
       setError("Erro de conexão. Tente novamente.");
       setIsLoading(false);
-      setSuccess(false);
     }
   };
 
@@ -74,20 +53,28 @@ export default function RegisterPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
         <div className="w-full max-w-md text-center">
           <div className="mb-8">
+            <h1 className="text-3xl font-bold text-emerald-600">DUD.IA</h1>
+            <p className="mt-2 text-slate-600">Financeiro Pessoal</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-8 shadow-sm border border-slate-100">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <Check className="h-8 w-8 text-emerald-600" />
+              <Mail className="h-8 w-8 text-emerald-600" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Conta criada com sucesso!</h1>
+            <h2 className="text-xl font-semibold text-slate-900">Verifique seu email</h2>
             <p className="mt-2 text-slate-600">
-              Bem-vindo ao DUD.IA Finance, {name}!
+              Enviamos um link de confirmação para:
             </p>
+            <p className="mt-1 font-medium text-slate-900">{email}</p>
             <p className="mt-4 text-sm text-slate-500">
-              Um e-mail de boas-vindas foi enviado para <strong>{email}</strong>
+              Clique no link no email para ativar sua conta. Depois você poderá fazer login.
             </p>
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Redirecionando para o dashboard...</span>
-            </div>
+          </div>
+
+          <div className="mt-6 text-center">
+            <Link href="/login" className="text-sm text-emerald-600 hover:underline">
+              Voltar para o login
+            </Link>
           </div>
         </div>
       </div>
