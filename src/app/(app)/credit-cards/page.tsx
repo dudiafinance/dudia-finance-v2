@@ -354,9 +354,7 @@ function LaunchFormModal({
     const start = Number(form.startInstallment) || 1;
     let m = form.invoiceMonth;
     let y = form.invoiceYear;
-    for (let i = 1; i < start; i++) {
-      m++; if (m > 12) { m = 1; y++; }
-    }
+    
     for (let i = start; i <= n; i++) {
       installmentPreview.push({ installment: i, month: m, year: y });
       m++; if (m > 12) { m = 1; y++; }
@@ -512,8 +510,9 @@ function LaunchFormModal({
             </div>
             {tab === "manual" && (
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Começa na parcela</label>
-                <input type="number" min={1} value={form.startInstallment} onChange={e => set("startInstallment", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                <label className="block text-xs font-medium text-slate-600 mb-1">Parcela atual</label>
+                <input type="number" min={1} max={form.totalInstallments || 1} value={form.startInstallment} onChange={e => set("startInstallment", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+                <p className="text-xs text-slate-400 mt-1">Ex: se está na parcela 19, digite 19</p>
               </div>
             )}
           </div>
@@ -522,7 +521,11 @@ function LaunchFormModal({
         {/* Manual: invoice month selector */}
         {tab === "manual" && (
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Entrar na fatura de</label>
+            <label className="block text-xs font-medium text-slate-600 mb-1">
+              {form.launchType === "installment" && form.startInstallment
+                ? `A parcela ${form.startInstallment} entra na fatura de`
+                : "Entrar na fatura de"}
+            </label>
             <select
               value={`${form.invoiceMonth}-${form.invoiceYear}`}
               onChange={e => {
@@ -540,28 +543,36 @@ function LaunchFormModal({
 
         {/* Installment preview */}
         {form.launchType === "installment" && installmentPreview.length > 0 && (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 max-h-36 overflow-y-auto">
-            <p className="text-xs font-medium text-slate-600 mb-2">
-              Prévia das parcelas:
-              {form.amountType === "total" && form.amount && (
-                <span className="text-slate-400 font-normal ml-2">
-                  (R$ {fmt(Number(form.amount) / Number(form.totalInstallments))}/parcela)
-                </span>
+          <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 max-h-48 overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-slate-600">
+                Prévia das parcelas
+              </p>
+              {tab === "manual" && form.startInstallment && Number(form.startInstallment) > 1 && (
+                <p className="text-xs text-amber-600">
+                  ⚠️ Parcelas anteriores já foram lançadas
+                </p>
               )}
-              {form.amountType === "parcel" && form.amount && (
-                <span className="text-slate-400 font-normal ml-2">
-                  (Total: R$ {fmt(Number(form.amount) * Number(form.totalInstallments))})
-                </span>
-              )}
-            </p>
+            </div>
             <div className="space-y-1">
-              {installmentPreview.map(p => (
-                <p key={p.installment} className="text-xs text-slate-500">
+              {installmentPreview.map((p, idx) => (
+                <p key={p.installment} className={cn("text-xs", idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 ? "text-amber-600 font-medium" : "text-slate-500")}>
                   Parcela {p.installment}/{form.totalInstallments} → Fatura {MONTH_NAMES[p.month - 1]}/{p.year}
                   {form.amount ? ` · ${fmt(Number(form.amount) / Number(form.totalInstallments))}` : ""}
+                  {idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 && " (próxima)"}
                 </p>
               ))}
             </div>
+            {form.amountType === "total" && form.amount && (
+              <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-200">
+                Total: {fmt(Number(form.amount))} · Parcela: {fmt(Number(form.amount) / Number(form.totalInstallments))}
+              </p>
+            )}
+            {form.amountType === "parcel" && form.amount && (
+              <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-200">
+                Parcela: {fmt(Number(form.amount))} · Total: {fmt(Number(form.amount) * Number(form.totalInstallments))}
+              </p>
+            )}
           </div>
         )}
 
