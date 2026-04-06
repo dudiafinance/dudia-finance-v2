@@ -258,6 +258,32 @@ export default function GoalsPage() {
             ? Math.ceil((endDate.getTime() - today.getTime()) / 86400000)
             : null;
 
+          const isActive = startDate ? today >= startDate : true;
+          
+          let expectedContribution = 0;
+          let monthsElapsed = 0;
+          
+          if (startDate && g.monthlyContribution && isActive) {
+            const start = new Date(startDate);
+            const now = new Date(today);
+            
+            monthsElapsed = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+            
+            if (monthsElapsed < 0) monthsElapsed = 0;
+            
+            expectedContribution = monthsElapsed * Number(g.monthlyContribution);
+          }
+          
+          if (endDate && g.monthlyContribution && g.goalType === 'monthly') {
+            const start = new Date(startDate || g.createdAt);
+            const end = new Date(endDate);
+            const totalMonths = Math.ceil((end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()));
+            
+            if (totalMonths > 0) {
+              const totalExpected = totalMonths * Number(g.monthlyContribution);
+            }
+          }
+
           return (
             <div key={g.id} className={cn("group rounded-xl bg-white p-5 shadow-sm border transition-all hover:shadow-md",
               g.status === "completed" ? "border-emerald-200 bg-emerald-50/20" : "border-slate-100"
@@ -330,18 +356,35 @@ export default function GoalsPage() {
                       <span className="text-2xl font-bold text-blue-600">{fmt(Number(g.monthlyContribution))}</span>
                       <span className="text-sm text-slate-400">por mês</span>
                     </div>
-                    {currentAmount > 0 && (
-                      <div className="text-xs text-slate-500">
-                        Total guardado: <span className="font-medium text-slate-700">{fmt(currentAmount)}</span>
+                    
+                    {!isActive && startDate && (
+                      <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                        <Calendar className="inline h-3 w-3 mr-1" />
+                        Meta começa em {new Date(startDate).toLocaleDateString("pt-BR")}
                       </div>
                     )}
+                    
+                    {isActive && currentAmount > 0 && (
+                      <div className="text-xs text-slate-500">
+                        Total guardado: <span className="font-medium text-slate-700">{fmt(currentAmount)}</span>
+                        {monthsElapsed > 0 && expectedContribution > 0 && (
+                          <span className="text-slate-400 ml-2">
+                            (esperado: {fmt(expectedContribution)})
+                          </span>
+                        )}
+                        {monthsElapsed > 0 && (
+                          <span className="text-blue-600 ml-2">• {monthsElapsed} {monthsElapsed === 1 ? 'mês' : 'meses'}</span>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="text-xs text-blue-600 font-medium">
                       {endDate ? "Meta com prazo definido" : "Meta mensal contínua"}
                     </div>
                   </>
                 )}
 
-                {(startDate || endDate || g.monthlyContribution) && (
+                {(startDate || endDate || g.monthlyContribution) && isActive && (
                   <div className="flex flex-col gap-1 text-xs text-slate-400 border-t border-slate-100 pt-2 mt-1">
                     {startDate && (
                       <span className="inline-flex items-center gap-1">
@@ -349,6 +392,9 @@ export default function GoalsPage() {
                         Início: {new Date(startDate).toLocaleDateString("pt-BR")}
                         {daysFromStart !== null && daysFromStart > 0 && (
                           <span className="text-slate-500 ml-1">({daysFromStart} dias)</span>
+                        )}
+                        {daysFromStart !== null && daysFromStart < 0 && (
+                          <span className="text-amber-600 ml-1">(começa em {Math.abs(daysFromStart)} dias)</span>
                         )}
                       </span>
                     )}
@@ -370,11 +416,28 @@ export default function GoalsPage() {
                         Repete indefinidamente
                       </span>
                     )}
-                    {g.monthlyContribution && Number(g.monthlyContribution) > 0 && (
+                    {g.monthlyContribution && Number(g.monthlyContribution) > 0 && isActive && (
                       <span className="inline-flex items-center gap-1 text-blue-600">
                         <TrendingUp className="h-3 w-3" />
                         {fmt(Number(g.monthlyContribution))}/mês
                       </span>
+                    )}
+                  </div>
+                )}
+
+                {!isActive && startDate && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 font-medium">
+                      <Calendar className="inline h-4 w-4 mr-1" />
+                      Esta meta ainda não começou
+                    </p>
+                    <p className="text-xs text-amber-600 mt-1">
+                      Início: {new Date(startDate).toLocaleDateString("pt-BR")}
+                    </p>
+                    {g.monthlyContribution && (
+                      <p className="text-xs text-amber-600">
+                        Valor: {fmt(Number(g.monthlyContribution))}/mês
+                      </p>
                     )}
                   </div>
                 )}
