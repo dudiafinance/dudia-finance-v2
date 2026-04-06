@@ -18,8 +18,8 @@ const transporter = nodemailer.createTransport({
     user: BrevoSMTPUser,
     pass: BrevoSMTPPass,
   },
-  logger: true,
-  debug: process.env.NODE_ENV === "development",
+  logger: process.env.NODE_ENV === "development",
+  debug: false,
 });
 
 const APP_NAME = "DUD.IA Finance";

@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
-
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
+import { creditCardSchema } from "@/lib/validations";
 
 export async function GET() {
   const userId = await getUserId();
@@ -27,11 +23,12 @@ export async function POST(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, bank, lastDigits, limit, dueDay, closingDay, color, gradient, network } = body;
-
-  if (!name || !bank || !limit || !dueDay || !closingDay) {
-    return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
+  const parsed = creditCardSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
+
+  const { name, bank, lastDigits, limit, dueDay, closingDay, color, gradient, network } = parsed.data;
 
   const [row] = await db
     .insert(creditCards)
@@ -41,8 +38,8 @@ export async function POST(req: NextRequest) {
       bank,
       lastDigits: lastDigits ?? null,
       limit: String(limit),
-      dueDay: Number(dueDay),
-      closingDay: Number(closingDay),
+      dueDay,
+      closingDay,
       color: color ?? '#820AD1',
       gradient: gradient ?? 'from-[#820AD1] to-[#4B0082]',
       network: network ?? 'mastercard',

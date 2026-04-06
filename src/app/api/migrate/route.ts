@@ -4,8 +4,12 @@ import { sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
-  const expectedAuth = process.env.MIGRATION_SECRET || "migration-secret-2026";
-  
+  const expectedAuth = process.env.MIGRATION_SECRET;
+
+  if (!expectedAuth) {
+    return NextResponse.json({ error: "Migration endpoint disabled" }, { status: 403 });
+  }
+
   if (authHeader !== `Bearer ${expectedAuth}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -110,8 +114,7 @@ export async function POST(req: NextRequest) {
     console.error("❌ Erro na migração:", error);
     return NextResponse.json({
       success: false,
-      error: error.message,
-      details: error.stack
+      error: "Erro na migração",
     }, { status: 500 });
   }
 }

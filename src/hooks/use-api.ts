@@ -12,9 +12,12 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   return data as T;
 }
 
+const FIVE_MINUTES = 5 * 60 * 1000;
+const ONE_MINUTE = 60 * 1000;
+
 // Accounts
 export function useAccounts() {
-  return useQuery({ queryKey: ["accounts"], queryFn: () => apiFetch<any[]>("/api/accounts") });
+  return useQuery({ queryKey: ["accounts"], queryFn: () => apiFetch<any[]>("/api/accounts"), staleTime: FIVE_MINUTES });
 }
 export function useCreateAccount() {
   const qc = useQueryClient();
@@ -40,7 +43,7 @@ export function useDeleteAccount() {
 
 // Categories
 export function useCategories() {
-  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<any[]>("/api/categories") });
+  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<any[]>("/api/categories"), staleTime: FIVE_MINUTES });
 }
 export function useCreateCategory() {
   const qc = useQueryClient();
@@ -66,7 +69,7 @@ export function useDeleteCategory() {
 
 // Global Tags
 export function useTags() {
-  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<string[]>("/api/tags") });
+  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<string[]>("/api/tags"), staleTime: FIVE_MINUTES });
 }
 export function useUpdateTags() {
   const qc = useQueryClient();
@@ -78,7 +81,7 @@ export function useUpdateTags() {
 
 // Transactions
 export function useTransactions() {
-  return useQuery({ queryKey: ["transactions"], queryFn: () => apiFetch<any[]>("/api/transactions") });
+  return useQuery({ queryKey: ["transactions"], queryFn: () => apiFetch<any[]>("/api/transactions"), staleTime: ONE_MINUTE });
 }
 export function useCreateTransaction() {
   const qc = useQueryClient();
@@ -104,7 +107,7 @@ export function useDeleteTransaction() {
 
 // Budgets
 export function useBudgets() {
-  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<any[]>("/api/budgets") });
+  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<any[]>("/api/budgets"), staleTime: FIVE_MINUTES });
 }
 export function useCreateBudget() {
   const qc = useQueryClient();
@@ -130,7 +133,7 @@ export function useDeleteBudget() {
 
 // Goals
 export function useGoals() {
-  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<any[]>("/api/goals") });
+  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<any[]>("/api/goals"), staleTime: FIVE_MINUTES });
 }
 export function useCreateGoal() {
   const qc = useQueryClient();
@@ -154,7 +157,17 @@ export function useDeleteGoal() {
   });
 }
 
-// Dashboard
-export function useDashboard() {
-  return useQuery({ queryKey: ["dashboard"], queryFn: () => apiFetch<any>("/api/dashboard") });
+// Dashboard – now accepts month/year
+export function useDashboard(month?: number, year?: number) {
+  const params = new URLSearchParams();
+  if (month) params.set("month", String(month));
+  if (year) params.set("year", String(year));
+  const qs = params.toString();
+  const url = qs ? `/api/dashboard?${qs}` : "/api/dashboard";
+
+  return useQuery({
+    queryKey: ["dashboard", month ?? null, year ?? null],
+    queryFn: () => apiFetch<any>(url),
+    staleTime: ONE_MINUTE,
+  });
 }

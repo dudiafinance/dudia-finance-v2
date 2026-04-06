@@ -81,6 +81,33 @@ export const goalSchema = z.object({
   message: "Preencha o valor alvo ou o valor mensal",
 });
 
+export const cardTransactionSchema = z.object({
+  description: z.string().min(1, "Descrição obrigatória").max(255),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  date: z.string().min(1, "Data obrigatória"),
+  categoryId: z.string().uuid().optional().nullable(),
+  tags: z.array(z.string()).default([]),
+  notes: z.string().max(1000).optional().nullable(),
+  launchType: z.enum(["single", "installment", "fixed"]),
+  invoiceMonth: z.coerce.number().int().min(1).max(12),
+  invoiceYear: z.coerce.number().int().min(2020).max(2100),
+  totalInstallments: z.coerce.number().int().min(2).max(360).optional().nullable(),
+  startInstallment: z.coerce.number().int().min(1).default(1),
+  isPending: z.boolean().default(false),
+});
+
+export const creditCardSchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(255),
+  bank: z.string().min(1, "Banco obrigatório").max(100),
+  lastDigits: z.string().max(4).optional().nullable(),
+  limit: z.coerce.number().positive("Limite deve ser positivo"),
+  dueDay: z.coerce.number().int().min(1).max(31, "Dia deve ser entre 1 e 31"),
+  closingDay: z.coerce.number().int().min(1).max(31, "Dia deve ser entre 1 e 31"),
+  color: z.string().max(7).optional(),
+  gradient: z.string().max(100).optional(),
+  network: z.string().max(20).optional(),
+});
+
 export const goalContributionSchema = z.object({
   goalId: z.string().uuid("Meta inválida"),
   month: z.number().int().min(1).max(12),

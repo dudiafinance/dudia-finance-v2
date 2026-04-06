@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { cardTransactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
+import { recalculateUsedAmount, generateFixedFutureTransactions } from "@/lib/credit-card-utils";
+import { cardTransactionSchema } from "@/lib/validations";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -47,11 +44,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id: cardId } = await params;
   const body = await req.json();
 
-  console.log("📝 Card transaction POST request:", {
-    userId,
-    cardId,
-    body: JSON.stringify(body, null, 2)
-  });
+  const parsed = cardTransactionSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
+  }
 
   const {
     description,
@@ -64,19 +60,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     invoiceMonth,
     invoiceYear,
     totalInstallments,
-    startInstallment = 1,
-    isPending = false,
-  } = body;
-
-  if (!description || !amount || !date || !launchType || !invoiceMonth || !invoiceYear) {
-    console.error("❌ Missing required fields:", { description, amount, date, launchType, invoiceMonth, invoiceYear });
-    return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 });
-  }
+    startInstallment,
+    isPending,
+  } = parsed.data;
 
   const records: typeof cardTransactions.$inferInsert[] = [];
 
   if (launchType === "single") {
-    console.log("✅ Creating single transaction");
     records.push({
       cardId,
       userId,
@@ -85,8 +75,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       amount: String(amount),
       totalAmount: String(amount),
       date,
-      invoiceMonth: Number(invoiceMonth),
-      invoiceYear: Number(invoiceYear),
+      invoiceMonth,
+      invoiceYear,
       launchType: "single",
       totalInstallments: null,
       currentInstallment: null,
@@ -97,29 +87,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       notes: notes ?? null,
     });
   } else if (launchType === "installment") {
-    const n = Number(totalInstallments) || 1;
-    const start = Number(startInstallment) || 1;
-    const perInstallment = Number(amount) / n;
+    const n = totalInstallments ?? 1;
+    const start = startInstallment;
+    const base = Math.floor((amount / n) * 100) / 100;
+    const remainder = Math.round((amount - base * n) * 100) / 100;
     const groupId = crypto.randomUUID();
 
-    console.log("✅ Creating installment transaction:", {
-      totalInstallments: n,
-      startInstallment: start,
-      totalAmount: amount,
-      perInstallment: perInstallment,
-      groupId
-    });
-
-    let m = Number(invoiceMonth);
-    let y = Number(invoiceYear);
+    let m = invoiceMonth;
+    let y = invoiceYear;
 
     for (let i = start; i <= n; i++) {
-      const record = {
+      const installmentAmount = i === n ? base + remainder : base;
+      records.push({
         cardId,
         userId,
         categoryId: categoryId ?? null,
         description: `${description} (${i}/${n})`,
-        amount: String(perInstallment.toFixed(2)),
+        amount: String(installmentAmount.toFixed(2)),
         totalAmount: String(amount),
         date,
         invoiceMonth: m,
@@ -132,21 +116,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         isPending,
         isFixed: false,
         notes: notes ?? null,
-      };
-      
-      console.log(`  📦 Installment ${i}/${n}:`, {
-        invoiceMonth: m,
-        invoiceYear: y,
-        amount: perInstallment.toFixed(2)
       });
-      
-      records.push(record);
 
       m++;
       if (m > 12) { m = 1; y++; }
     }
   } else if (launchType === "fixed") {
-    console.log("✅ Creating fixed transaction");
+    const groupId = crypto.randomUUID();
     records.push({
       cardId,
       userId,
@@ -155,46 +131,34 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       amount: String(amount),
       totalAmount: String(amount),
       date,
-      invoiceMonth: Number(invoiceMonth),
-      invoiceYear: Number(invoiceYear),
+      invoiceMonth,
+      invoiceYear,
       launchType: "fixed",
       totalInstallments: null,
       currentInstallment: null,
-      groupId: null,
+      groupId,
       tags: tags ?? null,
       isPending,
       isFixed: true,
       notes: notes ?? null,
     });
   } else {
-    console.error("❌ Invalid launchType:", launchType);
     return NextResponse.json({ error: "launchType inválido" }, { status: 400 });
   }
 
-  console.log(`💾 Inserting ${records.length} transaction(s)...`);
-  
   try {
     const inserted = await db.insert(cardTransactions).values(records).returning();
-    console.log(`✅ Successfully inserted ${inserted.length} transaction(s):`, {
-      first: inserted[0] ? {
-        id: inserted[0].id,
-        cardId: inserted[0].cardId,
-        description: inserted[0].description,
-        invoiceMonth: inserted[0].invoiceMonth,
-        invoiceYear: inserted[0].invoiceYear,
-        amount: inserted[0].amount,
-        totalAmount: inserted[0].totalAmount,
-        launchType: inserted[0].launchType,
-        currentInstallment: inserted[0].currentInstallment,
-        totalInstallments: inserted[0].totalInstallments,
-      } : null
-    });
+
+    // For fixed transactions, generate copies for 11 more months (total = 12 months)
+    if (launchType === "fixed" && inserted.length > 0) {
+      await generateFixedFutureTransactions(inserted[0], 11);
+    }
+
+    await recalculateUsedAmount(cardId);
+
     return NextResponse.json(inserted, { status: 201 });
   } catch (error) {
-    console.error("❌ Error inserting transactions:", error);
-    return NextResponse.json({ 
-      error: "Erro ao salvar transações",
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    console.error("Error saving card transactions:", error);
+    return NextResponse.json({ error: "Erro ao salvar transações" }, { status: 500 });
   }
 }

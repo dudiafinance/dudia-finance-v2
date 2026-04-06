@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { cardTransactions } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
-async function getUserId(): Promise<string | null> {
-  const session = await auth();
-  return (session?.user as any)?.id ?? null;
-}
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -17,10 +13,11 @@ export async function GET(req: NextRequest) {
   const email = searchParams.get("email");
 
   try {
-    // Get recent transactions
+    // Get recent transactions filtered by userId
     const recent = await db
       .select()
       .from(cardTransactions)
+      .where(eq(cardTransactions.userId, userId))
       .orderBy(desc(cardTransactions.createdAt))
       .limit(10);
 
@@ -32,9 +29,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    return NextResponse.json({ 
-      error: "Failed to fetch transactions",
-      details: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 });
   }
 }

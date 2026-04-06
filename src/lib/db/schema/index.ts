@@ -9,6 +9,7 @@ import {
   integer,
   date,
   jsonb,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -89,7 +90,12 @@ export const transactions = pgTable('transactions', {
   location: varchar('location', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('transactions_user_id_idx').on(table.userId),
+  index('transactions_date_idx').on(table.date),
+  index('transactions_account_id_idx').on(table.accountId),
+  index('transactions_category_id_idx').on(table.categoryId),
+]);
 
 // Orçamentos
 export const budgets = pgTable('budgets', {
@@ -275,7 +281,11 @@ export const cardTransactions = pgTable('card_transactions', {
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('card_transactions_user_id_idx').on(table.userId),
+  index('card_transactions_card_id_idx').on(table.cardId),
+  index('card_transactions_invoice_idx').on(table.invoiceMonth, table.invoiceYear),
+]);
 
 export const creditCardsRelations = relations(creditCards, ({ one, many }) => ({
   user: one(users, { fields: [creditCards.userId], references: [users.id] }),
