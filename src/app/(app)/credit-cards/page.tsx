@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   CreditCard,
@@ -69,7 +69,7 @@ function NetworkLogo({ network }: { network: string }) {
   return <span className="text-xs font-bold tracking-widest text-white/90">{labels[network] ?? network.toUpperCase()}</span>;
 }
 
-function CardVisual({ card, selected, onClick }: { card: any; selected: boolean; onClick: () => void }) {
+function CardVisual({ card, selected, onClick, onEdit }: { card: any; selected: boolean; onClick: () => void; onEdit?: (e: React.MouseEvent) => void }) {
   const limit = Number(card.limit);
   const used = Number(card.usedAmount);
   const usedPct = limit > 0 ? (used / limit) * 100 : 0;
@@ -83,6 +83,16 @@ function CardVisual({ card, selected, onClick }: { card: any; selected: boolean;
         selected ? "ring-4 ring-white/40 scale-[1.02]" : "opacity-80 hover:opacity-100"
       )}
     >
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          className="absolute top-4 right-4 p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+        >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+      )}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-white/70">Banco</p>
@@ -166,22 +176,48 @@ function TxRow({ tx, categories, onDelete }: { tx: any; categories: any[]; onDel
 }
 
 // ─── CardFormModal ────────────────────────────────────────────────────────────
-function CardFormModal({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
+function CardFormModal({ open, onClose, onSaved, editingCard }: { open: boolean; onClose: () => void; onSaved: () => void; editingCard?: any }) {
   const qc = useQueryClient();
   const [form, setForm] = useState({
     name: "", bank: "", lastDigits: "", limit: "", dueDay: "", closingDay: "",
     gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
   });
 
+  React.useEffect(() => {
+    if (editingCard) {
+      setForm({
+        name: editingCard.name || "",
+        bank: editingCard.bank || "",
+        lastDigits: editingCard.lastDigits || "",
+        limit: String(editingCard.limit || ""),
+        dueDay: String(editingCard.dueDay || ""),
+        closingDay: String(editingCard.closingDay || ""),
+        gradient: editingCard.gradient || GRADIENT_PRESETS[0].value,
+        color: editingCard.color || GRADIENT_PRESETS[0].color,
+        network: editingCard.network || "mastercard",
+      });
+    } else {
+      setForm({
+        name: "", bank: "", lastDigits: "", limit: "", dueDay: "", closingDay: "",
+        gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
+      });
+    }
+  }, [editingCard, open]);
+
   const createCard = useMutation({
     mutationFn: (data: any) => apiFetch("/api/credit-cards", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["credit-cards"] }); onSaved(); onClose(); },
+  });
+
+  const updateCard = useMutation({
+    mutationFn: (data: any) => apiFetch(`/api/credit-cards/${editingCard.id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["credit-cards"] }); onSaved(); onClose(); },
   });
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
   return (
-    <Modal open={open} onClose={onClose} title="Novo Cartão" size="md">
+    <Modal open={open} onClose={onClose} title={editingCard ? "Editar Cartão" : "Novo Cartão"} size="md">
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -234,10 +270,17 @@ function CardFormModal({ open, onClose, onSaved }: { open: boolean; onClose: () 
             ))}
           </div>
         </div>
-        {createCard.error && <p className="text-xs text-red-600">{(createCard.error as Error).message}</p>}
-        <Button className="w-full" disabled={createCard.isPending}
-          onClick={() => createCard.mutate({ ...form, limit: Number(form.limit), dueDay: Number(form.dueDay), closingDay: Number(form.closingDay) })}>
-          {createCard.isPending ? "Salvando..." : "Criar Cartão"}
+        {(createCard.error || updateCard.error) && <p className="text-xs text-red-600">{((createCard.error || updateCard.error) as Error).message}</p>}
+        <Button className="w-full" disabled={createCard.isPending || updateCard.isPending}
+          onClick={() => {
+            const data = { ...form, limit: Number(form.limit), dueDay: Number(form.dueDay), closingDay: Number(form.closingDay) };
+            if (editingCard) {
+              updateCard.mutate(data);
+            } else {
+              createCard.mutate(data);
+            }
+          }}>
+          {createCard.isPending || updateCard.isPending ? "Salvando..." : editingCard ? "Salvar Alterações" : "Criar Cartão"}
         </Button>
       </div>
     </Modal>
@@ -464,11 +507,12 @@ export default function CreditCardsPage() {
   const today = new Date();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"transactions" | "invoices" | "analytics">("transactions");
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [editingCard, setEditingCard] = useState<any>(null);
+  const [showLaunchModal, setShowLaunchModal] = useState(false);
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [year, setYear] = useState(today.getFullYear());
   const [searchTerm, setSearchTerm] = useState("");
-  const [showCardModal, setShowCardModal] = useState(false);
-  const [showLaunchModal, setShowLaunchModal] = useState(false);
 
   const { data: categories = [] } = useCategories();
   const { data: cards = [], isLoading: cardsLoading } = useQuery({
@@ -555,7 +599,10 @@ export default function CreditCardsPage() {
             {cards.length} {cards.length === 1 ? "cartão" : "cartões"} · {fmt(totalAvailable)} disponível
           </p>
         </div>
-        <Button onClick={() => setShowCardModal(true)}>
+        <Button onClick={() => {
+          setEditingCard(null);
+          setShowCardModal(true);
+        }}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Cartão
         </Button>
@@ -617,6 +664,11 @@ export default function CreditCardsPage() {
                     card={c}
                     selected={c.id === effectiveCardId}
                     onClick={() => setSelectedCardId(c.id)}
+                    onEdit={(e) => {
+                      e.stopPropagation();
+                      setEditingCard(c);
+                      setShowCardModal(true);
+                    }}
                   />
                 ))}
               </div>
@@ -831,7 +883,15 @@ export default function CreditCardsPage() {
       )}
 
       {/* Modals */}
-      <CardFormModal open={showCardModal} onClose={() => setShowCardModal(false)} onSaved={() => {}} />
+      <CardFormModal 
+        open={showCardModal} 
+        onClose={() => {
+          setShowCardModal(false);
+          setEditingCard(null);
+        }} 
+        onSaved={() => {}} 
+        editingCard={editingCard}
+      />
       {effectiveCardId && (
         <LaunchFormModal
           open={showLaunchModal}
