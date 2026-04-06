@@ -16,7 +16,9 @@ type FormData = {
   name: string;
   targetAmount: string;
   currentAmount: string;
-  deadline: string;
+  startDate: string;
+  endDate: string;
+  monthlyContribution: string;
   priority: string;
   status: string;
   notes: string;
@@ -26,7 +28,9 @@ const emptyForm = (): FormData => ({
   name: "",
   targetAmount: "",
   currentAmount: "0",
-  deadline: "",
+  startDate: new Date().toISOString().split("T")[0],
+  endDate: "",
+  monthlyContribution: "",
   priority: "medium",
   status: "active",
   notes: "",
@@ -77,7 +81,9 @@ export default function GoalsPage() {
       name: g.name,
       targetAmount: String(Number(g.targetAmount)),
       currentAmount: String(Number(g.currentAmount)),
-      deadline: g.deadline ? new Date(g.deadline).toISOString().split("T")[0] : "",
+      startDate: g.startDate ? new Date(g.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      endDate: g.endDate ? new Date(g.endDate).toISOString().split("T")[0] : "",
+      monthlyContribution: g.monthlyContribution ? String(Number(g.monthlyContribution)) : "",
       priority: g.priority,
       status: g.status,
       notes: g.notes ?? "",
@@ -90,6 +96,10 @@ export default function GoalsPage() {
     const e: typeof errors = {};
     if (!form.name.trim()) e.name = "Nome obrigatório";
     if (!form.targetAmount || Number(form.targetAmount) <= 0) e.targetAmount = "Valor obrigatório";
+    if (!form.startDate) e.startDate = "Data de início obrigatória";
+    if (form.endDate && form.startDate && new Date(form.endDate) <= new Date(form.startDate)) {
+      e.endDate = "Data final deve ser posterior à data de início";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -100,7 +110,9 @@ export default function GoalsPage() {
       name: form.name,
       targetAmount: Number(form.targetAmount),
       currentAmount: Number(form.currentAmount),
-      deadline: form.deadline || undefined,
+      startDate: form.startDate,
+      endDate: form.endDate || undefined,
+      monthlyContribution: form.monthlyContribution ? Number(form.monthlyContribution) : undefined,
       priority: form.priority,
       status: form.status,
       notes: form.notes,
@@ -214,9 +226,14 @@ export default function GoalsPage() {
           const StatusIcon = status.icon;
 
           const today = new Date();
-          const deadline = g.deadline ? new Date(g.deadline) : null;
-          const daysLeft = deadline
-            ? Math.ceil((deadline.getTime() - today.getTime()) / 86400000)
+          const startDate = g.startDate ? new Date(g.startDate) : null;
+          const endDate = g.endDate ? new Date(g.endDate) : null;
+          
+          const daysFromStart = startDate
+            ? Math.ceil((today.getTime() - startDate.getTime()) / 86400000)
+            : null;
+          const daysToEnd = endDate
+            ? Math.ceil((endDate.getTime() - today.getTime()) / 86400000)
             : null;
 
           return (
@@ -281,14 +298,39 @@ export default function GoalsPage() {
                   )}
                 </div>
 
-                {(daysLeft !== null || g.notes) && (
-                  <div className="flex items-center gap-2 text-xs text-slate-400 border-t border-slate-100 pt-2 mt-1">
-                    {daysLeft !== null && (
+                {(startDate || endDate || g.monthlyContribution) && (
+                  <div className="flex flex-col gap-1 text-xs text-slate-400 border-t border-slate-100 pt-2 mt-1">
+                    {startDate && (
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Início: {new Date(startDate).toLocaleDateString("pt-BR")}
+                        {daysFromStart !== null && daysFromStart > 0 && (
+                          <span className="text-slate-500 ml-1">({daysFromStart} dias)</span>
+                        )}
+                      </span>
+                    )}
+                    {endDate ? (
                       <span className={cn("inline-flex items-center gap-1",
-                        daysLeft < 30 ? "text-amber-600" : daysLeft < 0 ? "text-red-600" : ""
+                        daysToEnd !== null && daysToEnd < 30 ? "text-amber-600" : daysToEnd !== null && daysToEnd < 0 ? "text-red-600" : ""
                       )}>
                         <Calendar className="h-3 w-3" />
-                        {daysLeft < 0 ? `Venceu há ${Math.abs(daysLeft)} dias` : `${daysLeft} dias restantes`}
+                        Fim: {new Date(endDate).toLocaleDateString("pt-BR")}
+                        {daysToEnd !== null && (
+                          <span className="ml-1">
+                            {daysToEnd < 0 ? `(${Math.abs(daysToEnd)} dias atrás)` : `(${daysToEnd} dias restantes)`}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-green-600">
+                        <Calendar className="h-3 w-3" />
+                        Repete indefinidamente
+                      </span>
+                    )}
+                    {g.monthlyContribution && Number(g.monthlyContribution) > 0 && (
+                      <span className="inline-flex items-center gap-1 text-blue-600">
+                        <TrendingUp className="h-3 w-3" />
+                        {fmt(Number(g.monthlyContribution))}/mês
                       </span>
                     )}
                   </div>
@@ -338,8 +380,21 @@ export default function GoalsPage() {
           </FormRow>
 
           <FormRow>
-            <Field label="Prazo">
-              <Input type="date" value={form.deadline} onChange={(e) => set("deadline", e.target.value)} />
+            <Field label="Data de Início" required error={errors.startDate}>
+              <Input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} error={!!errors.startDate} />
+            </Field>
+            <Field label="Data Final (opcional)" error={errors.endDate}>
+              <Input type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} error={!!errors.endDate} />
+            </Field>
+          </FormRow>
+
+          <FormRow>
+            <Field label="Valor Mensal (opcional)">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                <Input type="number" step="0.01" min="0" placeholder="0,00"
+                  value={form.monthlyContribution} onChange={(e) => set("monthlyContribution", e.target.value)} className="pl-9" />
+              </div>
             </Field>
             <Field label="Prioridade">
               <Select value={form.priority} onChange={(e) => set("priority", e.target.value)}>
