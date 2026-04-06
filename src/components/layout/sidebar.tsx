@@ -16,8 +16,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { signOut } from "next-auth/react";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -28,6 +30,7 @@ const navItems = [
   { href: "/budgets", icon: PiggyBank, label: "Orçamentos" },
   { href: "/goals", icon: Target, label: "Metas" },
   { href: "/reports", icon: BarChart3, label: "Relatórios" },
+  { href: "/forecast", icon: TrendingUp, label: "Previsão" },
   { href: "/settings", icon: Settings, label: "Configurações" },
 ];
 
@@ -91,6 +94,7 @@ export function Sidebar() {
             )}
           </button>
           <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
             className={cn(
               "flex w-full items-center justify-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white",
               collapsed && "px-2"

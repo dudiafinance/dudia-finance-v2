@@ -31,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (d.description !== undefined) updateData.description = d.description;
   if (d.notes !== undefined) updateData.notes = d.notes;
   if (d.isPaid !== undefined) updateData.isPaid = d.isPaid;
-  if (d.isRecurring !== undefined) updateData.isRecurring = d.isRecurring;
+  if (d.subtype !== undefined) updateData.subtype = d.subtype;
   if (d.dueDate !== undefined) updateData.dueDate = d.dueDate;
   if (d.receiveDate !== undefined) updateData.receiveDate = d.receiveDate;
   if (d.tags !== undefined) updateData.tags = d.tags;

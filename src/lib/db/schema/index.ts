@@ -75,8 +75,11 @@ export const transactions = pgTable('transactions', {
   date: date('date').notNull(),
   description: varchar('description', { length: 255 }).notNull(),
   notes: text('notes'),
-  isRecurring: boolean('is_recurring').default(false),
+  subtype: varchar('subtype', { length: 20 }).default('single'),
   recurringId: uuid('recurring_id'),
+  recurringGroupId: uuid('recurring_group_id'),
+  totalOccurrences: integer('total_occurrences'),
+  currentOccurrence: integer('current_occurrence'),
   isPaid: boolean('is_paid').default(true),
   attachments: jsonb('attachments'), // URLs de anexos
   tags: jsonb('tags').$type<string[]>(), // Lista de tags
@@ -117,6 +120,7 @@ export const goals = pgTable('goals', {
   status: varchar('status', { length: 20 }).default('active'), // 'active', 'completed', 'cancelled'
   priority: varchar('priority', { length: 10 }).default('medium'), // 'low', 'medium', 'high'
   notes: text('notes'),
+  monthlyContribution: decimal('monthly_contribution', { precision: 15, scale: 2 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

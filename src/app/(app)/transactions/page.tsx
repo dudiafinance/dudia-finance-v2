@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Search, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft,
   Edit, Trash2, Calendar, CheckCircle2, Clock, Filter, X, ChevronDown,
+  RefreshCw, Repeat2,
 } from "lucide-react";
 import { useTransactions, useCategories, useAccounts, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ const fmt = (v: number) =>
 const toDateInput = (d?: any) =>
   d ? new Date(d).toISOString().split("T")[0] : "";
 
+type Subtype = "single" | "fixed" | "recurring";
+
 type FormData = {
   type: "income" | "expense" | "transfer";
   description: string;
@@ -29,7 +32,8 @@ type FormData = {
   dueDate: string;
   receiveDate: string;
   isPaid: boolean;
-  isRecurring: boolean;
+  subtype: Subtype;
+  totalOccurrences: string;
   notes: string;
   tags: string[];
   location: string;
@@ -45,11 +49,23 @@ const emptyForm = (): FormData => ({
   dueDate: "",
   receiveDate: "",
   isPaid: true,
-  isRecurring: false,
+  subtype: "single",
+  totalOccurrences: "2",
   notes: "",
   tags: [],
   location: "",
 });
+
+function getMonthName(date: Date) {
+  return date.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+function computeEndMonth(startDateStr: string, n: number) {
+  if (!startDateStr || isNaN(n) || n < 2) return "";
+  const d = new Date(startDateStr + "T12:00:00");
+  d.setMonth(d.getMonth() + n - 1);
+  return getMonthName(d);
+}
 
 export default function TransactionsPage() {
   const { toast } = useToast();
@@ -94,7 +110,8 @@ export default function TransactionsPage() {
       dueDate: toDateInput(t.dueDate),
       receiveDate: toDateInput(t.receiveDate),
       isPaid: t.isPaid,
-      isRecurring: t.isRecurring,
+      subtype: (t.subtype ?? "single") as Subtype,
+      totalOccurrences: String(t.totalOccurrences ?? 2),
       notes: t.notes ?? "",
       tags: t.tags ?? [],
       location: t.location ?? "",
@@ -109,13 +126,17 @@ export default function TransactionsPage() {
     if (!form.amount || isNaN(Number(form.amount)) || Number(form.amount) <= 0)
       e.amount = "Valor inválido";
     if (!form.date) e.date = "Data obrigatória";
+    if (form.subtype === "recurring") {
+      const n = Number(form.totalOccurrences);
+      if (!n || n < 2 || n > 360) e.totalOccurrences = "Entre 2 e 360";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const save = async () => {
     if (!validate()) return;
-    const formPayload = {
+    const formPayload: any = {
       type: form.type,
       description: form.description,
       amount: Number(form.amount),
@@ -125,11 +146,14 @@ export default function TransactionsPage() {
       dueDate: form.dueDate || undefined,
       receiveDate: form.receiveDate || undefined,
       isPaid: form.isPaid,
-      isRecurring: form.isRecurring,
+      subtype: form.subtype,
       notes: form.notes,
       tags: form.tags,
       location: form.location,
     };
+    if (form.subtype === "recurring") {
+      formPayload.totalOccurrences = Number(form.totalOccurrences);
+    }
     try {
       if (editingId) {
         await updateTransaction.mutateAsync({ id: editingId, ...formPayload });
@@ -173,6 +197,9 @@ export default function TransactionsPage() {
   const expenseCategories = categories.filter((c: any) => c.type === "expense");
   const relevantCategories =
     form.type === "income" ? incomeCategories : form.type === "expense" ? expenseCategories : [];
+
+  const startMonthName = form.date ? getMonthName(new Date(form.date + "T12:00:00")) : "";
+  const endMonthName = computeEndMonth(form.date, Number(form.totalOccurrences));
 
   if (txLoading) {
     return (
@@ -308,6 +335,7 @@ export default function TransactionsPage() {
                   const acc = accountsData.find((a: any) => a.id === t.accountId);
                   const isOverdue = !t.isPaid && t.dueDate && new Date(t.dueDate) < new Date();
                   const amount = Number(t.amount);
+                  const subtype = t.subtype ?? "single";
                   return (
                     <tr key={t.id} className="group hover:bg-slate-50 transition-colors">
                       <td className="whitespace-nowrap px-5 py-3.5">
@@ -326,7 +354,19 @@ export default function TransactionsPage() {
                               : <ArrowDownRight className="h-4 w-4 text-red-600" />}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-slate-900">{t.description}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-sm font-medium text-slate-900">{t.description}</p>
+                              {subtype === "fixed" && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+                                  <RefreshCw className="h-2.5 w-2.5" /> Fixo
+                                </span>
+                              )}
+                              {subtype === "recurring" && t.currentOccurrence && t.totalOccurrences && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-600">
+                                  <Repeat2 className="h-2.5 w-2.5" /> {t.currentOccurrence}/{t.totalOccurrences}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2">
                               {acc && <p className="text-xs text-slate-400">{acc.name}</p>}
                               {(t.tags ?? []).slice(0, 2).map((tag: string) => (
@@ -455,6 +495,51 @@ export default function TransactionsPage() {
             </Field>
           </FormRow>
 
+          <FormDivider label="Recorrência" />
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tipo de Lançamento</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { key: "single" as Subtype, label: "Único", desc: "Ocorre uma vez" },
+                { key: "fixed" as Subtype, label: "Fixo", desc: "Mensal, sem fim" },
+                { key: "recurring" as Subtype, label: "Recorrente", desc: "N parcelas" },
+              ]).map(({ key, label, desc }) => (
+                <button key={key} type="button" onClick={() => set("subtype", key)}
+                  className={cn("rounded-lg border-2 py-2.5 px-3 text-left transition-all",
+                    form.subtype === key
+                      ? "border-violet-500 bg-violet-50"
+                      : "border-slate-200 bg-white hover:border-slate-300"
+                  )}>
+                  <p className={cn("text-sm font-medium", form.subtype === key ? "text-violet-700" : "text-slate-700")}>{label}</p>
+                  <p className={cn("text-xs mt-0.5", form.subtype === key ? "text-violet-500" : "text-slate-400")}>{desc}</p>
+                </button>
+              ))}
+            </div>
+
+            {form.subtype === "fixed" && (
+              <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                Este lançamento irá aparecer em todos os meses futuros nas previsões
+              </p>
+            )}
+
+            {form.subtype === "recurring" && (
+              <div className="mt-3 space-y-2">
+                <Field label="Número de parcelas" error={errors.totalOccurrences}>
+                  <Input type="number" min="2" max="360"
+                    value={form.totalOccurrences}
+                    onChange={(e) => set("totalOccurrences", e.target.value)}
+                    error={!!errors.totalOccurrences} />
+                </Field>
+                {startMonthName && endMonthName && (
+                  <p className="text-xs text-slate-500">
+                    Será criado de <span className="font-medium text-slate-700">{startMonthName}</span> a <span className="font-medium text-slate-700">{endMonthName}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <FormDivider label="Datas" />
 
           <FormRow>
@@ -479,11 +564,6 @@ export default function TransactionsPage() {
               <input type="checkbox" checked={form.isPaid} onChange={(e) => set("isPaid", e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 accent-emerald-600" />
               <span className="text-sm text-slate-700">{form.type === "income" ? "Já recebido" : "Já pago"}</span>
-            </label>
-            <label className="flex cursor-pointer items-center gap-2.5">
-              <input type="checkbox" checked={form.isRecurring} onChange={(e) => set("isRecurring", e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 accent-emerald-600" />
-              <span className="text-sm text-slate-700">Recorrente</span>
             </label>
           </div>
 
