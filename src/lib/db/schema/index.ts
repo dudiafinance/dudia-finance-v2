@@ -9,7 +9,6 @@ import {
   integer,
   date,
   jsonb,
-  index,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -199,9 +198,3 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   category: one(categories, { fields: [transactions.categoryId], references: [categories.id] }),
 }));
 
-// Índices para performance
-export const usersIdIndex = index('idx_users_id').on(users.id);
-export const transactionsUserIdIndex = index('idx_transactions_user_id').on(transactions.userId);
-export const transactionsDateIndex = index('idx_transactions_date').on(transactions.date);
-export const categoriesUserIdIndex = index('idx_categories_user_id').on(categories.userId);
-export const accountsUserIdIndex = index('idx_accounts_user_id').on(accounts.userId);
