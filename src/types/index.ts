@@ -1,0 +1,169 @@
+export type User = {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  currency: string;
+  locale: string;
+  timezone: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Account = {
+  id: string;
+  userId: string;
+  name: string;
+  type: 'checking' | 'savings' | 'credit_card' | 'investment';
+  bank?: string;
+  agency?: string;
+  number?: string;
+  balance: number;
+  currency: string;
+  color: string;
+  icon?: string;
+  isActive: boolean;
+  includeInTotal: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Category = {
+  id: string;
+  userId: string;
+  name: string;
+  type: 'income' | 'expense';
+  icon?: string;
+  color: string;
+  parentId?: string;
+  budgetAmount?: number;
+  budgetPeriod?: 'weekly' | 'monthly' | 'yearly';
+  isActive: boolean;
+  order: number;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Transaction = {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId?: string;
+  amount: number;
+  type: 'income' | 'expense' | 'transfer';
+  date: Date;
+  description: string;
+  notes?: string;
+  isRecurring: boolean;
+  recurringId?: string;
+  isPaid: boolean;
+  dueDate?: Date;
+  receiveDate?: Date;
+  attachments?: string[];
+  tags: string[];
+  location?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Budget = {
+  id: string;
+  userId: string;
+  categoryId?: string;
+  name: string;
+  amount: number;
+  period: 'weekly' | 'monthly' | 'yearly';
+  startDate: Date;
+  endDate?: Date;
+  isActive: boolean;
+  alertsEnabled: boolean;
+  alertThreshold: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Goal = {
+  id: string;
+  userId: string;
+  accountId?: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: Date;
+  categoryId?: string;
+  status: 'active' | 'completed' | 'cancelled';
+  priority: 'low' | 'medium' | 'high';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type RecurringTransaction = {
+  id: string;
+  userId: string;
+  accountId: string;
+  categoryId?: string;
+  amount: number;
+  type: 'income' | 'expense' | 'transfer';
+  description: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  interval: number;
+  nextDueDate: Date;
+  endDate?: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type DashboardSummary = {
+  totalBalance: number;
+  totalIncome: number;
+  totalExpense: number;
+  monthlyVariation: number;
+};
+
+export type ChartData = {
+  name: string;
+  value: number;
+  color?: string;
+};
+
+export type CreditCard = {
+  id: string;
+  userId: string;
+  name: string;
+  bank: string;
+  lastDigits: string;
+  limit: number;
+  usedAmount: number;
+  dueDay: number;
+  closingDay: number;
+  color: string;
+  gradient: string;
+  network: 'visa' | 'mastercard' | 'elo' | 'amex' | 'hipercard';
+  isActive: boolean;
+};
+
+export type CardInvoice = {
+  id: string;
+  cardId: string;
+  month: string;
+  year: number;
+  total: number;
+  status: 'open' | 'closed' | 'paid';
+  dueDate: Date;
+  transactions: CardTransaction[];
+};
+
+export type CardTransaction = {
+  id: string;
+  cardId: string;
+  description: string;
+  categoryId: string;
+  amount: number;
+  date: Date;
+  installments?: number;
+  currentInstallment?: number;
+  isPending: boolean;
+};

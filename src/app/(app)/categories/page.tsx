@@ -1,0 +1,399 @@
+"use client";
+
+import { useState } from "react";
+import { Plus, Search, Edit, Trash2, Tag } from "lucide-react";
+import { mockCategories } from "@/lib/mock-data";
+import { Category } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
+import { TagInput } from "@/components/ui/tag-input";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
+
+const ICONS = [
+  { value: "coffee", label: "☕ Alimentação" },
+  { value: "car", label: "🚗 Transporte" },
+  { value: "home", label: "🏠 Moradia" },
+  { value: "heart", label: "❤️ Saúde" },
+  { value: "film", label: "🎬 Lazer" },
+  { value: "book", label: "📚 Educação" },
+  { value: "briefcase", label: "💼 Trabalho" },
+  { value: "laptop", label: "💻 Tecnologia" },
+  { value: "trending-up", label: "📈 Investimentos" },
+  { value: "shopping-bag", label: "🛍️ Compras" },
+  { value: "zap", label: "⚡ Energia" },
+  { value: "phone", label: "📱 Telefone" },
+  { value: "more-horizontal", label: "• Outros" },
+];
+
+type FormData = {
+  name: string;
+  type: "income" | "expense";
+  color: string;
+  icon: string;
+  budgetAmount: string;
+  budgetPeriod: string;
+  tags: string[];
+};
+
+const emptyForm = (): FormData => ({
+  name: "",
+  type: "expense",
+  color: "#10B981",
+  icon: "more-horizontal",
+  budgetAmount: "",
+  budgetPeriod: "monthly",
+  tags: [],
+});
+
+export default function CategoriesPage() {
+  const { toast } = useToast();
+  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [form, setForm] = useState<FormData>(emptyForm());
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+  const set = (key: keyof FormData, value: any) => {
+    setForm((f) => ({ ...f, [key]: value }));
+    setErrors((e) => ({ ...e, [key]: undefined }));
+  };
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(emptyForm());
+    setErrors({});
+    setModalOpen(true);
+  };
+
+  const openEdit = (c: Category) => {
+    setEditingId(c.id);
+    setForm({
+      name: c.name,
+      type: c.type,
+      color: c.color,
+      icon: c.icon ?? "more-horizontal",
+      budgetAmount: c.budgetAmount ? String(c.budgetAmount) : "",
+      budgetPeriod: c.budgetPeriod ?? "monthly",
+      tags: c.tags ?? [],
+    });
+    setErrors({});
+    setModalOpen(true);
+  };
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!form.name.trim()) e.name = "Nome obrigatório";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const save = () => {
+    if (!validate()) return;
+    const now = new Date();
+    if (editingId) {
+      setCategories((prev) =>
+        prev.map((c) =>
+          c.id === editingId
+            ? {
+                ...c,
+                name: form.name,
+                type: form.type,
+                color: form.color,
+                icon: form.icon,
+                budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
+                budgetPeriod: (form.budgetPeriod || undefined) as any,
+                tags: form.tags,
+                updatedAt: now,
+              }
+            : c
+        )
+      );
+      toast("Categoria atualizada!");
+    } else {
+      setCategories((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).slice(2),
+          userId: "1",
+          name: form.name,
+          type: form.type,
+          color: form.color,
+          icon: form.icon,
+          budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
+          budgetPeriod: (form.budgetPeriod || undefined) as any,
+          tags: form.tags,
+          isActive: true,
+          order: prev.length,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ]);
+      toast("Categoria criada!");
+    }
+    setModalOpen(false);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteId) return;
+    setCategories((prev) => prev.filter((c) => c.id !== deleteId));
+    setDeleteId(null);
+    toast("Categoria excluída.", "warning");
+  };
+
+  const filtered = categories.filter((c) => {
+    const matchSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.tags.some((t) => t.includes(searchTerm.toLowerCase()));
+    const matchType = filterType === "all" || c.type === filterType;
+    return matchSearch && matchType;
+  });
+
+  const incomeCount = categories.filter((c) => c.type === "income").length;
+  const expenseCount = categories.filter((c) => c.type === "expense").length;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Categorias</h1>
+          <p className="text-sm text-slate-500">{categories.length} categorias · {incomeCount} receitas · {expenseCount} despesas</p>
+        </div>
+        <Button onClick={openCreate}>
+          <Plus className="mr-2 h-4 w-4" />
+          Nova Categoria
+        </Button>
+      </div>
+
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou tag..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+          {[
+            { key: "all", label: "Todas" },
+            { key: "income", label: "Receitas" },
+            { key: "expense", label: "Despesas" },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => setFilterType(key)}
+              className={cn("rounded-lg px-4 py-1.5 text-sm font-medium transition-colors",
+                filterType === key ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"
+              )}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Income section */}
+      {(filterType === "all" || filterType === "income") && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-wide">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
+            Receitas ({filtered.filter((c) => c.type === "income").length})
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.filter((c) => c.type === "income").map((c) => (
+              <CategoryCard key={c.id} category={c} onEdit={openEdit} onDelete={setDeleteId} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Expense section */}
+      {(filterType === "all" || filterType === "expense") && (
+        <section>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-600 uppercase tracking-wide">
+            <span className="h-2 w-2 rounded-full bg-red-500 inline-block" />
+            Despesas ({filtered.filter((c) => c.type === "expense").length})
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.filter((c) => c.type === "expense").map((c) => (
+              <CategoryCard key={c.id} category={c} onEdit={openEdit} onDelete={setDeleteId} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Modal */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}
+        title={editingId ? "Editar Categoria" : "Nova Categoria"}
+        description="Configure a categoria" size="lg">
+        <div className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Tipo *</label>
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { key: "income", label: "Receita" },
+                { key: "expense", label: "Despesa" },
+              ] as const).map(({ key, label }) => (
+                <button key={key} type="button" onClick={() => set("type", key)}
+                  className={cn("rounded-lg border-2 py-2.5 text-sm font-medium transition-all",
+                    form.type === key
+                      ? key === "income" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-red-500 bg-red-50 text-red-700"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  )}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <FormRow>
+            <Field label="Nome" required error={errors.name}>
+              <Input placeholder="Ex: Alimentação, Salário..." value={form.name}
+                onChange={(e) => set("name", e.target.value)} error={!!errors.name} />
+            </Field>
+            <Field label="Ícone">
+              <Select value={form.icon} onChange={(e) => set("icon", e.target.value)}>
+                {ICONS.map((i) => (
+                  <option key={i.value} value={i.value}>{i.label}</option>
+                ))}
+              </Select>
+            </Field>
+          </FormRow>
+
+          <Field label="Cor">
+            <ColorPicker value={form.color} onChange={(c) => set("color", c)} />
+          </Field>
+
+          <Field label="Tags">
+            <TagInput value={form.tags} onChange={(tags) => set("tags", tags)}
+              placeholder="mercado, fixo, necessário... (Enter para adicionar)" />
+            <p className="text-xs text-slate-400 mt-1">Use tags para agrupar e filtrar categorias</p>
+          </Field>
+
+          <div className="rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-3">
+            <p className="text-sm font-medium text-slate-700">Orçamento (opcional)</p>
+            <FormRow>
+              <Field label="Valor limite">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
+                  <Input type="number" step="0.01" min="0" placeholder="0,00"
+                    value={form.budgetAmount} onChange={(e) => set("budgetAmount", e.target.value)} className="pl-9" />
+                </div>
+              </Field>
+              <Field label="Período">
+                <Select value={form.budgetPeriod} onChange={(e) => set("budgetPeriod", e.target.value)}>
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="yearly">Anual</option>
+                </Select>
+              </Field>
+            </FormRow>
+          </div>
+
+          {/* Preview */}
+          <div className="rounded-xl border border-slate-200 p-4">
+            <p className="text-xs text-slate-400 mb-3 font-medium uppercase tracking-wide">Preview</p>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg"
+                style={{ backgroundColor: `${form.color}20` }}>
+                <span className="text-lg font-bold" style={{ color: form.color }}>
+                  {form.name.charAt(0) || "C"}
+                </span>
+              </div>
+              <div>
+                <p className="font-medium text-slate-800">{form.name || "Nome da categoria"}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={cn("text-xs font-medium", form.type === "income" ? "text-emerald-600" : "text-red-600")}>
+                    {form.type === "income" ? "Receita" : "Despesa"}
+                  </span>
+                  {form.tags.map((tag) => (
+                    <span key={tag} className="text-xs text-slate-400">#{tag}</span>
+                  ))}
+                </div>
+              </div>
+              {form.color && (
+                <div className="ml-auto h-4 w-4 rounded-full" style={{ backgroundColor: form.color }} />
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button onClick={save}>{editingId ? "Salvar Alterações" : "Criar Categoria"}</Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Categoria" size="sm">
+        <p className="text-sm text-slate-600">Tem certeza que deseja excluir esta categoria?</p>
+        <div className="mt-5 flex justify-end gap-3">
+          <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
+          <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function CategoryCard({
+  category,
+  onEdit,
+  onDelete,
+}: {
+  category: Category;
+  onEdit: (c: Category) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="group relative rounded-xl bg-white p-4 shadow-sm border border-slate-100 hover:shadow-md transition-all">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: `${category.color}20` }}>
+            <span className="text-base font-bold" style={{ color: category.color }}>
+              {category.name.charAt(0)}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="font-medium text-slate-900 truncate">{category.name}</p>
+            {category.budgetAmount && (
+              <p className="text-xs text-slate-400">
+                Limite: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(category.budgetAmount)}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onClick={() => onEdit(category)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <Edit className="h-3.5 w-3.5" />
+          </button>
+          <button onClick={() => onDelete(category.id)}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {category.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1">
+          {category.tags.map((tag) => (
+            <span key={tag}
+              className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+              <Tag className="h-2.5 w-2.5" />
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-3 h-0.5 w-full rounded-full" style={{ backgroundColor: `${category.color}30` }}>
+        <div className="h-0.5 rounded-full w-full" style={{ backgroundColor: category.color }} />
+      </div>
+    </div>
+  );
+}
