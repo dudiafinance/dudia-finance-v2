@@ -299,13 +299,17 @@ function LaunchFormModal({
   const allTagSuggestions = Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[];
   const [tab, setTab] = useState<"quick" | "manual">("quick");
   const [form, setForm] = useState({
-    description: "", amount: "", date: new Date().toISOString().slice(0, 10),
+    description: "", amount: "", amountType: "parcel" as "total" | "parcel", date: new Date().toISOString().slice(0, 10),
     categoryId: "", tags: [] as string[], notes: "",
     launchType: "single" as "single" | "installment" | "fixed",
     totalInstallments: "2", startInstallment: "1",
     invoiceMonth: currentMonth, invoiceYear: currentYear,
     isPending: false,
   });
+  const [categorySearch, setCategorySearch] = useState("");
+  const filteredCategories = categories.filter((c: any) => 
+    c.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
 
   const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }));
 
@@ -318,9 +322,15 @@ function LaunchFormModal({
   });
 
   const handleSubmit = () => {
+    let finalAmount = Number(form.amount);
+    
+    if (form.launchType === "installment" && form.amountType === "parcel" && form.totalInstallments) {
+      finalAmount = Number(form.amount) * Number(form.totalInstallments);
+    }
+    
     const payload: any = {
       description: form.description,
-      amount: Number(form.amount),
+      amount: finalAmount,
       date: form.date,
       categoryId: form.categoryId || undefined,
       tags: form.tags.length > 0 ? form.tags : undefined,
@@ -383,25 +393,89 @@ function LaunchFormModal({
           <input value={form.description} onChange={e => set("description", e.target.value)} placeholder="Ex: Supermercado Extra" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
         </div>
 
-        {/* Amount + Date */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Valor (R$) *</label>
-            <input type="number" step="0.01" value={form.amount} onChange={e => set("amount", e.target.value)} placeholder="0,00" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+            <label className="block text-xs font-medium text-slate-600 mb-1">Tipo de Valor</label>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => set("amountType", "total")}
+                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors", 
+                  form.amountType === "total" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600 hover:bg-slate-50")}>
+                Valor Total
+              </button>
+              <button type="button" onClick={() => set("amountType", "parcel")}
+                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+                  form.amountType === "parcel" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600 hover:bg-slate-50")}>
+                Valor Parcela
+              </button>
+            </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Data *</label>
-            <input type="date" value={form.date} onChange={e => set("date", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+            <label className="block text-xs font-medium text-slate-600 mb-1">
+              {form.amountType === "total" ? "Valor Total (R$) *" : "Valor da Parcela (R$) *"}
+            </label>
+            <input type="number" step="0.01" value={form.amount} onChange={e => set("amount", e.target.value)} placeholder="0,00" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-600 mb-1">Data da Compra *</label>
+          <input type="date" value={form.date} onChange={e => set("date", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
         </div>
 
         {/* Category */}
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
-          <select value={form.categoryId} onChange={e => set("categoryId", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
-            <option value="">Sem categoria</option>
-            {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              value={categorySearch}
+              onChange={(e) => {
+                setCategorySearch(e.target.value);
+                if (!e.target.value) set("categoryId", "");
+              }}
+              placeholder="Buscar categoria..."
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            />
+            {form.categoryId && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                <span className="text-xs text-slate-600">
+                  {categories.find((c: any) => c.id === form.categoryId)?.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    set("categoryId", "");
+                    setCategorySearch("");
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+          {categorySearch && !form.categoryId && (
+            <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+              {filteredCategories.length > 0 ? (
+                filteredCategories.map((c: any) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      set("categoryId", c.id);
+                      setCategorySearch("");
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
+                  >
+                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
+                    {c.name}
+                  </button>
+                ))
+              ) : (
+                <p className="px-3 py-2 text-sm text-slate-400">Nenhuma categoria encontrada</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tags */}
@@ -467,7 +541,19 @@ function LaunchFormModal({
         {/* Installment preview */}
         {form.launchType === "installment" && installmentPreview.length > 0 && (
           <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 max-h-36 overflow-y-auto">
-            <p className="text-xs font-medium text-slate-600 mb-2">Prévia das parcelas:</p>
+            <p className="text-xs font-medium text-slate-600 mb-2">
+              Prévia das parcelas:
+              {form.amountType === "total" && form.amount && (
+                <span className="text-slate-400 font-normal ml-2">
+                  (R$ {fmt(Number(form.amount) / Number(form.totalInstallments))}/parcela)
+                </span>
+              )}
+              {form.amountType === "parcel" && form.amount && (
+                <span className="text-slate-400 font-normal ml-2">
+                  (Total: R$ {fmt(Number(form.amount) * Number(form.totalInstallments))})
+                </span>
+              )}
+            </p>
             <div className="space-y-1">
               {installmentPreview.map(p => (
                 <p key={p.installment} className="text-xs text-slate-500">
