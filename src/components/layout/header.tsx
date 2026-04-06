@@ -1,9 +1,19 @@
 "use client";
 
 import { Bell, Search, User } from "lucide-react";
-import { mockUser } from "@/lib/mock-data";
+import { useSession } from "next-auth/react";
 
 export function Header() {
+  const { data: session } = useSession();
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
       <div className="flex items-center gap-4">
@@ -25,12 +35,12 @@ export function Header() {
 
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-sm font-medium text-slate-900">{mockUser.name}</p>
-            <p className="text-xs text-slate-500">{mockUser.email}</p>
+            <p className="text-sm font-medium text-slate-900">{name}</p>
+            <p className="text-xs text-slate-500">{email}</p>
           </div>
-          <button className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-            <User className="h-5 w-5" />
-          </button>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold select-none">
+            {initials || <User className="h-5 w-5" />}
+          </div>
         </div>
       </div>
     </header>

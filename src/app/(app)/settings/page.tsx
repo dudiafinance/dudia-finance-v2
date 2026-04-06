@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { User, Bell, Shield, Palette, Globe, Key, Save } from "lucide-react";
-import { mockUser } from "@/lib/mock-data";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
+  const userName = session?.user?.name ?? "";
+  const userEmail = session?.user?.email ?? "";
   const [activeTab, setActiveTab] = useState("profile");
 
   const tabs = [
@@ -50,7 +53,7 @@ export default function SettingsPage() {
               <div className="mt-6 space-y-4">
                 <div className="flex items-center gap-6">
                   <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl font-bold">
-                    {mockUser.name.charAt(0)}
+                    {userName.charAt(0).toUpperCase()}
                   </div>
                   <Button variant="outline">Alterar Foto</Button>
                 </div>
@@ -60,7 +63,7 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-slate-700">Nome</label>
                     <input
                       type="text"
-                      defaultValue={mockUser.name}
+                      defaultValue={userName}
                       className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
@@ -68,7 +71,7 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-slate-700">Email</label>
                     <input
                       type="email"
-                      defaultValue={mockUser.email}
+                      defaultValue={userEmail}
                       className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                     />
                   </div>
