@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import { users } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { hashPassword } from "@/lib/auth/password";
+import { sendWelcomeEmail } from "@/lib/services/email";
 import { registerSchema } from "@/lib/validations";
 
 export async function POST(req: NextRequest) {
@@ -17,39 +21,33 @@ export async function POST(req: NextRequest) {
     const { name, email, password } = parsed.data;
     const normalizedEmail = email.toLowerCase().trim();
 
-    const { data, error } = await supabaseAdmin.auth.signUp({
-      email: normalizedEmail,
-      password,
-      options: {
-        data: {
-          name: name.trim(),
-        },
-        emailRedirectTo: `${process.env.NEXTAUTH_URL}/auth/callback`,
-      },
-    });
+    const [existing] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail))
+      .limit(1);
 
-    if (error) {
-      if (error.message.includes("already registered")) {
-        return NextResponse.json(
-          { error: "Este email já está cadastrado" },
-          { status: 409 }
-        );
-      }
-      console.error("Supabase signup error:", error);
+    if (existing) {
       return NextResponse.json(
-        { error: error.message ?? "Erro ao criar conta" },
-        { status: 400 }
+        { error: "Este email já está cadastrado" },
+        { status: 409 }
       );
     }
 
-    return NextResponse.json(
-      { 
-        success: true, 
-        message: "Conta criada! Verifique seu email para ativar sua conta.",
-        userId: data.user?.id 
-      },
-      { status: 201 }
-    );
+    const passwordHash = await hashPassword(password);
+
+    const [user] = await db
+      .insert(users)
+      .values({
+        name: name.trim(),
+        email: normalizedEmail,
+        passwordHash,
+      })
+      .returning({ id: users.id, email: users.email, name: users.name });
+
+    sendWelcomeEmail(user.email, user.name).catch(console.error);
+
+    return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
   } catch (error) {
     console.error("Register error:", error);
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 });
