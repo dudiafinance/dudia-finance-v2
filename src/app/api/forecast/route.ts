@@ -49,10 +49,25 @@ export async function GET() {
     return sum + amt;
   }, 0);
 
-  // Goal contributions
-  const goalContributionsTotal = allGoals.reduce((sum, g) => {
-    return sum + (g.monthlyContribution ? Number(g.monthlyContribution) : 0);
-  }, 0);
+  // Goal contributions for a specific month
+  function getGoalContributionsForMonth(year: number, month: number): number {
+    return allGoals.reduce((sum, g) => {
+      if (!g.monthlyContribution || !g.startDate) return sum;
+      
+      const startDate = new Date(g.startDate);
+      const goalStartMonth = startDate.getMonth() + 1;
+      const goalStartYear = startDate.getFullYear();
+      
+      const hasEnded = g.endDate && new Date(g.endDate) < new Date(year, month - 1, 1);
+      
+      const hasStarted = (goalStartYear < year) || 
+                         (goalStartYear === year && goalStartMonth <= month);
+      
+      if (!hasStarted || hasEnded) return sum;
+      
+      return sum + Number(g.monthlyContribution);
+    }, 0);
+  }
 
   const result = [];
   let cumulativeBalance = 0;
@@ -65,6 +80,8 @@ export async function GET() {
     const isCurrent = i === 0;
     const start = monthStart(y, m);
     const end = monthEnd(y, m);
+    
+    const monthGoalContributions = getGoalContributionsForMonth(y, m);
 
     if (isCurrent) {
       // Actual data for current month
@@ -74,7 +91,7 @@ export async function GET() {
       const income = monthTx.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
       const expenses = monthTx.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
       const cardInvoice = monthCard.reduce((s, t) => s + Number(t.amount), 0);
-      const netBalance = income - expenses - cardInvoice - budgetMonthly - goalContributionsTotal;
+      const netBalance = income - expenses - cardInvoice - budgetMonthly - monthGoalContributions;
       cumulativeBalance += netBalance;
 
       result.push({
@@ -86,7 +103,7 @@ export async function GET() {
         expenses,
         cardInvoice,
         budgetAllocations: budgetMonthly,
-        goalContributions: goalContributionsTotal,
+        goalContributions: monthGoalContributions,
         netBalance,
         cumulativeBalance,
       });
@@ -108,7 +125,7 @@ export async function GET() {
         .filter((t) => t.invoiceMonth === m && t.invoiceYear === y)
         .reduce((s, t) => s + Number(t.amount), 0);
 
-      const netBalance = projIncome - projExpense - cardInvoice - budgetMonthly - goalContributionsTotal;
+      const netBalance = projIncome - projExpense - cardInvoice - budgetMonthly - monthGoalContributions;
       cumulativeBalance += netBalance;
 
       result.push({
@@ -120,7 +137,7 @@ export async function GET() {
         expenses: projExpense,
         cardInvoice,
         budgetAllocations: budgetMonthly,
-        goalContributions: goalContributionsTotal,
+        goalContributions: monthGoalContributions,
         netBalance,
         cumulativeBalance,
       });
