@@ -5,8 +5,7 @@ import {
   Search, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft,
   Edit, Trash2, Calendar, CheckCircle2, Clock, Filter, X, ChevronDown,
 } from "lucide-react";
-import { mockTransactions, mockCategories, mockAccounts } from "@/lib/mock-data";
-import { Transaction } from "@/types";
+import { useTransactions, useCategories, useAccounts, useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -17,7 +16,7 @@ import { cn } from "@/lib/utils";
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
-const toDateInput = (d?: Date) =>
+const toDateInput = (d?: any) =>
   d ? new Date(d).toISOString().split("T")[0] : "";
 
 type FormData = {
@@ -41,7 +40,7 @@ const emptyForm = (): FormData => ({
   description: "",
   amount: "",
   categoryId: "",
-  accountId: mockAccounts[0]?.id ?? "",
+  accountId: "",
   date: new Date().toISOString().split("T")[0],
   dueDate: "",
   receiveDate: "",
@@ -54,7 +53,13 @@ const emptyForm = (): FormData => ({
 
 export default function TransactionsPage() {
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
+  const { data: transactions = [], isLoading: txLoading } = useTransactions();
+  const { data: categories = [] } = useCategories();
+  const { data: accountsData = [] } = useAccounts();
+  const createTransaction = useCreateTransaction();
+  const updateTransaction = useUpdateTransaction();
+  const deleteTransaction = useDeleteTransaction();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterPaid, setFilterPaid] = useState("all");
@@ -72,17 +77,17 @@ export default function TransactionsPage() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm(emptyForm());
+    setForm({ ...emptyForm(), accountId: accountsData[0]?.id ?? "" });
     setErrors({});
     setModalOpen(true);
   };
 
-  const openEdit = (t: Transaction) => {
+  const openEdit = (t: any) => {
     setEditingId(t.id);
     setForm({
       type: t.type as any,
       description: t.description,
-      amount: String(t.amount),
+      amount: String(Number(t.amount)),
       categoryId: t.categoryId ?? "",
       accountId: t.accountId,
       date: toDateInput(t.date),
@@ -108,68 +113,49 @@ export default function TransactionsPage() {
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    const now = new Date();
-    if (editingId) {
-      setTransactions((prev) =>
-        prev.map((t) =>
-          t.id === editingId
-            ? {
-                ...t,
-                type: form.type,
-                description: form.description,
-                amount: Number(form.amount),
-                categoryId: form.categoryId || undefined,
-                accountId: form.accountId,
-                date: new Date(form.date),
-                dueDate: form.dueDate ? new Date(form.dueDate) : undefined,
-                receiveDate: form.receiveDate ? new Date(form.receiveDate) : undefined,
-                isPaid: form.isPaid,
-                isRecurring: form.isRecurring,
-                notes: form.notes,
-                tags: form.tags,
-                location: form.location,
-                updatedAt: now,
-              }
-            : t
-        )
-      );
-      toast("Transação atualizada!");
-    } else {
-      const newTx: Transaction = {
-        id: Math.random().toString(36).slice(2),
-        userId: "1",
-        type: form.type,
-        description: form.description,
-        amount: Number(form.amount),
-        categoryId: form.categoryId || undefined,
-        accountId: form.accountId,
-        date: new Date(form.date),
-        dueDate: form.dueDate ? new Date(form.dueDate) : undefined,
-        receiveDate: form.receiveDate ? new Date(form.receiveDate) : undefined,
-        isPaid: form.isPaid,
-        isRecurring: form.isRecurring,
-        notes: form.notes,
-        tags: form.tags,
-        location: form.location,
-        createdAt: now,
-        updatedAt: now,
-      };
-      setTransactions((prev) => [newTx, ...prev]);
-      toast("Transação criada!");
+    const formPayload = {
+      type: form.type,
+      description: form.description,
+      amount: Number(form.amount),
+      categoryId: form.categoryId || undefined,
+      accountId: form.accountId,
+      date: form.date,
+      dueDate: form.dueDate || undefined,
+      receiveDate: form.receiveDate || undefined,
+      isPaid: form.isPaid,
+      isRecurring: form.isRecurring,
+      notes: form.notes,
+      tags: form.tags,
+      location: form.location,
+    };
+    try {
+      if (editingId) {
+        await updateTransaction.mutateAsync({ id: editingId, ...formPayload });
+        toast("Transação atualizada!");
+      } else {
+        await createTransaction.mutateAsync(formPayload);
+        toast("Transação criada!");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao salvar", "error");
     }
-    setModalOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
-    setTransactions((prev) => prev.filter((t) => t.id !== deleteId));
+    try {
+      await deleteTransaction.mutateAsync(deleteId);
+      toast("Transação excluída.", "warning");
+    } catch {
+      toast("Erro ao excluir", "error");
+    }
     setDeleteId(null);
-    toast("Transação excluída.", "warning");
   };
 
-  const filtered = transactions.filter((t) => {
+  const filtered = transactions.filter((t: any) => {
     const matchSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchType = filterType === "all" || t.type === filterType;
     const matchPaid =
@@ -179,14 +165,29 @@ export default function TransactionsPage() {
     return matchSearch && matchType && matchPaid;
   });
 
-  const totalIncome = filtered.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
-  const totalExpense = filtered.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+  const totalIncome = filtered.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalExpense = filtered.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
   const balance = totalIncome - totalExpense;
 
-  const incomeCategories = mockCategories.filter((c) => c.type === "income");
-  const expenseCategories = mockCategories.filter((c) => c.type === "expense");
+  const incomeCategories = categories.filter((c: any) => c.type === "income");
+  const expenseCategories = categories.filter((c: any) => c.type === "expense");
   const relevantCategories =
     form.type === "income" ? incomeCategories : form.type === "expense" ? expenseCategories : [];
+
+  if (txLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+        <div className="h-10 animate-pulse rounded-lg bg-slate-200" />
+        <div className="h-64 animate-pulse rounded-xl bg-slate-200" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -302,10 +303,11 @@ export default function TransactionsPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((t) => {
-                  const cat = mockCategories.find((c) => c.id === t.categoryId);
-                  const acc = mockAccounts.find((a) => a.id === t.accountId);
+                filtered.map((t: any) => {
+                  const cat = categories.find((c: any) => c.id === t.categoryId);
+                  const acc = accountsData.find((a: any) => a.id === t.accountId);
                   const isOverdue = !t.isPaid && t.dueDate && new Date(t.dueDate) < new Date();
+                  const amount = Number(t.amount);
                   return (
                     <tr key={t.id} className="group hover:bg-slate-50 transition-colors">
                       <td className="whitespace-nowrap px-5 py-3.5">
@@ -327,7 +329,7 @@ export default function TransactionsPage() {
                             <p className="text-sm font-medium text-slate-900">{t.description}</p>
                             <div className="flex items-center gap-2">
                               {acc && <p className="text-xs text-slate-400">{acc.name}</p>}
-                              {t.tags.slice(0, 2).map((tag) => (
+                              {(t.tags ?? []).slice(0, 2).map((tag: string) => (
                                 <span key={tag} className="text-xs text-slate-400">#{tag}</span>
                               ))}
                             </div>
@@ -366,7 +368,7 @@ export default function TransactionsPage() {
                       <td className={cn("whitespace-nowrap px-5 py-3.5 text-right text-sm font-semibold",
                         t.type === "income" ? "text-emerald-600" : "text-red-600"
                       )}>
-                        {t.type === "income" ? "+" : "-"}{fmt(t.amount)}
+                        {t.type === "income" ? "+" : "-"}{fmt(amount)}
                       </td>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -439,14 +441,14 @@ export default function TransactionsPage() {
             <Field label="Categoria">
               <Select value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
                 <option value="">Sem categoria</option>
-                {relevantCategories.map((c) => (
+                {relevantCategories.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>
             </Field>
             <Field label="Conta">
               <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)}>
-                {mockAccounts.map((a) => (
+                {accountsData.map((a: any) => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </Select>

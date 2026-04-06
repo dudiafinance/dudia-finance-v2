@@ -2,15 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Check } from "lucide-react";
+import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const passwordRequirements = [
     { met: password.length >= 8, text: "Mínimo 8 caracteres" },
@@ -21,11 +25,41 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordRequirements.every((r) => r.met)) return;
     setIsLoading(true);
-    setTimeout(() => {
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error ?? "Erro ao criar conta.");
+        setIsLoading(false);
+        return;
+      }
+
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Conta criada, mas não foi possível fazer login automaticamente.");
+        setIsLoading(false);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch {
+      setError("Erro de conexão. Tente novamente.");
       setIsLoading(false);
-      window.location.href = "/dashboard";
-    }, 1000);
+    }
   };
 
   return (
@@ -41,6 +75,12 @@ export default function RegisterPage() {
           <p className="mt-1 text-sm text-slate-500">
             Preencha seus dados para começar
           </p>
+
+          {error && (
+            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
             <div>
@@ -106,7 +146,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              disabled={isLoading || !passwordRequirements.every(r => r.met)}
+              disabled={isLoading || !passwordRequirements.every((r) => r.met)}
               className="w-full bg-emerald-600 hover:bg-emerald-700"
             >
               {isLoading ? (

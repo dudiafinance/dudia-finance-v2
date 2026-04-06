@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, Tag } from "lucide-react";
-import { mockCategories } from "@/lib/mock-data";
-import { Category } from "@/types";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
@@ -50,7 +49,11 @@ const emptyForm = (): FormData => ({
 
 export default function CategoriesPage() {
   const { toast } = useToast();
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
+  const { data: categories = [], isLoading } = useCategories();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,14 +74,14 @@ export default function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (c: Category) => {
+  const openEdit = (c: any) => {
     setEditingId(c.id);
     setForm({
       name: c.name,
       type: c.type,
       color: c.color,
       icon: c.icon ?? "more-horizontal",
-      budgetAmount: c.budgetAmount ? String(c.budgetAmount) : "",
+      budgetAmount: c.budgetAmount ? String(Number(c.budgetAmount)) : "",
       budgetPeriod: c.budgetPeriod ?? "monthly",
       tags: c.tags ?? [],
     });
@@ -93,68 +96,65 @@ export default function CategoriesPage() {
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    const now = new Date();
-    if (editingId) {
-      setCategories((prev) =>
-        prev.map((c) =>
-          c.id === editingId
-            ? {
-                ...c,
-                name: form.name,
-                type: form.type,
-                color: form.color,
-                icon: form.icon,
-                budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
-                budgetPeriod: (form.budgetPeriod || undefined) as any,
-                tags: form.tags,
-                updatedAt: now,
-              }
-            : c
-        )
-      );
-      toast("Categoria atualizada!");
-    } else {
-      setCategories((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).slice(2),
-          userId: "1",
-          name: form.name,
-          type: form.type,
-          color: form.color,
-          icon: form.icon,
-          budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
-          budgetPeriod: (form.budgetPeriod || undefined) as any,
-          tags: form.tags,
-          isActive: true,
-          order: prev.length,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ]);
-      toast("Categoria criada!");
+    const formPayload = {
+      name: form.name,
+      type: form.type,
+      color: form.color,
+      icon: form.icon,
+      budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
+      budgetPeriod: form.budgetPeriod || undefined,
+      tags: form.tags,
+    };
+    try {
+      if (editingId) {
+        await updateCategory.mutateAsync({ id: editingId, ...formPayload });
+        toast("Categoria atualizada!");
+      } else {
+        await createCategory.mutateAsync(formPayload);
+        toast("Categoria criada!");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao salvar", "error");
     }
-    setModalOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
-    setCategories((prev) => prev.filter((c) => c.id !== deleteId));
+    try {
+      await deleteCategory.mutateAsync(deleteId);
+      toast("Categoria excluída.", "warning");
+    } catch {
+      toast("Erro ao excluir", "error");
+    }
     setDeleteId(null);
-    toast("Categoria excluída.", "warning");
   };
 
-  const filtered = categories.filter((c) => {
+  const filtered = categories.filter((c: any) => {
     const matchSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.tags.some((t) => t.includes(searchTerm.toLowerCase()));
+      (c.tags ?? []).some((t: string) => t.includes(searchTerm.toLowerCase()));
     const matchType = filterType === "all" || c.type === filterType;
     return matchSearch && matchType;
   });
 
-  const incomeCount = categories.filter((c) => c.type === "income").length;
-  const expenseCount = categories.filter((c) => c.type === "expense").length;
+  const incomeCount = categories.filter((c: any) => c.type === "income").length;
+  const expenseCount = categories.filter((c: any) => c.type === "expense").length;
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+        <div className="h-10 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -201,10 +201,10 @@ export default function CategoriesPage() {
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-600 uppercase tracking-wide">
             <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" />
-            Receitas ({filtered.filter((c) => c.type === "income").length})
+            Receitas ({filtered.filter((c: any) => c.type === "income").length})
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.filter((c) => c.type === "income").map((c) => (
+            {filtered.filter((c: any) => c.type === "income").map((c: any) => (
               <CategoryCard key={c.id} category={c} onEdit={openEdit} onDelete={setDeleteId} />
             ))}
           </div>
@@ -216,10 +216,10 @@ export default function CategoriesPage() {
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-600 uppercase tracking-wide">
             <span className="h-2 w-2 rounded-full bg-red-500 inline-block" />
-            Despesas ({filtered.filter((c) => c.type === "expense").length})
+            Despesas ({filtered.filter((c: any) => c.type === "expense").length})
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.filter((c) => c.type === "expense").map((c) => (
+            {filtered.filter((c: any) => c.type === "expense").map((c: any) => (
               <CategoryCard key={c.id} category={c} onEdit={openEdit} onDelete={setDeleteId} />
             ))}
           </div>
@@ -344,10 +344,11 @@ function CategoryCard({
   onEdit,
   onDelete,
 }: {
-  category: Category;
-  onEdit: (c: Category) => void;
+  category: any;
+  onEdit: (c: any) => void;
   onDelete: (id: string) => void;
 }) {
+  const budgetAmount = category.budgetAmount ? Number(category.budgetAmount) : undefined;
   return (
     <div className="group relative rounded-xl bg-white p-4 shadow-sm border border-slate-100 hover:shadow-md transition-all">
       <div className="flex items-start justify-between">
@@ -360,9 +361,9 @@ function CategoryCard({
           </div>
           <div className="min-w-0">
             <p className="font-medium text-slate-900 truncate">{category.name}</p>
-            {category.budgetAmount && (
+            {budgetAmount && (
               <p className="text-xs text-slate-400">
-                Limite: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(category.budgetAmount)}
+                Limite: {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(budgetAmount)}
               </p>
             )}
           </div>
@@ -379,9 +380,9 @@ function CategoryCard({
         </div>
       </div>
 
-      {category.tags.length > 0 && (
+      {(category.tags ?? []).length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1">
-          {category.tags.map((tag) => (
+          {(category.tags ?? []).map((tag: string) => (
             <span key={tag}
               className="inline-flex items-center gap-0.5 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
               <Tag className="h-2.5 w-2.5" />

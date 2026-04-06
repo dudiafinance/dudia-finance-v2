@@ -57,6 +57,7 @@ export const categories = pgTable('categories', {
   parentId: uuid('parent_id').references((): any => categories.id),
   budgetAmount: decimal('budget_amount', { precision: 15, scale: 2 }),
   budgetPeriod: varchar('budget_period', { length: 10 }), // 'weekly', 'monthly', 'yearly'
+  tags: jsonb('tags').$type<string[]>(),
   isActive: boolean('is_active').default(true),
   order: integer('order').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -78,7 +79,9 @@ export const transactions = pgTable('transactions', {
   recurringId: uuid('recurring_id'),
   isPaid: boolean('is_paid').default(true),
   attachments: jsonb('attachments'), // URLs de anexos
-  tags: jsonb('tags'), // Lista de tags
+  tags: jsonb('tags').$type<string[]>(), // Lista de tags
+  dueDate: date('due_date'),
+  receiveDate: date('receive_date'),
   location: varchar('location', { length: 255 }),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

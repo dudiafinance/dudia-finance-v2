@@ -1,0 +1,71 @@
+import { z } from "zod";
+
+export const registerSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").max(255),
+  email: z.string().email("Email inválido").max(255),
+  password: z
+    .string()
+    .min(8, "Senha deve ter pelo menos 8 caracteres")
+    .regex(/[A-Z]/, "Senha deve conter uma letra maiúscula")
+    .regex(/[a-z]/, "Senha deve conter uma letra minúscula")
+    .regex(/[0-9]/, "Senha deve conter um número"),
+});
+
+export const accountSchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(255),
+  type: z.enum(["checking", "savings", "credit_card", "investment"]),
+  bank: z.string().max(100).optional(),
+  agency: z.string().max(20).optional(),
+  number: z.string().max(50).optional(),
+  balance: z.coerce.number().default(0),
+  currency: z.string().length(3).default("BRL"),
+  color: z.string().max(7).default("#10B981"),
+  includeInTotal: z.boolean().default(true),
+});
+
+export const categorySchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(100),
+  type: z.enum(["income", "expense"]),
+  icon: z.string().max(50).optional(),
+  color: z.string().max(7).default("#10B981"),
+  budgetAmount: z.coerce.number().positive().optional().nullable(),
+  budgetPeriod: z.enum(["weekly", "monthly", "yearly"]).optional().nullable(),
+  tags: z.array(z.string()).default([]),
+});
+
+export const transactionSchema = z.object({
+  accountId: z.string().uuid("Conta inválida"),
+  categoryId: z.string().uuid().optional().nullable(),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  type: z.enum(["income", "expense", "transfer"]),
+  date: z.string().min(1, "Data obrigatória"),
+  description: z.string().min(1, "Descrição obrigatória").max(255),
+  notes: z.string().max(1000).optional().nullable(),
+  isPaid: z.boolean().default(true),
+  isRecurring: z.boolean().default(false),
+  dueDate: z.string().optional().nullable(),
+  receiveDate: z.string().optional().nullable(),
+  tags: z.array(z.string()).default([]),
+  location: z.string().max(255).optional().nullable(),
+});
+
+export const budgetSchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(255),
+  categoryId: z.string().uuid().optional().nullable(),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  period: z.enum(["weekly", "monthly", "yearly"]),
+  startDate: z.string().min(1, "Data início obrigatória"),
+  endDate: z.string().optional().nullable(),
+  alertsEnabled: z.boolean().default(true),
+  alertThreshold: z.coerce.number().min(50).max(100).default(80),
+});
+
+export const goalSchema = z.object({
+  name: z.string().min(1, "Nome obrigatório").max(255),
+  targetAmount: z.coerce.number().positive("Valor alvo deve ser positivo"),
+  currentAmount: z.coerce.number().min(0).default(0),
+  deadline: z.string().optional().nullable(),
+  priority: z.enum(["low", "medium", "high"]).default("medium"),
+  status: z.enum(["active", "completed", "cancelled"]).default("active"),
+  notes: z.string().max(1000).optional().nullable(),
+});

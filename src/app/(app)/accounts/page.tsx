@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Search, Edit, Trash2, Wallet, CreditCard, Building, PiggyBank, TrendingUp, Eye, EyeOff } from "lucide-react";
-import { mockAccounts } from "@/lib/mock-data";
-import { Account } from "@/types";
+import { useAccounts, useCreateAccount, useUpdateAccount, useDeleteAccount } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -51,7 +50,11 @@ const emptyForm = (): FormData => ({
 
 export default function AccountsPage() {
   const { toast } = useToast();
-  const [accounts, setAccounts] = useState<Account[]>(mockAccounts);
+  const { data: accounts = [], isLoading } = useAccounts();
+  const createAccount = useCreateAccount();
+  const updateAccount = useUpdateAccount();
+  const deleteAccount = useDeleteAccount();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [showBalances, setShowBalances] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -72,7 +75,7 @@ export default function AccountsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (a: Account) => {
+  const openEdit = (a: any) => {
     setEditingId(a.id);
     setForm({
       name: a.name,
@@ -80,7 +83,7 @@ export default function AccountsPage() {
       bank: a.bank ?? "",
       agency: a.agency ?? "",
       number: a.number ?? "",
-      balance: String(a.balance),
+      balance: String(Number(a.balance)),
       color: a.color,
       currency: a.currency,
       includeInTotal: a.includeInTotal,
@@ -96,76 +99,79 @@ export default function AccountsPage() {
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    const now = new Date();
-    if (editingId) {
-      setAccounts((prev) =>
-        prev.map((a) =>
-          a.id === editingId
-            ? {
-                ...a,
-                name: form.name,
-                type: form.type as any,
-                bank: form.bank || undefined,
-                agency: form.agency || undefined,
-                number: form.number || undefined,
-                balance: Number(form.balance),
-                color: form.color,
-                currency: form.currency,
-                includeInTotal: form.includeInTotal,
-                updatedAt: now,
-              }
-            : a
-        )
-      );
-      toast("Conta atualizada!");
-    } else {
-      setAccounts((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).slice(2),
-          userId: "1",
-          name: form.name,
-          type: form.type as any,
-          bank: form.bank || undefined,
-          agency: form.agency || undefined,
-          number: form.number || undefined,
-          balance: Number(form.balance),
-          color: form.color,
-          currency: form.currency,
-          includeInTotal: form.includeInTotal,
-          isActive: true,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ]);
-      toast("Conta criada!");
+    const formPayload = {
+      name: form.name,
+      type: form.type,
+      bank: form.bank || undefined,
+      agency: form.agency || undefined,
+      number: form.number || undefined,
+      balance: Number(form.balance),
+      color: form.color,
+      currency: form.currency,
+      includeInTotal: form.includeInTotal,
+    };
+    try {
+      if (editingId) {
+        await updateAccount.mutateAsync({ id: editingId, ...formPayload });
+        toast("Conta atualizada!");
+      } else {
+        await createAccount.mutateAsync(formPayload);
+        toast("Conta criada!");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao salvar", "error");
     }
-    setModalOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
-    setAccounts((prev) => prev.filter((a) => a.id !== deleteId));
+    try {
+      await deleteAccount.mutateAsync(deleteId);
+      toast("Conta excluída.", "warning");
+    } catch {
+      toast("Erro ao excluir", "error");
+    }
     setDeleteId(null);
-    toast("Conta excluída.", "warning");
   };
 
-  const filtered = accounts.filter((a) =>
+  const filtered = accounts.filter((a: any) =>
     a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (a.bank ?? "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalBalance = accounts.filter((a) => a.includeInTotal && a.type !== "credit_card")
-    .reduce((s, a) => s + a.balance, 0);
-  const totalCredit = accounts.filter((a) => a.type === "credit_card")
-    .reduce((s, a) => s + Math.abs(a.balance), 0);
+  const totalBalance = accounts
+    .filter((a: any) => a.includeInTotal && a.type !== "credit_card")
+    .reduce((s: number, a: any) => s + Number(a.balance), 0);
+  const totalCredit = accounts
+    .filter((a: any) => a.type === "credit_card")
+    .reduce((s: number, a: any) => s + Math.abs(Number(a.balance)), 0);
 
   const groupedByType = ACCOUNT_TYPES.map((t) => ({
     ...t,
-    items: filtered.filter((a) => a.type === t.value),
+    items: filtered.filter((a: any) => a.type === t.value),
   })).filter((g) => g.items.length > 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+        <div className="h-10 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-36 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -192,7 +198,7 @@ export default function AccountsPage() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: "Saldo Total", value: totalBalance, sub: "contas inclusas" },
-          { label: "Contas Ativas", value: accounts.filter((a) => a.isActive).length, isCurrency: false, sub: `de ${accounts.length} total` },
+          { label: "Contas Ativas", value: accounts.filter((a: any) => a.isActive).length, isCurrency: false, sub: `de ${accounts.length} total` },
           { label: "Fatura Cartões", value: totalCredit, sub: "em aberto" },
         ].map(({ label, value, sub, isCurrency = true }) => (
           <div key={label} className="rounded-xl bg-white p-5 shadow-sm border border-slate-100">
@@ -223,8 +229,9 @@ export default function AccountsPage() {
             {label} ({items.length})
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {items.map((a) => {
+            {items.map((a: any) => {
               const AccIcon = getIcon(a.type);
+              const balance = Number(a.balance);
               return (
                 <div key={a.id} className="group rounded-xl bg-white p-5 shadow-sm border border-slate-100 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between">
@@ -262,9 +269,9 @@ export default function AccountsPage() {
                       )}
                     </div>
                     <p className={cn("text-xl font-bold mt-0.5",
-                      a.balance < 0 ? "text-red-600" : "text-slate-900"
+                      balance < 0 ? "text-red-600" : "text-slate-900"
                     )}>
-                      {showBalances ? fmt(a.balance) : "••••••"}
+                      {showBalances ? fmt(balance) : "••••••"}
                     </p>
                   </div>
                 </div>

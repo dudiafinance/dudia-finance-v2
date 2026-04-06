@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Edit, Trash2, AlertTriangle, CheckCircle2, TrendingUp, Bell, BellOff } from "lucide-react";
-import { mockBudgets, mockCategories, mockTransactions } from "@/lib/mock-data";
-import { Budget } from "@/types";
+import { useBudgets, useCategories, useTransactions, useCreateBudget, useUpdateBudget, useDeleteBudget } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -35,14 +34,15 @@ const emptyForm = (): FormData => ({
   alertThreshold: "80",
 });
 
-const getSpent = (categoryId: string | undefined) =>
-  mockTransactions
-    .filter((t) => t.type === "expense" && t.categoryId === categoryId)
-    .reduce((s, t) => s + t.amount, 0);
-
 export default function BudgetsPage() {
   const { toast } = useToast();
-  const [budgets, setBudgets] = useState<Budget[]>(mockBudgets);
+  const { data: budgets = [], isLoading } = useBudgets();
+  const { data: categories = [] } = useCategories();
+  const { data: transactions = [] } = useTransactions();
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
+  const deleteBudget = useDeleteBudget();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -54,6 +54,11 @@ export default function BudgetsPage() {
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
+  const getSpent = (categoryId: string | undefined) =>
+    transactions
+      .filter((t: any) => t.type === "expense" && t.categoryId === categoryId)
+      .reduce((s: number, t: any) => s + Number(t.amount), 0);
+
   const openCreate = () => {
     setEditingId(null);
     setForm(emptyForm());
@@ -61,12 +66,12 @@ export default function BudgetsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (b: Budget) => {
+  const openEdit = (b: any) => {
     setEditingId(b.id);
     setForm({
       name: b.name,
       categoryId: b.categoryId ?? "",
-      amount: String(b.amount),
+      amount: String(Number(b.amount)),
       period: b.period,
       startDate: new Date(b.startDate).toISOString().split("T")[0],
       endDate: b.endDate ? new Date(b.endDate).toISOString().split("T")[0] : "",
@@ -85,66 +90,68 @@ export default function BudgetsPage() {
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    const now = new Date();
-    if (editingId) {
-      setBudgets((prev) =>
-        prev.map((b) =>
-          b.id === editingId
-            ? {
-                ...b,
-                name: form.name,
-                categoryId: form.categoryId || undefined,
-                amount: Number(form.amount),
-                period: form.period as any,
-                startDate: new Date(form.startDate),
-                endDate: form.endDate ? new Date(form.endDate) : undefined,
-                alertsEnabled: form.alertsEnabled,
-                alertThreshold: Number(form.alertThreshold),
-                updatedAt: now,
-              }
-            : b
-        )
-      );
-      toast("Orçamento atualizado!");
-    } else {
-      setBudgets((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).slice(2),
-          userId: "1",
-          name: form.name,
-          categoryId: form.categoryId || undefined,
-          amount: Number(form.amount),
-          period: form.period as any,
-          startDate: new Date(form.startDate),
-          endDate: form.endDate ? new Date(form.endDate) : undefined,
-          alertsEnabled: form.alertsEnabled,
-          alertThreshold: Number(form.alertThreshold),
-          isActive: true,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ]);
-      toast("Orçamento criado!");
+    const formPayload = {
+      name: form.name,
+      categoryId: form.categoryId || undefined,
+      amount: Number(form.amount),
+      period: form.period,
+      startDate: form.startDate,
+      endDate: form.endDate || undefined,
+      alertsEnabled: form.alertsEnabled,
+      alertThreshold: Number(form.alertThreshold),
+    };
+    try {
+      if (editingId) {
+        await updateBudget.mutateAsync({ id: editingId, ...formPayload });
+        toast("Orçamento atualizado!");
+      } else {
+        await createBudget.mutateAsync(formPayload);
+        toast("Orçamento criado!");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao salvar", "error");
     }
-    setModalOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
-    setBudgets((prev) => prev.filter((b) => b.id !== deleteId));
+    try {
+      await deleteBudget.mutateAsync(deleteId);
+      toast("Orçamento excluído.", "warning");
+    } catch {
+      toast("Erro ao excluir", "error");
+    }
     setDeleteId(null);
-    toast("Orçamento excluído.", "warning");
   };
 
-  const totalBudget = budgets.reduce((s, b) => s + b.amount, 0);
-  const totalSpent = budgets.reduce((s, b) => s + getSpent(b.categoryId), 0);
-  const overBudget = budgets.filter((b) => getSpent(b.categoryId) > b.amount).length;
+  const totalBudget = budgets.reduce((s: number, b: any) => s + Number(b.amount), 0);
+  const totalSpent = budgets.reduce((s: number, b: any) => s + getSpent(b.categoryId), 0);
+  const overBudget = budgets.filter((b: any) => getSpent(b.categoryId) > Number(b.amount)).length;
 
   const periodLabel = (p: string) =>
     ({ weekly: "Semanal", monthly: "Mensal", yearly: "Anual" }[p] ?? p);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+        <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-36 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -193,12 +200,14 @@ export default function BudgetsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {budgets.map((b) => {
+        {budgets.map((b: any) => {
+          const amount = Number(b.amount);
+          const alertThreshold = Number(b.alertThreshold);
           const spent = getSpent(b.categoryId);
-          const pct = Math.min((spent / b.amount) * 100, 100);
-          const isOver = spent > b.amount;
-          const isAlert = !isOver && pct >= b.alertThreshold;
-          const cat = mockCategories.find((c) => c.id === b.categoryId);
+          const pct = Math.min((spent / amount) * 100, 100);
+          const isOver = spent > amount;
+          const isAlert = !isOver && pct >= alertThreshold;
+          const cat = categories.find((c: any) => c.id === b.categoryId);
 
           return (
             <div key={b.id} className={cn("group rounded-xl bg-white p-5 shadow-sm border transition-all hover:shadow-md",
@@ -243,7 +252,7 @@ export default function BudgetsPage() {
                   <span className={cn("font-semibold", isOver ? "text-red-600" : "text-slate-800")}>
                     {fmt(spent)}
                   </span>
-                  <span className="text-slate-400">de {fmt(b.amount)}</span>
+                  <span className="text-slate-400">de {fmt(amount)}</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-slate-100">
                   <div
@@ -258,17 +267,17 @@ export default function BudgetsPage() {
                   {isOver ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
                       <AlertTriangle className="h-3 w-3" />
-                      Estourado em {fmt(spent - b.amount)}
+                      Estourado em {fmt(spent - amount)}
                     </span>
                   ) : isAlert ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
                       <AlertTriangle className="h-3 w-3" />
-                      Atenção: {b.alertThreshold}% atingido
+                      Atenção: {alertThreshold}% atingido
                     </span>
                   ) : (
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
                       <CheckCircle2 className="h-3 w-3" />
-                      {fmt(b.amount - spent)} restante
+                      {fmt(amount - spent)} restante
                     </span>
                   )}
                 </div>
@@ -292,7 +301,7 @@ export default function BudgetsPage() {
             <Field label="Categoria">
               <Select value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
                 <option value="">Sem categoria</option>
-                {mockCategories.filter((c) => c.type === "expense").map((c) => (
+                {categories.filter((c: any) => c.type === "expense").map((c: any) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>

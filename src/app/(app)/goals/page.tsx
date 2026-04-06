@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Edit, Trash2, Target, Calendar, TrendingUp, CheckCircle2, Clock, XCircle, PlusCircle } from "lucide-react";
-import { mockGoals } from "@/lib/mock-data";
-import { Goal } from "@/types";
+import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -47,7 +46,11 @@ const statusConfig = {
 
 export default function GoalsPage() {
   const { toast } = useToast();
-  const [goals, setGoals] = useState<Goal[]>(mockGoals);
+  const { data: goals = [], isLoading } = useGoals();
+  const createGoal = useCreateGoal();
+  const updateGoal = useUpdateGoal();
+  const deleteGoal = useDeleteGoal();
+
   const [modalOpen, setModalOpen] = useState(false);
   const [depositModal, setDepositModal] = useState<string | null>(null);
   const [depositAmount, setDepositAmount] = useState("");
@@ -68,12 +71,12 @@ export default function GoalsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (g: Goal) => {
+  const openEdit = (g: any) => {
     setEditingId(g.id);
     setForm({
       name: g.name,
-      targetAmount: String(g.targetAmount),
-      currentAmount: String(g.currentAmount),
+      targetAmount: String(Number(g.targetAmount)),
+      currentAmount: String(Number(g.currentAmount)),
       deadline: g.deadline ? new Date(g.deadline).toISOString().split("T")[0] : "",
       priority: g.priority,
       status: g.status,
@@ -91,81 +94,86 @@ export default function GoalsPage() {
     return Object.keys(e).length === 0;
   };
 
-  const save = () => {
+  const save = async () => {
     if (!validate()) return;
-    const now = new Date();
-    if (editingId) {
-      setGoals((prev) =>
-        prev.map((g) =>
-          g.id === editingId
-            ? {
-                ...g,
-                name: form.name,
-                targetAmount: Number(form.targetAmount),
-                currentAmount: Number(form.currentAmount),
-                deadline: form.deadline ? new Date(form.deadline) : undefined,
-                priority: form.priority as any,
-                status: form.status as any,
-                notes: form.notes,
-                updatedAt: now,
-              }
-            : g
-        )
-      );
-      toast("Meta atualizada!");
-    } else {
-      setGoals((prev) => [
-        ...prev,
-        {
-          id: Math.random().toString(36).slice(2),
-          userId: "1",
-          name: form.name,
-          targetAmount: Number(form.targetAmount),
-          currentAmount: Number(form.currentAmount),
-          deadline: form.deadline ? new Date(form.deadline) : undefined,
-          priority: form.priority as any,
-          status: form.status as any,
-          notes: form.notes,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ]);
-      toast("Meta criada!");
+    const formPayload = {
+      name: form.name,
+      targetAmount: Number(form.targetAmount),
+      currentAmount: Number(form.currentAmount),
+      deadline: form.deadline || undefined,
+      priority: form.priority,
+      status: form.status,
+      notes: form.notes,
+    };
+    try {
+      if (editingId) {
+        await updateGoal.mutateAsync({ id: editingId, ...formPayload });
+        toast("Meta atualizada!");
+      } else {
+        await createGoal.mutateAsync(formPayload);
+        toast("Meta criada!");
+      }
+      setModalOpen(false);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao salvar", "error");
     }
-    setModalOpen(false);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return;
-    setGoals((prev) => prev.filter((g) => g.id !== deleteId));
+    try {
+      await deleteGoal.mutateAsync(deleteId);
+      toast("Meta excluída.", "warning");
+    } catch {
+      toast("Erro ao excluir", "error");
+    }
     setDeleteId(null);
-    toast("Meta excluída.", "warning");
   };
 
-  const addDeposit = () => {
+  const addDeposit = async () => {
     const amt = Number(depositAmount);
     if (!amt || amt <= 0 || !depositModal) return;
-    setGoals((prev) =>
-      prev.map((g) => {
-        if (g.id !== depositModal) return g;
-        const next = g.currentAmount + amt;
-        return {
-          ...g,
-          currentAmount: next,
-          status: next >= g.targetAmount ? "completed" : g.status,
-          updatedAt: new Date(),
-        };
-      })
-    );
-    toast(`Depósito de ${fmt(amt)} registrado!`);
+    const goal = goals.find((g: any) => g.id === depositModal);
+    if (!goal) return;
+    const currentAmt = Number(goal.currentAmount);
+    const targetAmt = Number(goal.targetAmount);
+    const next = currentAmt + amt;
+    try {
+      await updateGoal.mutateAsync({
+        id: depositModal,
+        currentAmount: next,
+        status: next >= targetAmt ? "completed" : goal.status,
+      });
+      toast(`Depósito de ${fmt(amt)} registrado!`);
+    } catch (e: any) {
+      toast(e.message ?? "Erro ao registrar depósito", "error");
+    }
     setDepositModal(null);
     setDepositAmount("");
   };
 
-  const active = goals.filter((g) => g.status === "active");
-  const completed = goals.filter((g) => g.status === "completed");
-  const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0);
-  const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0);
+  const active = goals.filter((g: any) => g.status === "active");
+  const completed = goals.filter((g: any) => g.status === "completed");
+  const totalTarget = goals.reduce((s: number, g: any) => s + Number(g.targetAmount), 0);
+  const totalSaved = goals.reduce((s: number, g: any) => s + Number(g.currentAmount), 0);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+        <div className="grid grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-48 animate-pulse rounded-xl bg-slate-200" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -196,11 +204,13 @@ export default function GoalsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {goals.map((g) => {
-          const pct = Math.min((g.currentAmount / g.targetAmount) * 100, 100);
-          const remaining = g.targetAmount - g.currentAmount;
-          const priority = priorityConfig[g.priority];
-          const status = statusConfig[g.status];
+        {goals.map((g: any) => {
+          const currentAmount = Number(g.currentAmount);
+          const targetAmount = Number(g.targetAmount);
+          const pct = Math.min((currentAmount / targetAmount) * 100, 100);
+          const remaining = targetAmount - currentAmount;
+          const priority = priorityConfig[g.priority as keyof typeof priorityConfig];
+          const status = statusConfig[g.status as keyof typeof statusConfig];
           const StatusIcon = status.icon;
 
           const today = new Date();
@@ -253,8 +263,8 @@ export default function GoalsPage() {
 
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-2xl font-bold text-slate-900">{fmt(g.currentAmount)}</span>
-                  <span className="text-sm text-slate-400 self-end">de {fmt(g.targetAmount)}</span>
+                  <span className="text-2xl font-bold text-slate-900">{fmt(currentAmount)}</span>
+                  <span className="text-sm text-slate-400 self-end">de {fmt(targetAmount)}</span>
                 </div>
                 <div className="h-2.5 w-full rounded-full bg-slate-100">
                   <div

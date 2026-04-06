@@ -8,6 +8,13 @@
       "when": 1775434014671,
       "tag": "0000_cool_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775436050061,
+      "tag": "0001_noisy_toro",
+      "breakpoints": true
     }
   ]
 }
