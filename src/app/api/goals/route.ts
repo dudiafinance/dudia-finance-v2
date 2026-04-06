@@ -2,8 +2,87 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, sql } from "drizzle-orm";
 import { goalSchema } from "@/lib/validations";
+
+let migrationApplied = false;
+
+async function ensureMigration() {
+  if (migrationApplied) return;
+  
+  try {
+    console.log("🔄 Verificando migração de metas...");
+    
+    await db.execute(sql`
+      ALTER TABLE goals 
+      ALTER COLUMN target_amount DROP NOT NULL
+    `);
+    console.log("✅ target_amount agora é nullable");
+  } catch (e: any) {
+    if (!e.message.includes('already')) console.log("⚠️ target_amount já é nullable");
+  }
+
+  try {
+    await db.execute(sql`
+      ALTER TABLE goals 
+      ADD COLUMN IF NOT EXISTS goal_type varchar(20) DEFAULT 'target'
+    `);
+    console.log("✅ goal_type adicionado");
+  } catch (e: any) {
+    if (!e.message.includes('already')) console.log("⚠️ goal_type já existe");
+  }
+
+  try {
+    await db.execute(sql`
+      ALTER TABLE goals 
+      ADD COLUMN IF NOT EXISTS start_date date
+    `);
+    console.log("✅ start_date adicionado");
+  } catch (e: any) {
+    if (!e.message.includes('already')) console.log("⚠️ start_date já existe");
+  }
+
+  try {
+    await db.execute(sql`
+      ALTER TABLE goals 
+      ADD COLUMN IF NOT EXISTS end_date date
+    `);
+    console.log("✅ end_date adicionado");
+  } catch (e: any) {
+    if (!e.message.includes('already')) console.log("⚠️ end_date já existe");
+  }
+
+  try {
+    await db.execute(sql`
+      UPDATE goals 
+      SET 
+        goal_type = CASE 
+          WHEN monthly_contribution IS NOT NULL AND target_amount IS NULL THEN 'monthly'
+          ELSE 'target'
+        END,
+        start_date = COALESCE(start_date, created_at::date)
+      WHERE goal_type IS NULL OR start_date IS NULL
+    `);
+    console.log("✅ Metas existentes atualizadas");
+  } catch (e: any) {
+    console.log("⚠️ Erro ao atualizar metas:", e.message);
+  }
+
+  try {
+    await db.execute(sql`
+      ALTER TABLE goals 
+      ALTER COLUMN start_date SET NOT NULL
+    `);
+    console.log("✅ start_date agora é obrigatório");
+  } catch (e: any) {
+    if (!e.message.includes('already')) console.log("⚠️ start_date já é obrigatório");
+  }
+
+  migrationApplied = true;
+  console.log("✅ Migração aplicada com sucesso!");
+}
+
+await ensureMigration();
 
 async function getUserId(): Promise<string | null> {
   const session = await auth();
