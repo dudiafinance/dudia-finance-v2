@@ -4,7 +4,12 @@
  * deploy against an existing or brand-new database.
  */
 
+import { config } from "dotenv";
+import { resolve } from "path";
 import postgres from "postgres";
+
+// Load .env.local for local development (no-op in production where env vars are injected)
+config({ path: resolve(process.cwd(), ".env.local") });
 
 // Prefer direct (non-pooled) connection for DDL statements
 const connectionUrl = process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL!;
