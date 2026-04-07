@@ -64,6 +64,13 @@
       "when": 1775573032374,
       "tag": "0008_lively_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775578721662,
+      "tag": "0009_parched_morlocks",
+      "breakpoints": true
     }
   ]
 }

@@ -17,6 +17,10 @@ import {
   BarChart3,
   Trash2,
   HelpCircle,
+  Pencil,
+  ArrowRightLeft,
+  ChevronDown,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -83,16 +87,6 @@ function CardVisual({ card, selected, onClick, onEdit }: { card: any; selected: 
         selected ? "ring-4 ring-white/40 scale-[1.02]" : "opacity-80 hover:opacity-100"
       )}
     >
-      {onEdit && (
-        <button
-          onClick={onEdit}
-          className="absolute top-4 right-4 p-2 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-        </button>
-      )}
       <div className="flex items-start justify-between">
         <div>
           <p className="text-xs font-medium text-white/70">Banco</p>
@@ -289,24 +283,33 @@ function CardFormModal({ open, onClose, onSaved, editingCard }: { open: boolean;
 
 // ─── LaunchFormModal ──────────────────────────────────────────────────────────
 function LaunchFormModal({
-  open, onClose, cardId, currentMonth, currentYear,
+  open, onClose, cardId, currentMonth, currentYear, card,
 }: {
-  open: boolean; onClose: () => void; cardId: string; currentMonth: number; currentYear: number;
+  open: boolean; onClose: () => void; cardId: string; currentMonth: number; currentYear: number; card: any;
 }) {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
   const { data: globalTags = [] } = useTags();
-  const allTagSuggestions = Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[];
-  const [tab, setTab] = useState<"quick" | "manual">("quick");
+  
   const [form, setForm] = useState({
-    description: "", amount: "", amountType: "parcel" as "total" | "parcel", date: new Date().toISOString().slice(0, 10),
-    categoryId: "", tags: [] as string[], notes: "",
+    description: "", 
+    amount: "", 
+    amountType: "parcel" as "total" | "parcel", 
+    date: new Date().toISOString().slice(0, 10),
+    categoryId: "", 
+    tags: [] as string[], 
+    notes: "",
     launchType: "single" as "single" | "installment" | "fixed",
-    totalInstallments: "2", startInstallment: "1",
-    invoiceMonth: currentMonth, invoiceYear: currentYear,
+    totalInstallments: "2", 
+    startInstallment: "1",
+    invoiceMonth: currentMonth, 
+    invoiceYear: currentYear,
     isPending: false,
   });
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
+  
   const filteredCategories = categories.filter((c: any) => 
     c.name.toLowerCase().includes(categorySearch.toLowerCase())
   );
@@ -317,13 +320,13 @@ function LaunchFormModal({
     mutationFn: (data: any) => apiFetch(`/api/credit-cards/${cardId}/transactions`, { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
+      qc.invalidateQueries({ queryKey: ["credit-cards"] });
       onClose();
     },
   });
 
   const handleSubmit = () => {
     let finalAmount = Number(form.amount);
-    
     if (form.launchType === "installment" && form.amountType === "parcel" && form.totalInstallments) {
       finalAmount = Number(form.amount) * Number(form.totalInstallments);
     }
@@ -347,258 +350,261 @@ function LaunchFormModal({
     createTx.mutate(payload);
   };
 
-  // Preview for installments
-  const installmentPreview: { installment: number; month: number; year: number }[] = [];
-  if (form.launchType === "installment" && Number(form.totalInstallments) > 0) {
-    const n = Number(form.totalInstallments);
-    const start = Number(form.startInstallment) || 1;
-    let m = form.invoiceMonth;
-    let y = form.invoiceYear;
-    
-    for (let i = start; i <= n; i++) {
-      installmentPreview.push({ installment: i, month: m, year: y });
-      m++; if (m > 12) { m = 1; y++; }
+  // Simplified month label
+  const getInvoiceLabel = (m: number, y: number) => {
+    const name = MONTH_NAMES[m - 1];
+    return `${name.slice(0,3)} ${y}`;
+  };
+
+  // Preview logic for both installments and fixed
+  const schedulePreview: { label: string; amount: number; invoice: string }[] = [];
+  if (form.amount && !isNaN(Number(form.amount))) {
+    const baseValue = form.amountType === "total" && form.launchType === "installment"
+      ? Number(form.amount) / Number(form.totalInstallments)
+      : Number(form.amount);
+
+    if (form.launchType === "installment") {
+      const n = Number(form.totalInstallments);
+      const start = Number(form.startInstallment) || 1;
+      let m = form.invoiceMonth;
+      let y = form.invoiceYear;
+      for (let i = start; i <= n; i++) {
+        schedulePreview.push({ label: `Parcela ${i}/${n}`, amount: baseValue, invoice: getInvoiceLabel(m, y) });
+        m++; if (m > 12) { m = 1; y++; }
+      }
+    } else if (form.launchType === "fixed") {
+      let m = form.invoiceMonth;
+      let y = form.invoiceYear;
+      for (let i = 0; i < 12; i++) {
+        schedulePreview.push({ label: `Recorrência ${i+1}`, amount: baseValue, invoice: getInvoiceLabel(m, y) });
+        m++; if (m > 12) { m = 1; y++; }
+      }
     }
   }
 
-  // Next 6 months for invoice selector
-  const nextMonths: { month: number; year: number; label: string }[] = [];
+  const next6Months: { m: number; y: number; label: string }[] = [];
   {
     let m = currentMonth; let y = currentYear;
     for (let i = 0; i < 6; i++) {
-      nextMonths.push({ month: m, year: y, label: `${MONTH_NAMES[m - 1]}/${y}` });
+      next6Months.push({ m, y, label: `${MONTH_NAMES[m - 1]}/${y}` });
       m++; if (m > 12) { m = 1; y++; }
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Novo Lançamento" size="xl">
-      {/* Tab selector */}
-      <div className="flex gap-1 rounded-xl bg-slate-100 p-1 mb-5">
-        {(["quick", "manual"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={cn("flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-              tab === t ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
-            {t === "quick" ? "Rápido" : "Manual"}
-          </button>
-        ))}
-      </div>
-
-      <div className="space-y-4">
-        {/* Description */}
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Descrição *</label>
-          <input value={form.description} onChange={e => set("description", e.target.value)} placeholder="Ex: Supermercado Extra" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">Tipo de Valor</label>
-            <div className="flex gap-2">
-              <button type="button" onClick={() => set("amountType", "total")}
-                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors", 
-                  form.amountType === "total" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600 hover:bg-slate-50")}>
-                Valor Total
-              </button>
-              <button type="button" onClick={() => set("amountType", "parcel")}
-                className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
-                  form.amountType === "parcel" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600 hover:bg-slate-50")}>
-                Valor Parcela
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              {form.amountType === "total" ? "Valor Total (R$) *" : "Valor da Parcela (R$) *"}
-            </label>
-            <input type="number" step="0.01" value={form.amount} onChange={e => set("amount", e.target.value)} placeholder="0,00" className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Data da Compra *</label>
-          <input type="date" value={form.date} onChange={e => set("date", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-        </div>
-
-        {/* Category */}
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Categoria</label>
-          <div className="relative">
-            <input
-              type="text"
-              value={categorySearch}
-              onChange={(e) => {
-                setCategorySearch(e.target.value);
-                if (!e.target.value) set("categoryId", "");
-              }}
-              placeholder="Buscar categoria..."
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            />
-            {form.categoryId && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <span className="text-xs text-slate-600">
-                  {categories.find((c: any) => c.id === form.categoryId)?.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    set("categoryId", "");
-                    setCategorySearch("");
-                  }}
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  ×
+    <Modal open={open} onClose={onClose} title="Novo Lançamento de Cartão" size="xl">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        
+        {/* Lado Esquerdo: Formulário */}
+        <div className="md:col-span-3 space-y-5">
+          
+          {/* Valor Principal */}
+          <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Valor do Lançamento</label>
+              <div className="flex bg-white rounded-lg p-0.5 border border-slate-200">
+                <button 
+                  onClick={() => set("amountType", "parcel")}
+                  className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", form.amountType === "parcel" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400")}>
+                  VALOR PARCELA
+                </button>
+                <button 
+                  onClick={() => set("amountType", "total")}
+                  className={cn("px-3 py-1 text-[10px] font-bold rounded-md transition-all", form.amountType === "total" ? "bg-emerald-500 text-white shadow-sm" : "text-slate-400")}>
+                  VALOR TOTAL
                 </button>
               </div>
-            )}
-          </div>
-          {categorySearch && !form.categoryId && (
-            <div className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-              {filteredCategories.length > 0 ? (
-                filteredCategories.map((c: any) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      set("categoryId", c.id);
-                      setCategorySearch("");
-                    }}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-slate-50 flex items-center gap-2"
-                  >
-                    <div className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
-                    {c.name}
-                  </button>
-                ))
-              ) : (
-                <p className="px-3 py-2 text-sm text-slate-400">Nenhuma categoria encontrada</p>
-              )}
             </div>
-          )}
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Tags</label>
-          <TagInput value={form.tags} onChange={v => set("tags", v)} suggestions={allTagSuggestions} />
-        </div>
-
-        {/* Launch type */}
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-2">Tipo de Lançamento *</label>
-          <div className="grid grid-cols-3 gap-2">
-            {([
-              { value: "single", label: "1x", sub: "Único" },
-              { value: "installment", label: "Parcelado", sub: "Em parcelas" },
-              { value: "fixed", label: "Fixo", sub: "Recorrente" },
-            ] as const).map(opt => (
-              <button key={opt.value} type="button" onClick={() => set("launchType", opt.value)}
-                className={cn("flex flex-col items-center rounded-xl border-2 py-3 px-2 text-sm transition-colors",
-                  form.launchType === opt.value ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-600 hover:bg-slate-50")}>
-                <span className="font-bold">{opt.label}</span>
-                <span className="text-xs opacity-70">{opt.sub}</span>
-              </button>
-            ))}
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-300">R$</span>
+              <input 
+                autoFocus
+                type="number" 
+                placeholder="0,00"
+                value={form.amount}
+                onChange={e => set("amount", e.target.value)}
+                className="w-full bg-transparent border-0 text-4xl font-bold text-slate-900 focus:ring-0 pl-14 placeholder:text-slate-200"
+              />
+            </div>
           </div>
-        </div>
 
-        {/* Installment count */}
-        {form.launchType === "installment" && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Total de parcelas</label>
-              <input type="number" min={2} value={form.totalInstallments} onChange={e => set("totalInstallments", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Descrição</label>
+              <input value={form.description} onChange={e => set("description", e.target.value)} placeholder="Onde você comprou?" className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 transition-all" />
             </div>
-            {tab === "manual" && (
+
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Parcela atual</label>
-                <input type="number" min={1} max={form.totalInstallments || 1} value={form.startInstallment} onChange={e => set("startInstallment", e.target.value)} className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-                <p className="text-xs text-slate-400 mt-1">Ex: se está na parcela 19, digite 19</p>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Data da Compra</label>
+                <input type="date" value={form.date} onChange={e => set("date", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Tipo</label>
+                <select 
+                  value={form.launchType} 
+                  onChange={e => set("launchType", e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none"
+                >
+                  <option value="single">À vista</option>
+                  <option value="installment">Parcelado</option>
+                  <option value="fixed">Fixo / Recorrente</option>
+                </select>
+              </div>
+            </div>
+
+            {form.launchType === "installment" && (
+              <div className="flex items-end gap-3 bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-blue-600 mb-1 ml-1 uppercase">Núm. de Parcelas</label>
+                  <input type="number" min={2} value={form.totalInstallments} onChange={e => set("totalInstallments", e.target.value)} className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] font-bold text-blue-600 mb-1 ml-1 uppercase">Primeira Parcela</label>
+                  <input type="number" min={1} value={form.startInstallment} onChange={e => set("startInstallment", e.target.value)} className="w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm outline-none" />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1.5 ml-1">Categoria</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    if (!e.target.value) set("categoryId", "");
+                  }}
+                  onFocus={() => { if(form.categoryId) setCategorySearch("") }}
+                  placeholder={form.categoryId ? categories.find((c: any) => c.id === form.categoryId)?.name : "Buscar categoria..."}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-emerald-500"
+                />
+                {categorySearch && (
+                  <div className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl py-1">
+                    {filteredCategories.map((c: any) => (
+                      <button key={c.id} onClick={() => { set("categoryId", c.id); setCategorySearch(""); }}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-emerald-50 flex items-center justify-between group transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: c.color }} />
+                          <span className="group-hover:text-emerald-700">{c.name}</span>
+                        </div>
+                        <span className="text-[10px] text-slate-400 capitalize">{c.type === "income" ? "Receita" : "Despesa"}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Opções Avançadas Toggle */}
+          <div className="pt-2">
+            <button 
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors uppercase tracking-tight"
+            >
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
+              Opções Avançadas e Fatura
+            </button>
+            
+            {showAdvanced && (
+              <div className="mt-4 space-y-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1 uppercase">Lançar na Fatura de</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {next6Months.map(nm => (
+                      <button 
+                        key={`${nm.m}-${nm.y}`}
+                        onClick={() => { set("invoiceMonth", nm.m); set("invoiceYear", nm.y); }}
+                        className={cn("px-2 py-2 rounded-lg text-xs font-medium border transition-all text-center",
+                          form.invoiceMonth === nm.m && form.invoiceYear === nm.y 
+                            ? "bg-white border-emerald-500 text-emerald-700 shadow-sm" 
+                            : "bg-white border-slate-200 text-slate-400 hover:border-slate-300")}
+                      >
+                        {nm.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 mb-1.5 ml-1 uppercase">Tags</label>
+                  <TagInput value={form.tags} onChange={v => set("tags", v)} suggestions={Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[]} />
+                </div>
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" checked={form.isPending} onChange={e => set("isPending", e.target.checked)} className="rounded text-emerald-500 focus:ring-emerald-500" />
+                    <span className="text-xs font-medium text-slate-600">Considerar como pendente</span>
+                  </label>
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        {/* Manual: invoice month selector */}
-        {tab === "manual" && (
-          <div>
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              {form.launchType === "installment" && form.startInstallment
-                ? `A parcela ${form.startInstallment} entra na fatura de`
-                : "Entrar na fatura de"}
-            </label>
-            <select
-              value={`${form.invoiceMonth}-${form.invoiceYear}`}
-              onChange={e => {
-                const [m, y] = e.target.value.split("-").map(Number);
-                setForm(p => ({ ...p, invoiceMonth: m, invoiceYear: y }));
-              }}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-            >
-              {nextMonths.map(nm => (
-                <option key={`${nm.month}-${nm.year}`} value={`${nm.month}-${nm.year}`}>{nm.label}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Installment preview */}
-        {form.launchType === "installment" && installmentPreview.length > 0 && (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 max-h-48 overflow-y-auto">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium text-slate-600">
-                Prévia das parcelas
-              </p>
-              {tab === "manual" && form.startInstallment && Number(form.startInstallment) > 1 && (
-                <p className="text-xs text-amber-600">
-                  ⚠️ Parcelas anteriores já foram lançadas
-                </p>
-              )}
-            </div>
-            <div className="space-y-1">
-              {installmentPreview.map((p, idx) => {
-                const installmentValue = form.amountType === "total" && form.amount
-                  ? Number(form.amount) / Number(form.totalInstallments)
-                  : Number(form.amount);
-                
-                return (
-                  <p key={p.installment} className={cn("text-xs", idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 ? "text-amber-600 font-medium" : "text-slate-500")}>
-                    Parcela {p.installment}/{form.totalInstallments} → Fatura {MONTH_NAMES[p.month - 1]}/{p.year}
-                    {form.amount ? ` · ${fmt(installmentValue)}` : ""}
-                    {idx === 0 && tab === "manual" && Number(form.startInstallment) > 1 && " (próxima)"}
-                  </p>
-                );
-              })}
-            </div>
-            {form.amountType === "total" && form.amount && (
-              <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-200">
-                Total: {fmt(Number(form.amount))} · Parcela: {fmt(Number(form.amount) / Number(form.totalInstallments))}
-              </p>
-            )}
-            {form.amountType === "parcel" && form.amount && (
-              <p className="text-xs text-slate-400 mt-2 pt-2 border-t border-slate-200">
-                Parcela: {fmt(Number(form.amount))} · Total: {fmt(Number(form.amount) * Number(form.totalInstallments))}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Notes */}
-        <div>
-          <label className="block text-xs font-medium text-slate-600 mb-1">Observações</label>
-          <textarea value={form.notes} onChange={e => set("notes", e.target.value)} rows={2} placeholder="Opcional..." className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 resize-none" />
         </div>
 
-        {/* Pending toggle */}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" checked={form.isPending} onChange={e => set("isPending", e.target.checked)} className="rounded" />
-          <span className="text-sm text-slate-600">Marcar como pendente</span>
-        </label>
+        {/* Lado Direito: Resumo e Preview */}
+        <div className="md:col-span-2 flex flex-col gap-5">
+          <div className="bg-emerald-600 rounded-3xl p-6 text-white shadow-lg shadow-emerald-200/50">
+            <h4 className="text-xs font-bold text-emerald-100 uppercase tracking-widest mb-4 opacity-70">Resumo do Lançamento</h4>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[10px] text-emerald-200 uppercase font-bold">Total Estimado</p>
+                <p className="text-3xl font-black">{fmt(schedulePreview.reduce((s, p) => s + p.amount, 0))}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-2">
+                <div>
+                  <p className="text-[10px] text-emerald-200 uppercase font-bold">Lançamento</p>
+                  <p className="text-xs font-bold capitalize">
+                    {form.launchType === "single" ? "À Vista" : form.launchType === "installment" ? "Parcelado" : "Mensalidade"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-emerald-200 uppercase font-bold">Cartão</p>
+                  <p className="text-xs font-bold">{card?.name || "..."}</p>
+                </div>
+              </div>
+            </div>
+          </div>
 
-        {createTx.error && <p className="text-xs text-red-600">{(createTx.error as Error).message}</p>}
+          {schedulePreview.length > 1 && (
+            <div className="flex-1 overflow-hidden flex flex-col rounded-3xl bg-white border border-slate-100">
+              <div className="px-5 py-3 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cronograma</span>
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-200 px-1.5 py-0.5 rounded-full">{schedulePreview.length}x</span>
+              </div>
+              <div className="flex-1 overflow-y-auto px-2 py-2 divide-y divide-slate-50 custom-scrollbar">
+                {schedulePreview.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-3 py-2.5 hover:bg-slate-50 rounded-xl transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-700 truncate">{item.label}</p>
+                      <p className="text-[10px] text-slate-400 font-medium">Fatura de {item.invoice}</p>
+                    </div>
+                    <p className="text-xs font-black text-slate-900">{fmt(item.amount)}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 bg-slate-50/50 border-t border-slate-100">
+                <div className="flex items-center gap-2 text-[10px] text-slate-400">
+                  <Info className="h-3 w-3" />
+                  <span>Projeção de impacto no fluxo de caixa futuro.</span>
+                </div>
+              </div>
+            </div>
+          )}
 
-        <Button className="w-full" disabled={createTx.isPending} onClick={handleSubmit}>
-          {createTx.isPending ? "Salvando..." : "Registrar Lançamento"}
-        </Button>
+          <div className="mt-auto pt-4">
+            <Button 
+              className="w-full h-14 rounded-2xl text-lg font-bold shadow-xl shadow-emerald-200 transition-all hover:scale-[1.02] active:scale-[0.98]" 
+              disabled={createTx.isPending || !form.amount || !form.description} 
+              onClick={handleSubmit}
+            >
+              {createTx.isPending ? "Processando..." : "Confirmar Lançamento"}
+            </Button>
+            <p className="text-center text-[10px] text-slate-400 mt-3 font-medium">
+              Ao confirmar, o saldo e o limite serão atualizados atomicamente.
+            </p>
+          </div>
+        </div>
       </div>
     </Modal>
   );
@@ -767,19 +773,24 @@ export default function CreditCardsPage() {
                     card={c}
                     selected={c.id === effectiveCardId}
                     onClick={() => setSelectedCardId(c.id)}
-                    onEdit={(e) => {
-                      e.stopPropagation();
-                      setEditingCard(c);
-                      setShowCardModal(true);
-                    }}
                   />
                 ))}
               </div>
 
               {card && (
                 <div className="rounded-xl bg-white shadow-sm border border-slate-100 overflow-hidden">
-                  <div className="px-5 py-4 border-b border-slate-100">
+                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 className="text-sm font-semibold text-slate-700">Informações do Cartão</h3>
+                    <button
+                      onClick={() => {
+                        setEditingCard(card);
+                        setShowCardModal(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-emerald-600 transition-colors p-1 -m-1"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </button>
                   </div>
                   <div className="divide-y divide-slate-50">
                     {[
@@ -1002,6 +1013,7 @@ export default function CreditCardsPage() {
           cardId={effectiveCardId}
           currentMonth={month}
           currentYear={year}
+          card={card}
         />
       )}
     </div>
