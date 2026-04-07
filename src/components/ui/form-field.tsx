@@ -29,10 +29,10 @@ export function Input({ className, error, ...props }: InputProps) {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-lg border bg-slate-50 dark:bg-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500",
+        "h-10 w-full rounded-md border bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500",
         error
           ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500",
+          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
         className
       )}
       {...props}
@@ -48,10 +48,10 @@ export function Textarea({ className, error, ...props }: TextareaProps) {
   return (
     <textarea
       className={cn(
-        "w-full rounded-lg border bg-slate-50 dark:bg-slate-700 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none",
+        "w-full rounded-md border bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none",
         error
           ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500",
+          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
         className
       )}
       rows={3}
@@ -68,10 +68,10 @@ export function Select({ className, error, children, ...props }: SelectProps) {
   return (
     <select
       className={cn(
-        "h-10 w-full rounded-lg border bg-slate-50 dark:bg-slate-700 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors",
+        "h-10 w-full rounded-md border bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors cursor-pointer",
         error
           ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500",
+          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
         className
       )}
       {...props}
@@ -91,10 +91,10 @@ export function FormRow({ children, className }: { children: React.ReactNode; cl
 
 export function FormDivider({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 py-1">
-      <div className="flex-1 border-t border-slate-100 dark:border-slate-700" />
+    <div className="flex items-center gap-3 py-2">
+      <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
       {label && <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</span>}
-      <div className="flex-1 border-t border-slate-100 dark:border-slate-700" />
+      <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
     </div>
   );
 }

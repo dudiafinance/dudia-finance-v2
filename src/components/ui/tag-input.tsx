@@ -53,20 +53,20 @@ export function TagInput({
     <div ref={containerRef} className="relative">
       <div
         className={cn(
-          "flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 px-3 py-2 transition-colors focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500",
+          "flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 transition-colors focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500",
           className
         )}
       >
         {value.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400"
+            className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300"
           >
             #{tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="ml-0.5 text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300"
+              className="ml-0.5 text-blue-500 hover:text-blue-700 dark:hover:text-blue-200"
             >
               <X className="h-3 w-3" />
             </button>
@@ -79,7 +79,6 @@ export function TagInput({
           onKeyDown={onKey}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => {
-            // Delay to allow suggestion click to register
             setTimeout(() => {
               if (input) addTag(input);
               setShowSuggestions(false);
@@ -92,7 +91,7 @@ export function TagInput({
 
       {/* Suggestions dropdown */}
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
           <div className="p-1">
             {filteredSuggestions.map((s) => (
               <button
@@ -101,7 +100,7 @@ export function TagInput({
                 onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
                 className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <span className="text-emerald-500">#</span>
+                <span className="text-blue-500">#</span>
                 {s}
               </button>
             ))}

@@ -169,10 +169,10 @@ export default function GoalsPage() {
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Suas Metas</h1>
-            <p className="text-sm text-slate-500 mt-1">Transforme seus sonhos em realidade.</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Metas</h1>
+            <p className="text-sm text-slate-500 mt-1">Acompanhe seus objetivos financeiros.</p>
           </div>
-          <Button onClick={openCreate} className="rounded-lg font-semibold bg-emerald-500 hover:bg-emerald-600 text-white">
+          <Button onClick={openCreate} className="rounded-lg font-semibold bg-blue-600 hover:bg-blue-700">
             <Plus className="mr-2 h-4 w-4" />
             Nova Meta
           </Button>
@@ -181,10 +181,10 @@ export default function GoalsPage() {
 
       {/* Stats */}
       <div className="px-6 py-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 mb-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-6">
           <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
-            <p className="text-sm font-medium text-slate-500">Total Guardado</p>
-            <h3 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{fmt(stats.totalCurrent)}</h3>
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Guardado</p>
+            <h3 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{fmt(stats.totalCurrent)}</h3>
             <div className="mt-3 flex items-center gap-2">
               <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-700">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(stats.progress, 100)}%` }} />
@@ -193,222 +193,239 @@ export default function GoalsPage() {
             </div>
           </div>
           
-          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
-            <p className="text-sm font-medium text-slate-500">Metas Ativas</p>
-            <div className="mt-2 flex items-baseline gap-2">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Metas Ativas</p>
+            <div className="mt-1 flex items-baseline gap-2">
               <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats.active}</h3>
-              <span className="text-sm text-slate-400">objetivos</span>
+              <span className="text-sm text-slate-400">de {stats.total}</span>
             </div>
-            <p className="mt-4 text-xs text-slate-400">De um total de {stats.total} metas criadas</p>
+          </div>
+
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Valor Alvo</p>
+            <h3 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">{fmt(stats.totalTarget)}</h3>
+            <p className="text-xs text-slate-400 mt-1">Planejado total</p>
           </div>
         </div>
       </div>
 
-      {/* Grid de Metas */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {goals.map((g: any) => {
-          const current = Number(g.currentAmount);
-          const target = Number(g.targetAmount);
-          const monthly = Number(g.monthlyContribution || 0);
-          const progress = target > 0 ? (current / target) * 100 : 0;
-          const remaining = target - current;
-          const priority = priorityConfig[g.priority as keyof typeof priorityConfig] || priorityConfig.medium;
-          
-          // Lógica de Projeção
-          const monthsLeft = monthly > 0 && remaining > 0 ? Math.ceil(remaining / monthly) : null;
-          const estimatedDate = monthsLeft ? new Date(new Date().setMonth(new Date().getMonth() + monthsLeft)) : null;
+      {/* Goals List */}
+      {goals.length === 0 ? (
+        <div className="px-6">
+          <div className="flex flex-col items-center justify-center p-16 rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 text-center">
+            <div className="h-16 w-16 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center mb-4">
+              <Target className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Nenhuma meta criada</h3>
+            <p className="text-sm text-slate-500 mt-1">Defina objetivos para acompanhar seu progresso.</p>
+            <Button onClick={openCreate} className="mt-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Meta
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="px-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {goals.map((g: any) => {
+              const current = Number(g.currentAmount);
+              const target = Number(g.targetAmount);
+              const monthly = Number(g.monthlyContribution || 0);
+              const progress = target > 0 ? (current / target) * 100 : 0;
+              const remaining = target - current;
+              const priority = priorityConfig[g.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+              
+              const monthsLeft = monthly > 0 && remaining > 0 ? Math.ceil(remaining / monthly) : null;
+              const estimatedDate = monthsLeft ? new Date(new Date().setMonth(new Date().getMonth() + monthsLeft)) : null;
 
-          return (
-            <div key={g.id} className="group relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="mb-6 flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-900">
-                    <Target className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold text-slate-900">{g.name}</h4>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider", priority.bg, priority.color, priority.border)}>
-                        {priority.label}
-                      </span>
-                      {g.status === "completed" && (
-                        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase">
-                          <CheckCircle2 className="h-3 w-3" /> Concluída
-                        </span>
-                      )}
+              return (
+                <div key={g.id} className="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700">
+                        <Target className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-slate-900 dark:text-white">{g.name}</h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className={cn("inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider", priority.bg, priority.color)}>
+                            {priority.label}
+                          </span>
+                          {g.status === "completed" && (
+                            <span className="flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
+                              <CheckCircle2 className="h-3 w-3" /> Concluída
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button onClick={() => openEdit(g)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600">
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => setDeleteId(g.id)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  <button onClick={() => openEdit(g)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600">
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button onClick={() => setDeleteId(g.id)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="space-y-6">
-                <div>
-                  <div className="flex items-end justify-between mb-2">
-                    <span className="text-2xl font-black text-slate-900">{fmt(current)}</span>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Alvo: {fmt(target)}</span>
+                  <div className="space-y-3">
+                    <div className="flex items-end justify-between">
+                      <span className="text-xl font-bold text-slate-900 dark:text-white">{fmt(current)}</span>
+                      <span className="text-xs font-medium text-slate-500">de {fmt(target)}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                      <div 
+                        className={cn("h-full rounded-full transition-all", progress >= 100 ? "bg-emerald-500" : "bg-blue-500")} 
+                        style={{ width: `${Math.min(progress, 100)}%` }} 
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-slate-500">
+                        {progress.toFixed(1)}% completo
+                      </span>
+                      <span className={cn("text-xs font-medium", remaining > 0 ? "text-slate-500" : "text-emerald-600")}>
+                        {remaining > 0 ? `Faltam ${fmt(remaining)}` : "Objetivo atingido!"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div 
-                      className={cn("h-full rounded-full transition-all duration-1000", progress >= 100 ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)]" : "bg-slate-900")} 
-                      style={{ width: `${Math.min(progress, 100)}%` }} 
-                    />
+
+                  <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Mensal</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{monthly > 0 ? fmt(monthly) : "--"}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Previsão</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                        {estimatedDate ? estimatedDate.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }) : "--"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-2 flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                    <span>{progress.toFixed(1)}% Completo</span>
-                    <span>{remaining > 0 ? `Faltam ${fmt(remaining)}` : "Objetivo Atingido!"}</span>
-                  </div>
+
+                  {g.status === "active" && (
+                    <button 
+                      onClick={() => { setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: accounts[0]?.id || "" })); }}
+                      className="flex w-full items-center justify-center gap-2 rounded-md bg-emerald-500 hover:bg-emerald-600 py-2.5 text-sm font-semibold text-white transition-all mt-4"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      Depositar
+                    </button>
+                  )}
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-                <div className="grid grid-cols-2 gap-4 rounded-2xl bg-slate-50 p-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Poupando p/ mês</p>
-                    <p className="text-sm font-bold text-slate-900">{monthly > 0 ? fmt(monthly) : "--"}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Previsão</p>
-                    <p className="text-sm font-bold text-emerald-600">
-                      {estimatedDate ? estimatedDate.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }) : "Indefinida"}
-                    </p>
-                  </div>
-                </div>
-
-                {g.status === "active" && (
-                  <button 
-                    onClick={() => { setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: accounts[0]?.id || "" })); }}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-black active:scale-95 shadow-lg shadow-slate-200"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    Adicionar Depósito
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Modal Criar/Editar */}
+      {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Editar Meta" : "Nova Meta"} size="md">
-        <div className="space-y-6 pt-2">
-          <Field label="Como você chama esse objetivo?" required error={errors.name}>
-            <Input placeholder="Ex: Viagem para o Japão 🇯🇵" value={form.name} onChange={e => set("name", e.target.value)} />
+        <div className="space-y-4 pt-2">
+          <Field label="Nome da Meta" required error={errors.name}>
+            <Input placeholder="Ex: Viagem, Carro..." value={form.name} onChange={e => set("name", e.target.value)} className="rounded-md" />
           </Field>
 
-          <FormRow>
-            <Field label="Valor total do objetivo" required error={errors.targetAmount}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Valor Alvo" required error={errors.targetAmount}>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-                <Input type="number" step="0.01" className="pl-9" value={form.targetAmount} onChange={e => set("targetAmount", e.target.value)} />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
+                <Input type="number" step="0.01" className="pl-10 h-11 rounded-md" value={form.targetAmount} onChange={e => set("targetAmount", e.target.value)} />
               </div>
             </Field>
-            <Field label="Já tem quanto guardado?">
+            <Field label="Valor Atual">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-                <Input type="number" step="0.01" className="pl-9" value={form.currentAmount} onChange={e => set("currentAmount", e.target.value)} />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
+                <Input type="number" step="0.01" className="pl-10 h-11 rounded-md" value={form.currentAmount} onChange={e => set("currentAmount", e.target.value)} />
               </div>
             </Field>
-          </FormRow>
+          </div>
 
-          <FormRow>
-            <Field label="Investimento mensal planejado">
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Contribuição Mensal">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-                <Input type="number" step="0.01" className="pl-9" value={form.monthlyContribution} onChange={e => set("monthlyContribution", e.target.value)} />
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
+                <Input type="number" step="0.01" className="pl-10 h-11 rounded-md" value={form.monthlyContribution} onChange={e => set("monthlyContribution", e.target.value)} />
               </div>
             </Field>
             <Field label="Prioridade">
-              <Select value={form.priority} onChange={e => set("priority", e.target.value)}>
-                <option value="low">Baixa (Desejo)</option>
-                <option value="medium">Média (Planejamento)</option>
-                <option value="high">Alta (Urgência)</option>
+              <Select value={form.priority} onChange={e => set("priority", e.target.value)} className="rounded-md h-11">
+                <option value="low">Baixa</option>
+                <option value="medium">Média</option>
+                <option value="high">Alta</option>
               </Select>
             </Field>
-          </FormRow>
+          </div>
 
-          <FormRow>
-            <Field label="Data de início" required>
-              <Input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Data de Início" required>
+              <Input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} className="rounded-md h-11" />
             </Field>
             <Field label="Status">
-              <Select value={form.status} onChange={e => set("status", e.target.value)}>
+              <Select value={form.status} onChange={e => set("status", e.target.value)} className="rounded-md h-11">
                 <option value="active">Em andamento</option>
                 <option value="completed">Concluída</option>
-                <option value="cancelled">Pausada/Cancelada</option>
+                <option value="paused">Pausada</option>
               </Select>
             </Field>
-          </FormRow>
+          </div>
 
           <Field label="Observações">
-            <Textarea placeholder="Qualquer detalhe importante..." value={form.notes} onChange={e => set("notes", e.target.value)} />
+            <Textarea placeholder="Detalhes..." value={form.notes} onChange={e => set("notes", e.target.value)} className="rounded-md" />
           </Field>
 
-          <div className="flex gap-3 pt-4">
-            <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button className="flex-1 bg-slate-900 text-white" onClick={save}>Guardar Meta</Button>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="outline" className="flex-1 rounded-md" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button className="flex-1 rounded-md bg-blue-600 hover:bg-blue-700" onClick={save}>{editingId ? "Salvar" : "Criar"}</Button>
           </div>
         </div>
       </Modal>
 
-      {/* Modal de Depósito Integrado */}
-      <Modal open={!!depositModal} onClose={() => setDepositModal(null)} title="Adicionar Dinheiro" size="sm">
-        <div className="space-y-5 pt-4">
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-start gap-3">
-            <Info className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-emerald-800">
-              O valor será deduzido do saldo da conta física selecionada e adicionado ao progresso da sua meta.
-            </p>
-          </div>
-
-          <Field label="Qual o valor?">
+      {/* Deposit Modal */}
+      <Modal open={!!depositModal} onClose={() => setDepositModal(null)} title="Depositar na Meta" size="sm">
+        <div className="space-y-4 pt-2">
+          <Field label="Valor">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">R$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
               <Input 
-                autoFocus type="number" step="0.01" className="pl-10 text-lg font-bold" 
+                autoFocus type="number" step="0.01" className="pl-10 h-11 rounded-md" 
                 value={depositForm.amount} onChange={e => setDepositForm(prev => ({ ...prev, amount: e.target.value }))} 
               />
             </div>
           </Field>
 
-          <Field label="De qual conta deseja retirar?">
-            <Select value={depositForm.accountId} onChange={e => setDepositForm(prev => ({ ...prev, accountId: e.target.value }))}>
+          <Field label="Conta de Origem">
+            <Select value={depositForm.accountId} onChange={e => setDepositForm(prev => ({ ...prev, accountId: e.target.value }))} className="rounded-md">
               {accounts.map((acc: any) => (
-                <option key={acc.id} value={acc.id}>{acc.name} (Saldo: {fmt(Number(acc.balance))})</option>
+                <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
               ))}
             </Select>
           </Field>
 
-          <div className="flex flex-col gap-2 pt-4">
-            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-6 text-lg font-bold shadow-lg shadow-emerald-100" onClick={handleDeposit}>
-              Confirmar Depósito
-            </Button>
-            <Button variant="ghost" className="text-slate-400" onClick={() => setDepositModal(null)}>Cancelar</Button>
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" className="flex-1 rounded-md" onClick={() => setDepositModal(null)}>Cancelar</Button>
+            <Button className="flex-1 rounded-md bg-emerald-500 hover:bg-emerald-600" onClick={handleDeposit}>Confirmar</Button>
           </div>
         </div>
       </Modal>
 
-      {/* Modal Deletar */}
+      {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Meta?" size="sm">
-        <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-start gap-3 mb-6">
-          <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
-          <p className="text-sm text-red-900 font-medium">Esta ação não pode ser desfeita. O histórico dessa meta será perdido.</p>
+        <div className="text-center py-4">
+          <div className="h-14 w-14 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+          </div>
+          <p className="text-sm text-slate-600 dark:text-slate-300">O histórico será preservado.</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => setDeleteId(null)}>Voltar</Button>
-          <Button variant="destructive" className="flex-1" onClick={async () => {
+        <div className="flex gap-3 mt-4">
+          <Button variant="outline" className="flex-1 rounded-md" onClick={() => setDeleteId(null)}>Cancelar</Button>
+          <Button variant="destructive" className="flex-1 rounded-md" onClick={async () => {
              try {
                await deleteGoal.mutateAsync(deleteId!);
                toast("Meta removida");
                setDeleteId(null);
              } catch { toast("Erro ao deletar", "error"); }
-          }}>Confirmar Exclusão</Button>
+          }}>Excluir</Button>
         </div>
       </Modal>
     </div>
