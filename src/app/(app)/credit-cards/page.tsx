@@ -38,7 +38,9 @@ import {
   usePayCardInvoice,
   useCategories,
   useTags,
-  useAccounts
+  useAccounts,
+  useInvoiceStatus,
+  useUpdateInvoiceStatus
 } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -60,23 +62,6 @@ const GRADIENT_PRESETS = [
   { label: "Emerald", value: "from-[#059669] to-[#065F46]", color: "#059669" },
   { label: "Rose", value: "from-[#DB2777] to-[#831843]", color: "#DB2777" },
 ];
-
-function getInvoiceStatus(card: any, viewMonth: number, viewYear: number) {
-  if (!card) return "FUTURA";
-  const now = new Date();
-  
-  // A fatura "ABERTA" é aquela que o sistema sugere para uma compra feita HOJE.
-  const suggested = getSuggestedInvoice(card, now.toISOString().split('T')[0]);
-  const currentOpenMonth = suggested.month;
-  const currentOpenYear = suggested.year;
-
-  const viewTotalMonths = Number(viewYear) * 12 + Number(viewMonth);
-  const currentOpenTotalMonths = Number(currentOpenYear) * 12 + Number(currentOpenMonth);
-
-  if (viewTotalMonths < currentOpenTotalMonths) return "FECHADA";
-  if (viewTotalMonths === currentOpenTotalMonths) return "ABERTA";
-  return "FUTURA";
-}
 
 function getSuggestedInvoice(card: any, dateStr: string) {
   const d = new Date(dateStr + 'T12:00:00'); 
@@ -140,7 +125,10 @@ export default function CreditCardsPage() {
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
 
-  // Stats
+  const { data: invoiceStatusData, isLoading: isLoadingStatus } = useInvoiceStatus(selectedCard?.id, currentMonth, currentYear);
+  const updateInvoiceStatus = useUpdateInvoiceStatus(selectedCard?.id);
+  const currentInvoiceStatus = invoiceStatusData?.status || "ABERTA";
+
   const invoiceTotal = transactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
 
   // Handlers
@@ -327,9 +315,10 @@ export default function CreditCardsPage() {
                   <button onClick={prevInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronLeft className="h-5 w-5 text-slate-600" /></button>
                   <button 
                     onClick={goToToday}
-                    className="px-4 text-[10px] font-black text-slate-900 border-x border-slate-200 hover:text-emerald-600 transition-colors uppercase tracking-widest"
+                    className="px-6 text-[10px] font-black text-slate-900 border-x border-slate-200 hover:text-emerald-600 transition-all uppercase tracking-widest flex flex-col items-center gap-0.5 group"
                   >
-                    Hoje
+                    <span className="text-[8px] opacity-40 group-hover:opacity-100 transition-opacity">{currentYear}</span>
+                    <span className="group-hover:scale-110 transition-transform">{MONTH_NAMES[currentMonth - 1]}</span>
                   </button>
                   <button onClick={nextInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronRight className="h-5 w-5 text-slate-600" /></button>
                 </div>
@@ -350,18 +339,25 @@ export default function CreditCardsPage() {
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Estado</p>
                     <div className="flex items-center gap-2">
                        <AnimatePresence mode="wait">
-                        <motion.div 
-                          key={getInvoiceStatus(selectedCard, currentMonth, currentYear)}
-                          initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
+                        <motion.button 
+                          key={currentInvoiceStatus}
+                          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            const statuses = ["ABERTA", "FECHADA", "PAGA"];
+                            const next = statuses[(statuses.indexOf(currentInvoiceStatus) + 1) % statuses.length];
+                            updateInvoiceStatus.mutate({ month: currentMonth, year: currentYear, status: next });
+                          }}
                           className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                            getInvoiceStatus(selectedCard, currentMonth, currentYear) === "FECHADA" ? "bg-rose-100 text-rose-600 shadow-sm border border-rose-200/50" :
-                            getInvoiceStatus(selectedCard, currentMonth, currentYear) === "ABERTA" ? "bg-emerald-100 text-emerald-600 border border-emerald-200/50" :
-                            "bg-blue-100 text-blue-600 border border-blue-200/50"
+                            "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-sm active:shadow-inner",
+                            currentInvoiceStatus === "PAGA" ? "bg-emerald-100 text-emerald-600 border border-emerald-200" :
+                            currentInvoiceStatus === "FECHADA" ? "bg-rose-100 text-rose-600 border border-rose-200" :
+                            "bg-blue-100 text-blue-600 border border-blue-200"
                           )}
                         >
-                          {getInvoiceStatus(selectedCard, currentMonth, currentYear)}
-                        </motion.div>
+                          {currentInvoiceStatus}
+                        </motion.button>
                        </AnimatePresence>
                     </div>
                   </div>

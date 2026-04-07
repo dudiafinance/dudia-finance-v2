@@ -319,3 +319,22 @@ export function usePayCardInvoice() {
     },
   });
 }
+
+export function useInvoiceStatus(cardId: string, month: number, year: number) {
+  return useQuery({
+    queryKey: ["invoice-status", cardId, month, year],
+    queryFn: () => apiFetch<any>(`/api/credit-cards/${cardId}/invoices?month=${month}&year=${year}`),
+    enabled: !!cardId && !!month && !!year,
+  });
+}
+
+export function useUpdateInvoiceStatus(cardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch(`/api/credit-cards/${cardId}/invoices`, { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ["invoice-status", cardId, variables.month, variables.year] });
+    },
+  });
+}
+

@@ -267,7 +267,21 @@ export const creditCards = pgTable('credit_cards', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
-// Lançamentos de Cartão
+// Faturas de Cartão (Persistência de Status Manual)
+export const creditCardInvoices = pgTable('credit_card_invoices', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  cardId: uuid('card_id').references(() => creditCards.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  month: integer('month').notNull(),
+  year: integer('year').notNull(),
+  status: varchar('status', { length: 20 }).notNull().default('ABERTA'), // 'ABERTA', 'FECHADA', 'PAGA'
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('credit_card_invoices_card_idx').on(table.cardId, table.month, table.year),
+]);
+
+// Lançamentos de Cartão e outras tabelas...
 export const cardTransactions = pgTable('card_transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   cardId: uuid('card_id').references(() => creditCards.id).notNull(),
@@ -334,6 +348,12 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 export const creditCardsRelations = relations(creditCards, ({ one, many }) => ({
   user: one(users, { fields: [creditCards.userId], references: [users.id] }),
   transactions: many(cardTransactions),
+  invoices: many(creditCardInvoices),
+}));
+
+export const creditCardInvoicesRelations = relations(creditCardInvoices, ({ one }) => ({
+  card: one(creditCards, { fields: [creditCardInvoices.cardId], references: [creditCards.id] }),
+  user: one(users, { fields: [creditCardInvoices.userId], references: [users.id] }),
 }));
 
 export const cardTransactionsRelations = relations(cardTransactions, ({ one }) => ({
@@ -345,4 +365,5 @@ export const cardTransactionsRelations = relations(cardTransactions, ({ one }) =
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }));
+
 
