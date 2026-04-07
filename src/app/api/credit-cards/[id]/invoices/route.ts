@@ -6,11 +6,12 @@ import { getUserId } from "@/lib/auth-utils";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { id } = await params;
   const { searchParams } = new URL(req.url);
   const month = parseInt(searchParams.get("month") || "");
   const year = parseInt(searchParams.get("year") || "");
@@ -25,7 +26,7 @@ export async function GET(
       .from(creditCardInvoices)
       .where(
         and(
-          eq(creditCardInvoices.cardId, params.id),
+          eq(creditCardInvoices.cardId, id),
           eq(creditCardInvoices.userId, userId),
           eq(creditCardInvoices.month, month),
           eq(creditCardInvoices.year, year)
@@ -42,12 +43,13 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
+    const { id } = await params;
     const { month, year, status } = await req.json();
 
     if (isNaN(month) || isNaN(year) || !status) {
@@ -60,7 +62,7 @@ export async function PATCH(
       .from(creditCardInvoices)
       .where(
         and(
-          eq(creditCardInvoices.cardId, params.id),
+          eq(creditCardInvoices.cardId, id),
           eq(creditCardInvoices.userId, userId),
           eq(creditCardInvoices.month, month),
           eq(creditCardInvoices.year, year)
@@ -79,7 +81,7 @@ export async function PATCH(
       const [inserted] = await db
         .insert(creditCardInvoices)
         .values({
-          cardId: params.id,
+          cardId: id,
           userId,
           month,
           year,
@@ -93,3 +95,4 @@ export async function PATCH(
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
