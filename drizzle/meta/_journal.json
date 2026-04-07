@@ -57,6 +57,13 @@
       "when": 1775572075368,
       "tag": "0007_luxuriant_miss_america",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775573032374,
+      "tag": "0008_lively_mole_man",
+      "breakpoints": true
     }
   ]
 }

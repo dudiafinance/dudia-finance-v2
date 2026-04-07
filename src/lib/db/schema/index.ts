@@ -212,6 +212,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   recurringTransactions: many(recurringTransactions),
   sessions: many(sessions),
   authAccounts: many(authAccounts),
+  notifications: many(notifications),
 }));
 
 export const accountsRelations = relations(accounts, ({ one, many }) => ({
@@ -286,10 +287,28 @@ export const cardTransactions = pgTable('card_transactions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
-  index('card_transactions_user_id_idx').on(table.userId),
-  index('card_transactions_card_id_idx').on(table.cardId),
   index('card_transactions_invoice_idx').on(table.invoiceMonth, table.invoiceYear),
 ]);
+
+// Notificações
+export const notifications = pgTable('notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  title: varchar('title', { length: 255 }).notNull(),
+  message: text('message').notNull(),
+  type: varchar('type', { length: 20 }).default('info'), // 'info', 'success', 'warning', 'error'
+  isRead: boolean('is_read').default(false),
+  link: varchar('link', { length: 255 }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('notifications_user_id_idx').on(table.userId),
+  index('notifications_is_read_idx').on(table.isRead),
+]);
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
 
 export const creditCardsRelations = relations(creditCards, ({ one, many }) => ({
   user: one(users, { fields: [creditCards.userId], references: [users.id] }),

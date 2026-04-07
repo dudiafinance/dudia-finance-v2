@@ -171,3 +171,21 @@ export function useDashboard(month?: number, year?: number) {
     staleTime: ONE_MINUTE,
   });
 }
+
+// Notifications
+export function useNotifications() {
+  return useQuery({ 
+    queryKey: ["notifications"], 
+    queryFn: () => apiFetch<any[]>("/api/notifications"), 
+    staleTime: ONE_MINUTE,
+    refetchInterval: ONE_MINUTE, // Atualiza notificações a cada minuto
+  });
+}
+export function useUpdateNotifications() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { id?: string; markAllAsRead?: boolean }) => 
+      apiFetch("/api/notifications", { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+}
