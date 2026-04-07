@@ -23,9 +23,9 @@ export default function AppLayout({
 
   return (
     <MobileNavProvider>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 antialiased selection:bg-blue-100 selection:text-blue-900">
         <Sidebar />
-        <div className="lg:pl-64 pb-20 lg:pb-0">
+        <div className="relative z-0 lg:pl-64 pb-20 lg:pb-0 min-h-screen flex flex-col">
           <Header />
           <main className="p-4 lg:p-6">{children}</main>
         </div>
