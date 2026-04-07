@@ -1,17 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { User, Bell, Shield, Palette, Globe, Key, Save } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const { theme, setTheme } = useTheme();
-  const userName = session?.user?.name ?? "";
-  const userEmail = session?.user?.email ?? "";
   const [activeTab, setActiveTab] = useState("profile");
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    avatar: "",
+  });
+
+  // Update formData when session is available
+  useEffect(() => {
+    if (session?.user) {
+      setFormData({
+        name: session.user.name ?? "",
+        email: session.user.email ?? "",
+        avatar: session.user.image ?? "",
+      });
+    }
+  }, [session]);
 
   const tabs = [
     { id: "profile", label: "Perfil", icon: User },
@@ -55,10 +72,53 @@ export default function SettingsPage() {
               
               <div className="mt-6 space-y-4">
                 <div className="flex items-center gap-6">
-                  <div className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl font-bold">
-                    {userName.charAt(0).toUpperCase()}
+                  <div className="relative group">
+                    <div className="h-24 w-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-3xl font-bold border-4 border-white shadow-sm overflow-hidden">
+                      {formData.avatar ? (
+                        <img 
+                          src={formData.avatar} 
+                          alt={formData.name} 
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        formData.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 p-1.5 bg-emerald-600 text-white rounded-full border-2 border-white shadow-sm hover:bg-emerald-700 transition-colors"
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFormData(prev => ({ ...prev, avatar: reader.result as string }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
                   </div>
-                  <Button variant="outline">Alterar Foto</Button>
+                  <div className="space-y-1">
+                    <h3 className="font-medium text-slate-900">Foto de Perfil</h3>
+                    <p className="text-xs text-slate-500">JPG, PNG ou GIF. Máximo de 2MB.</p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-2"
+                    >
+                      Alterar Foto
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -66,23 +126,54 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-slate-700">Nome</label>
                     <input
                       type="text"
-                      defaultValue={userName}
-                      className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700">Email</label>
                     <input
                       type="email"
-                      defaultValue={userEmail}
-                      className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                     />
                   </div>
                 </div>
 
-                <Button className="bg-emerald-600 hover:bg-emerald-700">
-                  <Save className="mr-2 h-4 w-4" />
-                  Salvar Alterações
+                <Button 
+                  className="bg-emerald-600 hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-70"
+                  disabled={isSaving}
+                  onClick={async () => {
+                    setIsSaving(true);
+                    try {
+                      const res = await fetch("/api/user/profile", {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(formData),
+                      });
+                      
+                      if (res.ok) {
+                        await update(); // Refresh session
+                        alert("Perfil atualizado com sucesso!");
+                      } else {
+                        const data = await res.json();
+                        alert(data.error || "Erro ao salvar perfil");
+                      }
+                    } catch (err) {
+                      alert("Erro de conexão");
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                >
+                  {isSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {isSaving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </div>
             </div>
