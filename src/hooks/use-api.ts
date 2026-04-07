@@ -109,25 +109,37 @@ export function useDeleteTransaction() {
 export function useBudgets() {
   return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<any[]>("/api/budgets"), staleTime: FIVE_MINUTES });
 }
+export function useBudgetStats() {
+  return useQuery({ queryKey: ["budget-stats"], queryFn: () => apiFetch<any[]>("/api/budgets/stats") });
+}
 export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: any) => apiFetch("/api/budgets", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budgets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
   });
 }
 export function useUpdateBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }: any) => apiFetch(`/api/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budgets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
   });
 }
 export function useDeleteBudget() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => apiFetch(`/api/budgets/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["budgets"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["budgets"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
   });
 }
 

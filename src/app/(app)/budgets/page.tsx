@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Edit, Trash2, AlertTriangle, CheckCircle2, TrendingUp, Bell, BellOff } from "lucide-react";
-import { useBudgets, useCategories, useTransactions, useCreateBudget, useUpdateBudget, useDeleteBudget } from "@/hooks/use-api";
+import { useState, useMemo } from "react";
+import { 
+  Plus, Edit, Trash2, AlertTriangle, CheckCircle2, 
+  TrendingUp, Bell, BellOff, Calendar, ArrowUpRight,
+  Filter, Info, ShieldCheck, Zap
+} from "lucide-react";
+import { 
+  useBudgets, useCategories, useBudgetStats, 
+  useCreateBudget, useUpdateBudget, useDeleteBudget 
+} from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
@@ -36,9 +43,8 @@ const emptyForm = (): FormData => ({
 
 export default function BudgetsPage() {
   const { toast } = useToast();
-  const { data: budgets = [], isLoading } = useBudgets();
   const { data: categories = [] } = useCategories();
-  const { data: transactions = [] } = useTransactions();
+  const { data: budgetStats = [], isLoading } = useBudgetStats();
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
@@ -53,20 +59,6 @@ export default function BudgetsPage() {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
-
-  const getSpent = (categoryId: string | undefined) =>
-    transactions
-      .filter((t: any) =>
-        t.type === "expense" &&
-        t.categoryId === categoryId &&
-        t.date >= startOfMonth &&
-        t.date <= endOfMonth
-      )
-      .reduce((s: number, t: any) => s + Number(t.amount), 0);
 
   const openCreate = () => {
     setEditingId(null);
@@ -112,13 +104,9 @@ export default function BudgetsPage() {
       alertThreshold: Number(form.alertThreshold),
     };
     try {
-      if (editingId) {
-        await updateBudget.mutateAsync({ id: editingId, ...formPayload });
-        toast("Orçamento atualizado!");
-      } else {
-        await createBudget.mutateAsync(formPayload);
-        toast("Orçamento criado!");
-      }
+      if (editingId) await updateBudget.mutateAsync({ id: editingId, ...formPayload });
+      else await createBudget.mutateAsync(formPayload);
+      toast(editingId ? "Orçamento atualizado!" : "Orçamento criado!");
       setModalOpen(false);
     } catch (e: any) {
       toast(e.message ?? "Erro ao salvar", "error");
@@ -130,165 +118,203 @@ export default function BudgetsPage() {
     try {
       await deleteBudget.mutateAsync(deleteId);
       toast("Orçamento excluído.", "warning");
+      setDeleteId(null);
     } catch {
       toast("Erro ao excluir", "error");
     }
-    setDeleteId(null);
   };
 
-  const totalBudget = budgets.reduce((s: number, b: any) => s + Number(b.amount), 0);
-  const totalSpent = budgets.reduce((s: number, b: any) => s + getSpent(b.categoryId), 0);
-  const overBudget = budgets.filter((b: any) => getSpent(b.categoryId) > Number(b.amount)).length;
+  const stats = useMemo(() => {
+    const totalBudgeted = budgetStats.reduce((s: number, b: any) => s + Number(b.amount), 0);
+    const totalSpent = budgetStats.reduce((s: number, b: any) => s + Number(b.spent), 0);
+    const overBudgetCount = budgetStats.filter((b: any) => Number(b.spent) > Number(b.amount)).length;
+    return {
+      totalBudgeted,
+      totalSpent,
+      remaining: Math.max(totalBudgeted - totalSpent, 0),
+      overBudgetCount,
+      usagePercent: totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0
+    };
+  }, [budgetStats]);
 
-  const periodLabel = (p: string) =>
-    ({ weekly: "Semanal", monthly: "Mensal", yearly: "Anual" }[p] ?? p);
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200" />
-          ))}
-        </div>
-        <div className="h-20 animate-pulse rounded-xl bg-slate-200" />
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-36 animate-pulse rounded-xl bg-slate-200" />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="h-96 w-full animate-pulse bg-slate-50/50 rounded-3xl border border-slate-100" />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 pb-10">
+      {/* Header Premium */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Orçamentos</h1>
-          <p className="text-sm text-slate-500">{budgets.length} orçamentos ativos</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Orçamentos</h1>
+          <p className="text-slate-500 mt-1">Controle seus gastos com precisão absoluta.</p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-200">
           <Plus className="mr-2 h-4 w-4" />
-          Novo Orçamento
+          Novo Limite
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[
-          { label: "Total Orçado", value: fmt(totalBudget), sub: "planejado", icon: TrendingUp, color: "blue" },
-          { label: "Total Gasto", value: fmt(totalSpent), sub: `${((totalSpent / totalBudget) * 100 || 0).toFixed(1)}% do orçamento`, icon: TrendingUp, color: totalSpent > totalBudget ? "red" : "emerald" },
-          { label: "Acima do Limite", value: String(overBudget), sub: overBudget > 0 ? "categorias estouradas" : "tudo ok!", icon: AlertTriangle, color: overBudget > 0 ? "red" : "emerald" },
-        ].map(({ label, value, sub, color }) => (
-          <div key={label} className="rounded-xl bg-white p-5 shadow-sm border border-slate-100">
-            <p className="text-sm text-slate-500">{label}</p>
-            <p className={cn("text-2xl font-bold mt-1",
-              color === "blue" ? "text-slate-900" : color === "emerald" ? "text-emerald-600" : "text-red-600"
-            )}>{value}</p>
-            <p className="text-xs text-slate-400 mt-1">{sub}</p>
+      {/* Main Stats Card - Glassmorphism */}
+      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 text-white shadow-2xl">
+        <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-400">Total Planejado (Mês)</p>
+            <h3 className="text-4xl font-black">{fmt(stats.totalBudgeted)}</h3>
+            <div className="flex items-center gap-2 text-xs text-emerald-400">
+              <ShieldCheck className="h-3 w-3" />
+              <span>{budgetStats.length} categorias monitoradas</span>
+            </div>
           </div>
-        ))}
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-400">Progresso Geral</p>
+              <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded-lg">
+                {stats.usagePercent.toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-3 w-full rounded-full bg-white/10 overflow-hidden">
+              <div 
+                className={cn(
+                  "h-full rounded-full transition-all duration-1000",
+                  stats.usagePercent > 100 ? "bg-red-500" : stats.usagePercent > 80 ? "bg-amber-500" : "bg-emerald-500"
+                )}
+                style={{ width: `${Math.min(stats.usagePercent, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-slate-400">
+               Gasto atual: <span className="text-white font-bold">{fmt(stats.totalSpent)}</span>
+            </p>
+          </div>
+
+          <div className="flex flex-col justify-center rounded-3xl bg-white/5 p-6 border border-white/10 backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-xl",
+                stats.overBudgetCount > 0 ? "bg-red-500/20 text-red-400" : "bg-emerald-500/20 text-emerald-400"
+              )}>
+                <Zap className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Status</p>
+                <p className="text-sm font-bold">
+                  {stats.overBudgetCount > 0 
+                    ? `${stats.overBudgetCount} categorias estouradas` 
+                    : "Dentro do planejado"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Decorative elements */}
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+        <div className="absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
       </div>
 
-      {/* Global progress */}
-      <div className="rounded-xl bg-white p-5 shadow-sm border border-slate-100">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium text-slate-700">Progresso Geral</p>
-          <p className="text-sm font-bold text-slate-900">
-            {fmt(totalSpent)} / {fmt(totalBudget)}
-          </p>
-        </div>
-        <div className="h-3 w-full rounded-full bg-slate-100">
-          <div
-            className={cn("h-3 rounded-full transition-all", totalSpent > totalBudget ? "bg-red-500" : totalSpent / totalBudget > 0.8 ? "bg-amber-500" : "bg-emerald-500")}
-            style={{ width: `${Math.min((totalSpent / totalBudget) * 100, 100)}%` }}
-          />
-        </div>
-        <p className="text-xs text-slate-400 mt-2">{((totalSpent / totalBudget) * 100 || 0).toFixed(1)}% utilizado</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {budgets.map((b: any) => {
+      {/* Grid de Orçamentos */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {budgetStats.map((b: any) => {
           const amount = Number(b.amount);
-          const alertThreshold = Number(b.alertThreshold);
-          const spent = getSpent(b.categoryId);
+          const spent = Number(b.spent);
           const pct = Math.min((spent / amount) * 100, 100);
           const isOver = spent > amount;
-          const isAlert = !isOver && pct >= alertThreshold;
+          const isWarning = !isOver && pct >= Number(b.alertThreshold);
           const cat = categories.find((c: any) => c.id === b.categoryId);
+          const remaining = Math.max(amount - spent, 0);
 
           return (
-            <div key={b.id} className={cn("group rounded-xl bg-white p-5 shadow-sm border transition-all hover:shadow-md",
-              isOver ? "border-red-200" : isAlert ? "border-amber-200" : "border-slate-100"
-            )}>
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  {cat && (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg"
-                      style={{ backgroundColor: `${cat.color}18` }}>
-                      <span className="text-base font-bold" style={{ color: cat.color }}>
-                        {cat.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
+            <div key={b.id} className="group relative overflow-hidden rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1">
+              <div className="mb-6 flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl text-slate-900"
+                    style={{ backgroundColor: cat ? `${cat.color}15` : '#f8fafc' }}
+                  >
+                    {cat ? (
+                      <span className="text-xl font-bold" style={{ color: cat.color }}>{cat.name.charAt(0)}</span>
+                    ) : (
+                      <Filter className="h-6 w-6 text-slate-400" />
+                    )}
+                  </div>
                   <div>
-                    <p className="font-semibold text-slate-800">{b.name}</p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-slate-400">{periodLabel(b.period)}</span>
-                      {b.alertsEnabled ? (
-                        <Bell className="h-3 w-3 text-slate-400" />
-                      ) : (
-                        <BellOff className="h-3 w-3 text-slate-300" />
+                    <h4 className="text-lg font-bold text-slate-900">{b.name}</h4>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
+                        {b.period === 'monthly' ? 'Mensal' : b.period === 'weekly' ? 'Semanal' : 'Anual'}
+                      </span>
+                      {b.alertsEnabled && (
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-blue-500 uppercase">
+                          <Bell className="h-3 w-3" /> {b.alertThreshold}%
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEdit(b)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600">
-                    <Edit className="h-3.5 w-3.5" />
+                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button onClick={() => openEdit(b)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600">
+                    <Edit className="h-4 w-4" />
                   </button>
-                  <button onClick={() => setDeleteId(b.id)}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-600">
-                    <Trash2 className="h-3.5 w-3.5" />
+                  <button onClick={() => setDeleteId(b.id)} className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-red-50 text-slate-400 hover:text-red-500">
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className={cn("font-semibold", isOver ? "text-red-600" : "text-slate-800")}>
-                    {fmt(spent)}
-                  </span>
-                  <span className="text-slate-400">de {fmt(amount)}</span>
+              <div className="space-y-6">
+                <div>
+                  <div className="flex items-end justify-between mb-2">
+                    <span className={cn("text-2xl font-black", isOver ? "text-red-600" : "text-slate-900")}>
+                      {fmt(spent)}
+                    </span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-tight">Limite: {fmt(amount)}</span>
+                  </div>
+                  <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div 
+                      className={cn(
+                        "h-full rounded-full transition-all duration-1000",
+                        isOver ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-emerald-500"
+                      )} 
+                      style={{ width: `${pct}%` }} 
+                    />
+                  </div>
+                  <div className="mt-3 flex justify-between">
+                    <div className="flex items-center gap-1.5">
+                      {isOver ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-red-600 uppercase bg-red-50 px-2 py-1 rounded-lg">
+                          <AlertTriangle className="h-3 w-3" /> Estourado
+                        </span>
+                      ) : isWarning ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-600 uppercase bg-amber-50 px-2 py-1 rounded-lg">
+                          <AlertTriangle className="h-3 w-3" /> Alerta
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-1 rounded-lg">
+                          <CheckCircle2 className="h-3 w-3" /> Seguro
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      {isOver ? `Excedido em ${fmt(spent - amount)}` : `${fmt(remaining)} disponíveis`}
+                    </span>
+                  </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-slate-100">
-                  <div
-                    className={cn("h-2 rounded-full transition-all",
-                      isOver ? "bg-red-500" : isAlert ? "bg-amber-500" : "bg-emerald-500"
-                    )}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-400">{pct.toFixed(1)}% usado</span>
-                  {isOver ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      Estourado em {fmt(spent - amount)}
-                    </span>
-                  ) : isAlert ? (
-                    <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                      <AlertTriangle className="h-3 w-3" />
-                      Atenção: {alertThreshold}% atingido
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
-                      <CheckCircle2 className="h-3 w-3" />
-                      {fmt(amount - spent)} restante
-                    </span>
-                  )}
+
+                <div className="flex items-center justify-between rounded-2xl bg-slate-50 p-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-slate-400" />
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">Período Atual</p>
+                      <p className="text-[11px] font-bold text-slate-600">
+                        {new Date(b.periodDates.start).toLocaleDateString()} — {new Date(b.periodDates.end).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">Uso</p>
+                    <p className={cn("text-xs font-black", isOver ? "text-red-500" : "text-slate-900")}>
+                      {pct.toFixed(1)}%
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -296,27 +322,24 @@ export default function BudgetsPage() {
         })}
       </div>
 
-      {/* Modal */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-        title={editingId ? "Editar Orçamento" : "Novo Orçamento"}
-        description="Defina um limite de gastos por categoria" size="md">
-        <div className="space-y-4">
-          <Field label="Nome" required error={errors.name}>
-            <Input placeholder="Ex: Alimentação Mensal" value={form.name}
-              onChange={(e) => set("name", e.target.value)} error={!!errors.name} />
+      {/* Modal Criar/Editar */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Editar Limite" : "Novo Orçamento"} size="md">
+        <div className="space-y-6 pt-2">
+          <Field label="Nome do Orçamento" required error={errors.name}>
+            <Input placeholder="Ex: Mercado & Alimentação" value={form.name} onChange={e => set("name", e.target.value)} />
           </Field>
 
           <FormRow>
             <Field label="Categoria">
-              <Select value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)}>
-                <option value="">Sem categoria</option>
-                {categories.filter((c: any) => c.type === "expense").map((c: any) => (
+              <Select value={form.categoryId} onChange={e => set("categoryId", e.target.value)}>
+                <option value="">Todas as Categorias</option>
+                {categories.filter((c: any) => c.type === 'expense').map((c: any) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </Select>
             </Field>
-            <Field label="Período">
-              <Select value={form.period} onChange={(e) => set("period", e.target.value)}>
+            <Field label="Recorrência">
+              <Select value={form.period} onChange={e => set("period", e.target.value)}>
                 <option value="weekly">Semanal</option>
                 <option value="monthly">Mensal</option>
                 <option value="yearly">Anual</option>
@@ -324,57 +347,72 @@ export default function BudgetsPage() {
             </Field>
           </FormRow>
 
-          <Field label="Valor Limite" required error={errors.amount}>
+          <Field label="Valor Máximo" required error={errors.amount}>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">R$</span>
-              <Input type="number" step="0.01" min="0" placeholder="0,00"
-                value={form.amount} onChange={(e) => set("amount", e.target.value)}
-                error={!!errors.amount} className="pl-9" />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-bold">R$</span>
+              <Input type="number" step="0.01" className="pl-10 text-lg font-bold" value={form.amount} onChange={e => set("amount", e.target.value)} />
             </div>
           </Field>
 
           <FormRow>
-            <Field label="Data início">
-              <Input type="date" value={form.startDate} onChange={(e) => set("startDate", e.target.value)} />
+            <Field label="Data de Início">
+              <Input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} />
             </Field>
-            <Field label="Data fim (opcional)">
-              <Input type="date" value={form.endDate} onChange={(e) => set("endDate", e.target.value)} />
+            <Field label="Data de Fim (Opcional)">
+              <Input type="date" value={form.endDate} onChange={e => set("endDate", e.target.value)} />
             </Field>
           </FormRow>
 
-          <FormDivider label="Alertas" />
+          <FormDivider label="Configurações de Alerta" />
 
-          <label className="flex cursor-pointer items-center gap-2.5">
-            <input type="checkbox" checked={form.alertsEnabled} onChange={(e) => set("alertsEnabled", e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 accent-emerald-600" />
-            <span className="text-sm text-slate-700">Habilitar alertas</span>
-          </label>
-
-          {form.alertsEnabled && (
-            <Field label={`Alertar ao atingir ${form.alertThreshold}% do limite`}>
-              <div className="space-y-2">
-                <input type="range" min="50" max="100" step="5" value={form.alertThreshold}
-                  onChange={(e) => set("alertThreshold", e.target.value)}
-                  className="w-full accent-emerald-600" />
-                <div className="flex justify-between text-xs text-slate-400">
-                  <span>50%</span><span className="font-medium text-emerald-600">{form.alertThreshold}%</span><span>100%</span>
-                </div>
+          <div className="space-y-4 rounded-2xl bg-slate-50 p-6 border border-slate-100">
+            <label className="flex cursor-pointer items-center gap-3">
+              <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200 transition-colors">
+                <input 
+                  type="checkbox" className="peer sr-only" 
+                  checked={form.alertsEnabled} onChange={e => set("alertsEnabled", e.target.checked)} 
+                />
+                <div className="h-4 w-4 rounded-full bg-white transition-all peer-checked:translate-x-6 peer-checked:bg-emerald-500 ml-1" />
               </div>
-            </Field>
-          )}
+              <span className="text-sm font-bold text-slate-700">Notificar quando o limite estiver acabando</span>
+            </label>
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button onClick={save}>{editingId ? "Salvar Alterações" : "Criar Orçamento"}</Button>
+            {form.alertsEnabled && (
+              <Field label={`Alertar ao atingir ${form.alertThreshold}% do valor total`}>
+                <div className="space-y-4 pt-2">
+                  <input 
+                    type="range" min="50" max="100" step="5" 
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-slate-900" 
+                    value={form.alertThreshold} onChange={e => set("alertThreshold", e.target.value)} 
+                  />
+                  <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase">
+                    <span>50%</span>
+                    <span className="text-slate-900 bg-white px-2 py-1 rounded-md shadow-sm border border-slate-100">
+                      Impacto em {form.alertThreshold}%
+                    </span>
+                    <span>100%</span>
+                  </div>
+                </div>
+              </Field>
+            )}
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button className="flex-1 bg-slate-900 text-white" onClick={save}>Ativar Limite</Button>
           </div>
         </div>
       </Modal>
 
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Orçamento" size="sm">
-        <p className="text-sm text-slate-600">Tem certeza que deseja excluir este orçamento?</p>
-        <div className="mt-5 flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+      {/* Modal Deletar */}
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Orçamento?" size="sm">
+        <div className="p-4 bg-red-50 rounded-2xl border border-red-100 flex items-start gap-3 mb-6">
+          <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+          <p className="text-sm text-red-900 font-medium">Isso removerá apenas o acompanhamento. Suas transações permanecem intactas.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex-1" onClick={() => setDeleteId(null)}>Voltar</Button>
+          <Button variant="destructive" className="flex-1" onClick={confirmDelete}>Confirmar</Button>
         </div>
       </Modal>
     </div>
