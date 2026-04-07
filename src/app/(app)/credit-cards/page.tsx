@@ -16,12 +16,14 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
-  Wifi,
   Wallet,
   ArrowRightLeft,
   ArrowDownLeft,
   X,
-  Target
+  Target,
+  Lock,
+  Unlock,
+  Wifi
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
