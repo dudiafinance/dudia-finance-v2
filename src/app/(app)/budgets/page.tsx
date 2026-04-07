@@ -14,11 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+import { useSession } from "next-auth/react";
 
 type FormData = {
   name: string;
@@ -43,6 +41,10 @@ const emptyForm = (): FormData => ({
 });
 
 export default function BudgetsPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const { toast } = useToast();
   const { data: categories = [] } = useCategories();
   const { data: budgetStats = [], isLoading } = useBudgetStats();

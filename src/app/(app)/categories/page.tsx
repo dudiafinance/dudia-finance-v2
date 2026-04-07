@@ -23,8 +23,9 @@ import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
 import { TagInput } from "@/components/ui/tag-input";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSession } from "next-auth/react";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -84,6 +85,10 @@ const emptyForm = (): FormData => ({
 });
 
 export default function CategoriesPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const { toast } = useToast();
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
@@ -213,8 +218,6 @@ export default function CategoriesPage() {
 
   const incomeCount = categories.filter((c: any) => c.type === "income").length;
   const expenseCount = categories.filter((c: any) => c.type === "expense").length;
-
-  const fmt = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 
   if (isLoading) {
     return (

@@ -24,11 +24,9 @@ import {
   useInvoiceStatus,
   useUpdateInvoiceStatus
 } from "@/hooks/use-api";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+import { useSession } from "next-auth/react";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -57,6 +55,10 @@ function getSuggestedInvoice(card: any, dateStr: string) {
 }
 
 export default function CreditCardsPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth() + 1);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -474,6 +476,7 @@ export default function CreditCardsPage() {
         accounts={accounts}
         month={currentMonth}
         year={currentYear}
+        fmt={fmt}
       />
 
       {/* Edit Transaction Modal */}
@@ -724,7 +727,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   );
 }
 
-function PayInvoiceModal({ open, onClose, card, total, accounts, month, year }: any) {
+function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fmt }: any) {
   const [form, setForm] = useState({ accountId: "", amount: String(total), date: new Date().toISOString().split('T')[0] });
   const payInvoice = usePayCardInvoice();
 

@@ -20,11 +20,9 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+import { useSession } from "next-auth/react";
 
 const ACCOUNT_TYPES = [
   { value: "checking", label: "Conta Corrente", icon: Wallet, gradient: "from-blue-600 to-indigo-600" },
@@ -62,6 +60,10 @@ const emptyForm = (): FormData => ({
 });
 
 export default function AccountsPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const { toast } = useToast();
   const { data: accounts = [], isLoading } = useAccounts();
   const { data: categories = [] } = useCategories();

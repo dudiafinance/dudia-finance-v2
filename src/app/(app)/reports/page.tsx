@@ -4,13 +4,15 @@ import { useState } from "react";
 import { BarChart3, TrendingUp, TrendingDown, Download } from "lucide-react";
 import { useReports } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+import { useSession } from "next-auth/react";
 
 export default function ReportsPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
   const { data, isLoading } = useReports(period);
 

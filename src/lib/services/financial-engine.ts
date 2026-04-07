@@ -161,6 +161,21 @@ export class FinancialEngine {
     categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
+      const [fromAccount] = await tx
+        .select()
+        .from(accounts)
+        .where(and(eq(accounts.id, data.fromAccountId), eq(accounts.userId, data.userId)))
+        .limit(1);
+
+      if (!fromAccount) throw new Error("Conta de origem não encontrada");
+
+      const balance = Number(fromAccount.balance);
+      const amount = Number(data.amount);
+
+      if (balance < amount) {
+        throw new Error(`Saldo insuficiente. Disponível: ${balance.toFixed(2)}, Necessário: ${amount.toFixed(2)}`);
+      }
+
       const linkedId = crypto.randomUUID();
 
       // 1. Saída (Expense) na conta de origem
@@ -341,6 +356,34 @@ export class FinancialEngine {
     categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
+      const [account] = await tx
+        .select()
+        .from(accounts)
+        .where(and(eq(accounts.id, data.accountId), eq(accounts.userId, data.userId)))
+        .limit(1);
+
+      if (!account) throw new Error("Conta bancária não encontrada");
+
+      const [card] = await tx
+        .select()
+        .from(creditCards)
+        .where(and(eq(creditCards.id, data.cardId), eq(creditCards.userId, data.userId)))
+        .limit(1);
+
+      if (!card) throw new Error("Cartão de crédito não encontrado");
+
+      const paymentAmount = Number(data.amount);
+      const accountBalance = Number(account.balance);
+      const usedAmount = Number(card.usedAmount);
+
+      if (accountBalance < paymentAmount) {
+        throw new Error(`Saldo insuficiente na conta. Disponível: ${accountBalance.toFixed(2)}, Necessário: ${paymentAmount.toFixed(2)}`);
+      }
+
+      if (usedAmount < paymentAmount) {
+        throw new Error(`Valor do pagamento excede o limite utilizado. Limite usado: ${usedAmount.toFixed(2)}, Pagamento: ${paymentAmount.toFixed(2)}`);
+      }
+
       // 1. Criar transação de saída na conta bancária
       const [bankTx] = await tx.insert(transactions).values({
         userId: data.userId,

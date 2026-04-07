@@ -21,11 +21,9 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-
-const fmt = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+import { useSession } from "next-auth/react";
 
 const toDateInput = (d?: any) =>
   d ? new Date(d).toISOString().split("T")[0] : "";
@@ -92,6 +90,10 @@ function getRelativeGroupDate(dateStr: string) {
 }
 
 export default function TransactionsPage() {
+  const { data: session } = useSession();
+  const userCurrency = session?.user?.currency ?? "BRL";
+  const fmt = (v: number) => formatCurrency(v, userCurrency);
+
   const { toast } = useToast();
   const { data: transactions = [], isLoading: txLoading } = useTransactions();
   const { data: categories = [] } = useCategories();

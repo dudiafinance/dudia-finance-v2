@@ -46,12 +46,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: "/login",
   },
   callbacks: {
-    jwt({ token, user }) {
-      if (user?.id) token.id = user.id;
+    async jwt({ token, user }) {
+      if (user?.id) {
+        token.id = user.id;
+        const [dbUser] = await db
+          .select({ currency: users.currency })
+          .from(users)
+          .where(eq(users.id, user.id))
+          .limit(1);
+        token.currency = dbUser?.currency ?? "BRL";
+      }
       return token;
     },
     session({ session, token }) {
       if (token.id) session.user.id = token.id as string;
+      if (token.currency) session.user.currency = token.currency as string;
       return session;
     },
   },
