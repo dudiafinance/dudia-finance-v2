@@ -1,28 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
-import { db } from "@/lib/db";
-import { cardTransactions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
-import { recalculateUsedAmount } from "@/lib/credit-card-utils";
+import { FinancialEngine } from "@/lib/services/financial-engine";
 
-
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string; txId: string }> }
-) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string, txId: string }> }) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id: cardId, txId } = await params;
+  const { txId } = await params;
+  
+  try {
+    const { updateGroup, ...data } = await req.json();
+    const result = await FinancialEngine.updateCardTransaction(txId, userId, data, updateGroup);
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error("Error updating card transaction:", error);
+    return NextResponse.json({ error: error.message || "Erro ao atualizar" }, { status: 500 });
+  }
+}
 
-  const [row] = await db
-    .delete(cardTransactions)
-    .where(and(eq(cardTransactions.id, txId), eq(cardTransactions.userId, userId)))
-    .returning();
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string, txId: string }> }) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const { txId } = await params;
 
-  await recalculateUsedAmount(cardId);
-
-  return NextResponse.json({ success: true });
+  try {
+    await FinancialEngine.deleteCardTransaction(txId, userId);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting card transaction:", error);
+    return NextResponse.json({ error: error.message || "Erro ao excluir" }, { status: 500 });
+  }
 }

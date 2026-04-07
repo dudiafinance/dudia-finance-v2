@@ -223,3 +223,99 @@ export function useUpdateNotifications() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 }
+
+// Credit Cards
+export function useCreditCards() {
+  return useQuery({ 
+    queryKey: ["credit-cards"], 
+    queryFn: () => apiFetch<any[]>("/api/credit-cards"), 
+    staleTime: FIVE_MINUTES 
+  });
+}
+
+export function useCreateCreditCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch("/api/credit-cards", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
+  });
+}
+
+export function useUpdateCreditCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/credit-cards/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
+  });
+}
+
+export function useDeleteCreditCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/credit-cards/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
+  });
+}
+
+export function useCardTransactions(cardId: string, month?: number, year?: number) {
+  const params = new URLSearchParams();
+  if (month) params.set("month", String(month));
+  if (year) params.set("year", String(year));
+  const url = `/api/credit-cards/${cardId}/transactions${params.toString() ? '?' + params.toString() : ''}`;
+
+  return useQuery({
+    queryKey: ["card-transactions", cardId, month ?? null, year ?? null],
+    queryFn: () => apiFetch<any[]>(url),
+    staleTime: ONE_MINUTE,
+  });
+}
+
+export function useCreateCardTransaction(cardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch(`/api/credit-cards/${cardId}/transactions`, { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
+      qc.invalidateQueries({ queryKey: ["credit-cards"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
+  });
+}
+
+export function useUpdateCardTransaction(cardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
+      qc.invalidateQueries({ queryKey: ["credit-cards"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
+  });
+}
+
+export function useDeleteCardTransaction(cardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
+      qc.invalidateQueries({ queryKey: ["credit-cards"] });
+      qc.invalidateQueries({ queryKey: ["budget-stats"] });
+    },
+  });
+}
+
+export function usePayCardInvoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch("/api/credit-cards/pay-invoice", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["credit-cards"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["card-transactions"] });
+    },
+  });
+}

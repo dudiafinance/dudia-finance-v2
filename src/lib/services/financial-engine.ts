@@ -234,6 +234,140 @@ export class FinancialEngine {
   }
 
   /**
+   * Remove uma transação de cartão e devolve o limite utilizado
+   */
+  static async deleteCardTransaction(id: string, userId: string) {
+    return await db.transaction(async (tx) => {
+      const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
+      if (!oldTx) throw new Error("Lançamento não encontrado");
+
+      const [card] = await tx.select().from(creditCards).where(eq(creditCards.id, oldTx.cardId)).limit(1);
+
+      // Reverter limite se for da fatura atual
+      if (card && this.isTransactionInCurrentInvoice(card, oldTx.invoiceMonth, oldTx.invoiceYear)) {
+        await tx.update(creditCards)
+          .set({ usedAmount: sql`${creditCards.usedAmount} - ${oldTx.amount}` })
+          .where(eq(creditCards.id, oldTx.cardId));
+      }
+
+      await tx.delete(cardTransactions).where(eq(cardTransactions.id, id));
+      await this.logAudit(tx, userId, "card_transaction", id, "delete", oldTx, null);
+    });
+  }
+
+  /**
+   * Atualiza transação de cartão com suporte a edição em massa e deslocamento de faturas
+   */
+  static async updateCardTransaction(id: string, userId: string, data: any, updateGroup: boolean = false) {
+    return await db.transaction(async (tx) => {
+      const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
+      if (!oldTx) throw new Error("Lançamento não encontrado");
+
+      const [card] = await tx.select().from(creditCards).where(eq(creditCards.id, oldTx.cardId)).limit(1);
+
+      // 1. Reverter limite antigo
+      if (card && this.isTransactionInCurrentInvoice(card, oldTx.invoiceMonth, oldTx.invoiceYear)) {
+        await tx.update(creditCards)
+          .set({ usedAmount: sql`${creditCards.usedAmount} - ${oldTx.amount}` })
+          .where(eq(creditCards.id, oldTx.cardId));
+      }
+
+      // 2. Lógica de Atualização em Massa (Group) + Cascade Shift
+      if (updateGroup && oldTx.groupId) {
+        const monthDelta = (data.invoiceMonth && data.invoiceYear) 
+          ? (data.invoiceYear * 12 + data.invoiceMonth) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth)
+          : 0;
+
+        const allGroup = await tx.select().from(cardTransactions)
+          .where(and(eq(cardTransactions.groupId, oldTx.groupId), eq(cardTransactions.userId, userId)));
+
+        for (const item of allGroup) {
+          // Apenas parcelas iguais ou futuras em relação à editada
+          if (item.currentInstallment && oldTx.currentInstallment && item.currentInstallment >= oldTx.currentInstallment) {
+            let newM = item.invoiceMonth;
+            let newY = item.invoiceYear;
+
+            if (monthDelta !== 0) {
+              const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
+              newM = (totalMonths % 12) + 1;
+              newY = Math.floor(totalMonths / 12);
+            }
+
+            await tx.update(cardTransactions)
+              .set({
+                description: data.description ?? item.description,
+                categoryId: data.categoryId ?? item.categoryId,
+                amount: data.amount ?? item.amount,
+                invoiceMonth: newM,
+                invoiceYear: newY,
+                updatedAt: new Date(),
+              })
+              .where(eq(cardTransactions.id, item.id));
+          }
+        }
+      } else {
+        // Atualização Única
+        await tx.update(cardTransactions)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(cardTransactions.id, id));
+      }
+
+      // 3. Aplicar novo limite (após update)
+      const [newTx] = await tx.select().from(cardTransactions).where(eq(cardTransactions.id, id)).limit(1);
+      if (card && this.isTransactionInCurrentInvoice(card, newTx.invoiceMonth, newTx.invoiceYear)) {
+        await tx.update(creditCards)
+          .set({ usedAmount: sql`${creditCards.usedAmount} + ${newTx.amount}` })
+          .where(eq(creditCards.id, newTx.cardId));
+      }
+
+      await this.logAudit(tx, userId, "card_transaction", id, "update", oldTx, newTx);
+      return newTx;
+    });
+  }
+
+  /**
+   * Paga uma fatura de cartão usando saldo de uma conta bancária
+   */
+  static async payCardInvoice(data: {
+    userId: string,
+    cardId: string,
+    accountId: string,
+    amount: string,
+    description: string,
+    date: string,
+    categoryId?: string
+  }) {
+    return await db.transaction(async (tx) => {
+      // 1. Criar transação de saída na conta bancária
+      const [bankTx] = await tx.insert(transactions).values({
+        userId: data.userId,
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        amount: data.amount,
+        type: "expense",
+        subtype: "card_payment",
+        description: `Pagamento: ${data.description}`,
+        date: data.date,
+        isPaid: true
+      }).returning();
+
+      // 2. Deduzir saldo da conta
+      await tx.update(accounts)
+        .set({ balance: sql`${accounts.balance} - ${data.amount}`, updatedAt: new Date() })
+        .where(eq(accounts.id, data.accountId));
+
+      // 3. Reduzir limite utilizado do cartão (Abatimento)
+      await tx.update(creditCards)
+        .set({ usedAmount: sql`${creditCards.usedAmount} - ${data.amount}`, updatedAt: new Date() })
+        .where(eq(creditCards.id, data.cardId));
+
+      await this.logAudit(tx, data.userId, "credit_card", data.cardId, "update", null, { payment: data.amount });
+      
+      return bankTx;
+    });
+  }
+
+  /**
    * Realiza um depósito em uma meta vindo de uma conta bancária (Atômico)
    */
   static async depositToGoal(data: {
