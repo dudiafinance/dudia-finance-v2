@@ -129,13 +129,13 @@ export default function CreditCardsPage() {
             <p className="text-slate-400 font-medium">Gerencie suas faturas e limites.</p>
           </div>
 
-          <button
+          <Button
             onClick={() => { setEditingCard(null); setIsCardModalOpen(true); }}
-            className="h-11 px-6 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all flex items-center gap-3 font-semibold"
+            className="gap-3 font-bold"
           >
             <Plus className="h-5 w-5" />
-            <span className="font-semibold text-sm">Novo Cartão</span>
-          </button>
+            <span>Novo Cartão</span>
+          </Button>
         </div>
 
         {/* Stats */}
@@ -238,12 +238,14 @@ export default function CreditCardsPage() {
                             <p className="text-xs text-slate-500">{card.bank}</p>
                           </div>
                         </div>
-                        <button 
+                        <Button 
+                          variant="secondary"
+                          size="icon"
                           onClick={(e) => { e.stopPropagation(); setEditingCard(card); setIsCardModalOpen(true); }}
-                          className="h-8 w-8 rounded-md bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                          className="h-8 w-8 bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-none border-none"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                        </button>
+                        </Button>
                       </div>
                       
                       <div className="space-y-2">
@@ -280,42 +282,46 @@ export default function CreditCardsPage() {
                 {/* Invoice Header */}
                 <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 p-1 rounded-md">
-                      <button 
+                    <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                      <Button 
+                        variant="ghost"
+                        size="icon"
                         onClick={prevInvoice} 
-                        className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-slate-600 transition-all"
+                        className="h-9 w-9"
                       >
                         <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
+                        variant="ghost"
                         onClick={goToToday}
-                        className="px-4 h-9 rounded-md flex items-center gap-2"
+                        className="px-4 h-9 gap-2 font-bold text-slate-900 dark:text-white"
                       >
-                        <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                          {MONTH_NAMES[currentMonth-1]} {currentYear}
-                        </span>
+                        {MONTH_NAMES[currentMonth-1]} {currentYear}
                         {currentMonth === new Date().getMonth() + 1 && currentYear === new Date().getFullYear() && (
                           <div className="h-2 w-2 rounded-full bg-blue-500" />
                         )}
-                      </button>
-                      <button 
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        size="icon"
                         onClick={nextInvoice} 
-                        className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-white dark:hover:bg-slate-600 transition-all"
+                        className="h-9 w-9"
                       >
                         <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
-                      </button>
+                      </Button>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <Button 
+                        variant="secondary"
                         onClick={() => setIsPayModalOpen(true)}
-                        className="rounded-md font-semibold bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:bg-slate-800"
+                        className="font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:bg-slate-800"
                       >
                         Pagar Fatura
                       </Button>
                       <Button 
                         onClick={() => setIsLaunchModalOpen(true)}
-                        className="rounded-md font-semibold bg-blue-600 hover:bg-blue-700"
+                        className="font-bold shadow-lg"
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Lançar
@@ -350,22 +356,23 @@ export default function CreditCardsPage() {
 
                 {/* Status Button */}
                 <div className="flex justify-center">
-                  <button
+                  <Button
+                    variant={currentInvoiceStatus === "PAGA" ? "glass" : currentInvoiceStatus === "FECHADA" ? "default" : "secondary"}
                     onClick={() => {
                       const statuses = ["ABERTA", "FECHADA", "PAGA"];
                       const next = statuses[(statuses.indexOf(currentInvoiceStatus) + 1) % statuses.length];
                       updateInvoiceStatus.mutate({ month: currentMonth, year: currentYear, status: next });
                     }}
                     className={cn(
-                      "px-6 py-2 rounded-md font-semibold transition-all",
-                      currentInvoiceStatus === "PAGA" ? "bg-emerald-600 text-white hover:bg-emerald-700" :
+                      "px-8 py-6 font-bold text-base transition-all shadow-xl",
+                      currentInvoiceStatus === "PAGA" ? "bg-emerald-600/20 text-emerald-600 border-emerald-500/30 hover:bg-emerald-600/30" :
                       currentInvoiceStatus === "FECHADA" ? "bg-red-600 text-white hover:bg-red-700" :
-                      "bg-blue-600 text-white hover:bg-blue-700"
+                      "bg-blue-600/10 text-blue-600 border-blue-500/20 hover:bg-blue-600/20"
                     )}
                   >
-                    {currentInvoiceStatus === "PAGA" && <CheckCircle2 className="h-4 w-4 inline mr-2" />}
+                    {currentInvoiceStatus === "PAGA" && <CheckCircle2 className="h-5 w-5 mr-3" />}
                     Marcar como {currentInvoiceStatus === "ABERTA" ? "Fechada" : currentInvoiceStatus === "FECHADA" ? "Paga" : "Aberta"}
-                  </button>
+                  </Button>
                 </div>
 
                 {/* Transactions List */}
@@ -559,16 +566,18 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
             </Select>
           </Field>
           <Field label="Estilo">
-            <div className="flex gap-2">
+            <div className="flex gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
               {GRADIENT_PRESETS.map(preset => (
-                <button 
+                <Button 
                   key={preset.value}
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setForm(p => ({...p, gradient: preset.value, color: preset.color}))}
                   className={cn(
-                    "h-10 w-10 rounded-lg bg-gradient-to-br transition-all",
+                    "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all",
                     preset.value,
-                    form.gradient === preset.value ? "ring-2 ring-blue-500 ring-offset-2" : "opacity-40 hover:opacity-100"
+                    form.gradient === preset.value ? "ring-2 ring-blue-500 scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
                   )}
                 />
               ))}
@@ -576,9 +585,9 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
           </Field>
         </FormRow>
 
-        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 rounded-md font-medium">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-1 rounded-md font-semibold bg-blue-600 hover:bg-blue-700"
+        <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
+          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Cancelar</Button>
+          <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
             disabled={createCard.isPending || updateCard.isPending}>
             {createCard.isPending || updateCard.isPending ? "Salvando..." : "Salvar Cartão"}
           </Button>
@@ -627,17 +636,21 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
     <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
       <div className="space-y-5 pt-2">
         {/* Type Toggle */}
-        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
           {[
             { key: "purchase", label: "Compra", icon: TrendingDown },
             { key: "refund", label: "Estorno", icon: ArrowDownLeft },
           ].map(({ key, label }) => (
-            <button key={key} onClick={() => setForm(p => ({...p, type: key}))}
-              className={cn("flex-1 py-2.5 rounded-md text-xs font-semibold transition-all",
-                form.type === key ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-              )}>
+            <Button 
+              key={key} 
+              variant={form.type === key ? "secondary" : "ghost"}
+              onClick={() => setForm(p => ({...p, type: key}))}
+              className={cn("flex-1 transition-all rounded-lg font-bold",
+                form.type === key ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
               {label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -699,9 +712,9 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
           )}
         </FormRow>
 
-        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 rounded-md font-medium">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-1 rounded-md font-semibold bg-blue-600 hover:bg-blue-700"
+        <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
+          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Cancelar</Button>
+          <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
             disabled={!form.amount || !form.description || createTx.isPending}>
             {createTx.isPending ? "Lançando..." : "Criar Lançamento"}
           </Button>

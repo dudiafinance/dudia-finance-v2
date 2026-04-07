@@ -10,6 +10,7 @@ import {
 import { useDashboard } from "@/hooks/use-api";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -78,43 +79,44 @@ export default function DashboardPage() {
             </div>
             
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigateMonth(-1)}
-                className="h-9 w-9 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                className="text-slate-400 hover:text-white"
               >
                 <ChevronLeft className="h-5 w-5" />
-              </button>
+              </Button>
               
-              <button
+              <Button
+                variant={isCurrentMonth ? "default" : "secondary"}
                 onClick={goToCurrentMonth}
-                className={cn(
-                  "px-5 h-10 rounded-md text-sm font-semibold transition-all",
-                  isCurrentMonth
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                )}
+                className="px-6"
               >
                 {MONTH_NAMES[month - 1]} {year}
-              </button>
+              </Button>
 
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => navigateMonth(1)}
-                className="h-9 w-9 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                className="text-slate-400 hover:text-white"
               >
                 <ChevronRight className="h-5 w-5" />
-              </button>
+              </Button>
             </div>
           </div>
 
-          <button
+          <Button
+            variant="secondary"
             onClick={() => setShowBalances(!showBalances)}
-            className="group h-11 px-5 rounded-md bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 transition-all flex items-center gap-3 self-start md:self-auto"
+            className="gap-3 self-start md:self-auto bg-slate-800/50 border-slate-700 text-white hover:bg-slate-800"
           >
-            <div className="h-8 w-8 flex items-center justify-center rounded bg-slate-700 group-hover:bg-slate-600 transition-all">
+            <div className="h-8 w-8 flex items-center justify-center rounded bg-slate-700">
               {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </div>
-            <span className="font-medium text-sm">{showBalances ? "Ocultar" : "Mostrar"} Patrimônio</span>
-          </button>
+            <span>{showBalances ? "Ocultar" : "Mostrar"} Patrimônio</span>
+          </Button>
         </div>
 
         {/* Patrimônio Section */}
@@ -244,9 +246,13 @@ export default function DashboardPage() {
                   </div>
                 ))
               )}
-              <button className="w-full flex items-center justify-center gap-2 py-3 rounded-md bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-300">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="w-full gap-2 text-xs uppercase tracking-wider text-slate-500 font-bold"
+              >
                 <MoreHorizontal className="h-4 w-4" /> Ver mais
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -357,7 +363,13 @@ export default function DashboardPage() {
                         <Zap className="h-3.5 w-3.5" />
                         <span className="text-[10px] font-semibold uppercase tracking-wider">Em andamento</span>
                       </div>
-                      <button className="text-[10px] font-medium uppercase tracking-wider text-slate-400 hover:text-blue-500 transition-colors">Detalhes</button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-blue-500"
+                      >
+                        Detalhes
+                      </Button>
                     </div>
                   </div>
                 );

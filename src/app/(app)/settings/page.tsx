@@ -5,7 +5,9 @@ import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera } from "
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { Field, Input, Select } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -57,19 +59,26 @@ export default function SettingsPage() {
           <div className="lg:w-56 lg:shrink-0">
             <nav className="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:space-y-1 lg:overflow-x-visible lg:pb-0">
               {tabs.map((tab) => (
-                <button
+                <Button
                   key={tab.id}
+                  variant={activeTab === tab.id ? "default" : "ghost"}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:w-full",
+                    "flex shrink-0 items-center justify-start gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all lg:w-full shadow-none",
                     activeTab === tab.id
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                   )}
                 >
-                  <tab.icon className="h-4 w-4 lg:h-5 lg:w-5" />
+                  <tab.icon className={cn("h-4 w-4 lg:h-5 lg:w-5", activeTab === tab.id ? "text-white" : "text-slate-400")} />
                   <span className="whitespace-nowrap">{tab.label}</span>
-                </button>
+                  {activeTab === tab.id && (
+                    <motion.div 
+                      layoutId="activeTab" 
+                      className="absolute left-0 w-1 h-6 bg-white rounded-full lg:block hidden" 
+                    />
+                  )}
+                </Button>
               ))}
             </nav>
           </div>
@@ -121,39 +130,36 @@ export default function SettingsPage() {
                       <h3 className="font-medium text-slate-900 dark:text-white">Foto de Perfil</h3>
                       <p className="text-xs text-slate-500">JPG, PNG ou GIF. Máximo de 2MB.</p>
                       <Button 
-                        variant="outline" 
+                        variant="secondary" 
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-2 rounded-md"
+                        className="mt-2 rounded-lg font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600"
                       >
                         Alterar Foto
                       </Button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nome</label>
-                      <input
-                        type="text"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Field label="Nome Completo">
+                      <Input
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="h-12"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email</label>
-                      <input
+                    </Field>
+                    <Field label="Endereço de Email">
+                      <Input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                        className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                        className="h-12"
                       />
-                    </div>
+                    </Field>
                   </div>
 
                   <Button 
-                    className="bg-blue-600 hover:bg-blue-700 rounded-md"
+                    className="h-12 px-8 font-bold shadow-lg shadow-blue-500/20"
                     disabled={isSaving}
                     onClick={async () => {
                       setIsSaving(true);
@@ -221,32 +227,29 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Segurança</h2>
                 <p className="mt-1 text-sm text-slate-500">Gerencie sua senha e autenticação</p>
                 
-                <div className="mt-6 space-y-5">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Senha Atual</label>
-                    <input
+                <div className="mt-6 space-y-6">
+                  <Field label="Senha Atual">
+                    <Input
                       type="password"
-                      className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       placeholder="••••••••"
+                      className="h-12"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Nova Senha</label>
-                    <input
+                  </Field>
+                  <Field label="Nova Senha">
+                    <Input
                       type="password"
-                      className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       placeholder="••••••••"
+                      className="h-12"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Confirmar Senha</label>
-                    <input
+                  </Field>
+                  <Field label="Confirmar Senha">
+                    <Input
                       type="password"
-                      className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       placeholder="••••••••"
+                      className="h-12"
                     />
-                  </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 rounded-md">
+                  </Field>
+                  <Button className="h-12 px-8 font-bold shadow-lg shadow-blue-500/20">
                     <Save className="mr-2 h-4 w-4" />
                     Alterar Senha
                   </Button>
@@ -261,25 +264,28 @@ export default function SettingsPage() {
                 
                 <div className="mt-6">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Tema</label>
-                  <div className="flex gap-3">
+                  <div className="flex gap-4">
                     {(["light", "dark", "system"] as const).map((t) => (
-                      <button
+                      <Button
                         key={t}
+                        variant="ghost"
                         onClick={() => setTheme(t)}
                         className={cn(
-                          "flex-1 rounded-lg border-2 p-4 text-center transition-colors",
+                          "flex-1 h-auto flex-col gap-3 rounded-2xl border-2 p-6 transition-all",
                           theme === t || (t === "system" && !theme)
-                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-blue-500/10"
+                            : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
                         )}
                       >
-                        <span className="text-2xl">
+                        <span className="text-4xl filter drop-shadow-sm">
                           {t === "light" && "☀️"}
                           {t === "dark" && "🌙"}
                           {t === "system" && "💻"}
                         </span>
-                        <span className="block text-sm font-medium mt-1 text-slate-900 dark:text-white capitalize">{t}</span>
-                      </button>
+                        <span className={cn("text-xs font-bold uppercase tracking-widest",
+                           theme === t || (t === "system" && !theme) ? "text-blue-600 dark:text-blue-400" : "text-slate-500"
+                        )}>{t}</span>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -291,31 +297,28 @@ export default function SettingsPage() {
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Regional</h2>
                 <p className="mt-1 text-sm text-slate-500">Configure idioma, moeda e fuso horário</p>
                 
-                <div className="mt-6 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Moeda</label>
-                    <select className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                <div className="mt-6 space-y-6">
+                  <Field label="Moeda Principal">
+                    <Select className="h-12">
                       <option>BRL - Real Brasileiro</option>
                       <option>USD - Dólar Americano</option>
                       <option>EUR - Euro</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Idioma</label>
-                    <select className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </Select>
+                  </Field>
+                  <Field label="Idioma do Sistema">
+                    <Select className="h-12">
                       <option>Português (Brasil)</option>
                       <option>English (US)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Fuso Horário</label>
-                    <select className="block w-full rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                    </Select>
+                  </Field>
+                  <Field label="Fuso Horário">
+                    <Select className="h-12">
                       <option>America/Sao_Paulo (GMT-3)</option>
                       <option>America/New_York (GMT-5)</option>
                       <option>Europe/London (GMT+0)</option>
-                    </select>
-                  </div>
-                  <Button className="bg-blue-600 hover:bg-blue-700 rounded-md">
+                    </Select>
+                  </Field>
+                  <Button className="h-12 px-8 font-bold shadow-lg shadow-blue-500/20">
                     <Save className="mr-2 h-4 w-4" />
                     Salvar Alterações
                   </Button>
@@ -333,7 +336,7 @@ export default function SettingsPage() {
                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300">OpenRouter API Key</p>
                     <p className="mt-1 font-mono text-xs text-slate-500">sk-or-v1-••••••••••••••••••••••••</p>
                   </div>
-                  <Button variant="outline" className="mt-4 rounded-md">
+                  <Button variant="secondary" className="mt-4 font-bold bg-slate-100 dark:bg-slate-700">
                     Atualizar API Key
                   </Button>
                 </div>

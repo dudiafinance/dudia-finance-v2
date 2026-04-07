@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface ModalProps {
   open: boolean;
@@ -14,15 +15,13 @@ interface ModalProps {
 }
 
 const sizes = {
-  sm: "lg:max-w-sm",
-  md: "lg:max-w-md",
-  lg: "lg:max-w-lg",
-  xl: "lg:max-w-2xl",
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
+  xl: "max-w-2xl",
 };
 
 export function Modal({ open, onClose, title, description, children, size = "md" }: ModalProps) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     if (open) document.addEventListener("keydown", onKey);
@@ -30,36 +29,55 @@ export function Modal({ open, onClose, title, description, children, size = "md"
   }, [open, onClose]);
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div
-      ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-0 lg:p-4"
-      onClick={(e) => e.target === overlayRef.current && onClose()}
-    >
-      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
-
-      <div className={cn("relative w-full rounded-t-xl lg:rounded-lg bg-white dark:bg-slate-800 shadow-xl", sizes[size])}>
-        <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-700 px-5 py-4">
-          <div>
-            <h2 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{description}</p>}
-          </div>
-          <button
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
-            className="ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-all"
+          />
 
-        <div className="max-h-[80vh] overflow-y-auto px-5 py-4">{children}</div>
-      </div>
-    </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className={cn(
+              "relative w-full rounded-3xl bg-white dark:bg-slate-900 shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800",
+              sizes[size]
+            )}
+          >
+            <div className="flex items-start justify-between border-b border-slate-100 dark:border-slate-800 px-8 py-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h2>
+                {description && <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">{description}</p>}
+              </div>
+              <button
+                onClick={onClose}
+                className="ml-4 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-200 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[80vh] overflow-y-auto px-8 py-6">
+              {children}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

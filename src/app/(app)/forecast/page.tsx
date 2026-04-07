@@ -15,6 +15,7 @@ import {
   ReferenceLine
 } from "recharts";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -96,46 +97,72 @@ export default function ForecastPage() {
 
       <div className="px-6 py-6 space-y-6">
         {/* Info box */}
-        <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 px-4 py-3">
-          <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-500" />
-          <p className="text-sm text-blue-700 dark:text-blue-300">
-            <span className="font-semibold">Saldo = </span>
-            Receitas − Despesas Fixas − Faturas Cartão − Orçamentos − Contribuições para Metas
-          </p>
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-start gap-4 rounded-2xl bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100/50 dark:border-blue-500/10 px-6 py-4 shadow-sm"
+        >
+          <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-0.5">Entenda a Projeção</h4>
+            <p className="text-xs font-medium text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
+              <span className="font-bold opacity-100">Saldo Final = </span>
+              Receitas − Despesas Fixas − Faturas de Cartão − Orçamentos Definidos − Contribuições para Metas
+            </p>
+          </div>
+        </motion.div>
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Saldo Atual</p>
-            <p className="mt-1 text-xl font-bold text-slate-900 dark:text-white">{fmt(data[0]?.startingBalance ?? 0)}</p>
-          </div>
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Projeção (12m)</p>
-            <p className={cn("mt-1 text-xl font-bold", (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-emerald-600" : "text-red-600")}>
-              {fmt(data[12]?.cumulativeBalance ?? 0)}
-            </p>
-          </div>
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
-            <div className="flex items-center gap-1 mb-1">
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Melhor Mês</p>
-            </div>
-            <p className="text-xl font-bold text-emerald-600">{fmt(bestMonth?.netBalance ?? 0)}</p>
-            <p className="text-xs text-slate-400 mt-0.5 capitalize">{bestMonth?.monthName}</p>
-          </div>
-          <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
-            <div className="flex items-center gap-1 mb-1">
-              <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Pior Mês</p>
-            </div>
-            <p className="text-xl font-bold text-red-600">{fmt(worstMonth?.netBalance ?? 0)}</p>
-            <p className="text-xs text-slate-400 mt-0.5 capitalize">{worstMonth?.monthName}</p>
-          </div>
+          {[
+            { label: "Saldo Atual", value: fmt(data[0]?.startingBalance ?? 0), color: "text-slate-900 dark:text-white" },
+            { 
+              label: "Projeção (12m)", 
+              value: fmt(data[12]?.cumulativeBalance ?? 0), 
+              color: (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-emerald-600" : "text-red-600" 
+            },
+            { 
+              label: "Melhor Mês", 
+              value: fmt(bestMonth?.netBalance ?? 0), 
+              color: "text-emerald-600", 
+              icon: TrendingUp, 
+              iconColor: "text-emerald-500",
+              sub: bestMonth?.monthName 
+            },
+            { 
+              label: "Pior Mês", 
+              value: fmt(worstMonth?.netBalance ?? 0), 
+              color: "text-red-600", 
+              icon: TrendingDown, 
+              iconColor: "text-red-500",
+              sub: worstMonth?.monthName 
+            },
+          ].map((card, i) => (
+            <motion.div 
+              key={card.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-all"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {card.icon && <card.icon className={cn("h-3.5 w-3.5", card.iconColor)} />}
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{card.label}</p>
+              </div>
+              <p className={cn("text-2xl font-bold tracking-tight", card.color)}>{card.value}</p>
+              {card.sub && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase opacity-60">{card.sub}</p>}
+            </motion.div>
+          ))}
         </div>
 
         {/* Chart */}
-        <div className="rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 shadow-sm"
+        >
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <ChartIcon className="h-4 w-4 text-slate-400" />
@@ -213,7 +240,7 @@ export default function ForecastPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
         {/* Monthly cards */}
         <div className="space-y-3">
@@ -228,11 +255,17 @@ export default function ForecastPage() {
               : 0;
 
             return (
-              <div
+              <motion.div
                 key={`${m.year}-${m.month}`}
+                layout
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
                 className={cn(
-                  "rounded-lg bg-white dark:bg-slate-800 border p-5 transition-all",
-                  m.isCurrent ? "border-blue-500 dark:border-blue-400 ring-1 ring-blue-200 dark:ring-blue-800" : "border-slate-200 dark:border-slate-700"
+                  "rounded-2xl bg-white dark:bg-slate-800 border p-6 transition-all cursor-default",
+                  m.isCurrent 
+                    ? "border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/20" 
+                    : "border-slate-200 dark:border-slate-700 shadow-sm"
                 )}
               >
                 <div className="flex items-start justify-between mb-4">
@@ -295,7 +328,7 @@ export default function ForecastPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

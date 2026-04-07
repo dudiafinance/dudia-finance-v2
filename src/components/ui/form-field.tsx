@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface FieldProps {
   label: string;
@@ -10,14 +11,31 @@ interface FieldProps {
 
 export function Field({ label, error, required, children, className }: FieldProps) {
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={cn("space-y-2", className)}
+    >
+      <label className="block text-[13px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider ml-1">
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
-      {children}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-    </div>
+      <div className="relative group">
+        {children}
+      </div>
+      <AnimatePresence>
+        {error && (
+          <motion.p 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="text-xs text-red-500 font-medium mt-1 ml-1"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
 
@@ -29,10 +47,10 @@ export function Input({ className, error, ...props }: InputProps) {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-md border bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500",
+        "h-11 w-full rounded-xl border bg-white/50 backdrop-blur-sm dark:bg-slate-800/50 px-4 text-sm text-slate-900 dark:text-slate-100 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500",
         error
-          ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+          ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 shadow-sm"
+          : "border-slate-200 dark:border-slate-700/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 shadow-sm",
         className
       )}
       {...props}
@@ -48,10 +66,10 @@ export function Textarea({ className, error, ...props }: TextareaProps) {
   return (
     <textarea
       className={cn(
-        "w-full rounded-md border bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none",
+        "w-full rounded-xl border bg-white/50 backdrop-blur-sm dark:bg-slate-800/50 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none",
         error
-          ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+          ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 shadow-sm"
+          : "border-slate-200 dark:border-slate-700/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 shadow-sm",
         className
       )}
       rows={3}
@@ -68,10 +86,10 @@ export function Select({ className, error, children, ...props }: SelectProps) {
   return (
     <select
       className={cn(
-        "h-10 w-full rounded-md border bg-white dark:bg-slate-800 px-3 text-sm text-slate-900 dark:text-slate-100 outline-none transition-colors cursor-pointer",
+        "h-11 w-full rounded-xl border bg-white/50 backdrop-blur-sm dark:bg-slate-800/50 px-4 text-sm text-slate-900 dark:text-slate-100 outline-none transition-all cursor-pointer",
         error
-          ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          : "border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500",
+          ? "border-red-300 focus:border-red-500 focus:ring-4 focus:ring-red-500/10 shadow-sm"
+          : "border-slate-200 dark:border-slate-700/50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 dark:focus:ring-blue-500/20 shadow-sm",
         className
       )}
       {...props}
@@ -83,7 +101,7 @@ export function Select({ className, error, children, ...props }: SelectProps) {
 
 export function FormRow({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("grid grid-cols-2 gap-4", className)}>
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-5", className)}>
       {children}
     </div>
   );
@@ -91,10 +109,10 @@ export function FormRow({ children, className }: { children: React.ReactNode; cl
 
 export function FormDivider({ label }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 py-2">
-      <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
-      {label && <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">{label}</span>}
-      <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+    <div className="flex items-center gap-4 py-4">
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
+      {label && <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{label}</span>}
+      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent" />
     </div>
   );
 }

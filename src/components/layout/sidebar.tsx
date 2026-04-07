@@ -55,55 +55,89 @@ export function Sidebar() {
       {/* ── Desktop sidebar (lg+) ────────────────────────────────── */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen bg-slate-900 text-white transition-all duration-200 hidden lg:flex flex-col",
-          collapsed ? "w-20" : "w-64"
+          "fixed left-0 top-0 z-40 h-screen bg-slate-900 text-white transition-all duration-300 hidden lg:flex flex-col border-r border-slate-800 shadow-2xl",
+          collapsed ? "w-22" : "w-64"
         )}
       >
-        <div className={cn("flex h-16 items-center border-b border-slate-700", !collapsed && "px-6")}>
+        <div className={cn("flex h-20 items-center border-b border-slate-800/50 px-6", collapsed && "justify-center px-0")}>
           {collapsed ? (
-            <span className="w-full text-center text-lg font-bold text-blue-400 tracking-tight">DF</span>
+            <motion.div 
+              initial={{ scale: 0.5, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }}
+              className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20"
+            >
+              <span className="text-white font-bold text-xs tracking-tighter">DF</span>
+            </motion.div>
           ) : (
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
+            <motion.div 
+              initial={{ x: -10, opacity: 0 }} 
+              animate={{ x: 0, opacity: 1 }}
+              className="flex items-center gap-3"
+            >
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
                 <span className="text-white font-bold text-sm">DF</span>
               </div>
-              <span className="text-lg font-semibold tracking-tight text-white">Finance</span>
-            </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold tracking-tight text-white leading-none">DUDIA</span>
+                <span className="text-[10px] font-bold text-blue-400/80 uppercase tracking-widest mt-0.5">Finance</span>
+              </div>
+            </motion.div>
           )}
         </div>
 
-        <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
-          {navItems.map((item) => {
+        <nav className="flex-1 space-y-1.5 p-4 overflow-y-auto scrollbar-none">
+          {navItems.map((item, index) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                  "group relative flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200",
                   isActive
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white",
-                  collapsed && "justify-center px-2"
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white",
+                  collapsed && "justify-center px-0 h-12 w-12 mx-auto"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
+                <item.icon className={cn("h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110", isActive ? "text-white" : "text-slate-500 group-hover:text-blue-400")} />
+                {!collapsed && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -5 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+                
+                {isActive && !collapsed && (
+                  <motion.div 
+                    layoutId="active-pill"
+                    className="absolute left-0 w-1 h-6 bg-white rounded-r-full shadow-[0_0_8px_rgba(255,255,255,0.6)]"
+                  />
+                )}
+
+                {collapsed && (
+                  <div className="absolute left-full ml-4 rounded-md bg-slate-800 px-2 py-1 text-xs font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl border border-slate-700">
+                    {item.label}
+                  </div>
+                )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-slate-700 p-3 space-y-1">
+        <div className="p-4 space-y-2 bg-slate-900/50 backdrop-blur-md border-t border-slate-800/50">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-150",
-              collapsed && "justify-center px-2"
+              "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 hover:bg-slate-800/50 hover:text-white transition-all duration-200",
+              collapsed && "justify-center px-0 h-10 w-10 mx-auto"
             )}
           >
             {collapsed ? (
-              <ChevronRight className="h-5 w-5" />
+               <ChevronRight className="h-5 w-5" />
             ) : (
               <>
                 <ChevronLeft className="h-5 w-5" />
@@ -111,15 +145,16 @@ export function Sidebar() {
               </>
             )}
           </button>
+          
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-all duration-150",
-              collapsed && "justify-center px-2"
+              "flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-slate-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 group",
+              collapsed && "justify-center px-0 h-10 w-10 mx-auto"
             )}
           >
-            <LogOut className="h-5 w-5" />
-            {!collapsed && <span>Sair</span>}
+            <LogOut className="h-5 w-5 shrink-0 group-hover:-translate-x-1 transition-transform" />
+            {!collapsed && <span>Encerrar Sessão</span>}
           </button>
         </div>
       </aside>

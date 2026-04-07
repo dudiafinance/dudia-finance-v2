@@ -15,6 +15,7 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
@@ -148,9 +149,9 @@ export default function BudgetsPage() {
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Orçamentos</h1>
             <p className="text-sm text-slate-500 mt-1">Controle seus gastos por categoria.</p>
           </div>
-          <Button onClick={openCreate} className="rounded-lg font-semibold bg-blue-600 hover:bg-blue-700">
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Limite
+          <Button onClick={openCreate} className="font-bold shadow-lg shadow-blue-500/20">
+            <Plus className="mr-2 h-5 w-5" />
+            Novo Orçamento
           </Button>
         </div>
       </div>
@@ -214,8 +215,8 @@ export default function BudgetsPage() {
             </div>
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Nenhum orçamento criado</h3>
             <p className="text-sm text-slate-500 mt-1">Crie orçamentos para controlar seus gastos.</p>
-            <Button onClick={openCreate} className="mt-6 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={openCreate} className="mt-6 font-bold shadow-lg px-8">
+              <Plus className="mr-2 h-5 w-5" />
               Criar Orçamento
             </Button>
           </div>
@@ -231,7 +232,14 @@ export default function BudgetsPage() {
               const remaining = Math.max(amount - spent, 0);
 
               return (
-                <div key={b.id} className="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all">
+                <motion.div 
+                  key={b.id} 
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ y: -4 }}
+                  className="group bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl transition-all"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div 
@@ -259,12 +267,22 @@ export default function BudgetsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button onClick={() => openEdit(b)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600">
+                      <Button 
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => openEdit(b)} 
+                        className="h-8 w-8 bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:text-blue-600 shadow-none border-none"
+                      >
                         <Edit className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => setDeleteId(b.id)} className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500">
+                      </Button>
+                      <Button 
+                        variant="secondary"
+                        size="icon"
+                        onClick={() => setDeleteId(b.id)} 
+                        className="h-8 w-8 bg-slate-50 dark:bg-slate-700/50 text-slate-400 hover:text-red-500 shadow-none border-none"
+                      >
                         <Trash2 className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -297,7 +315,7 @@ export default function BudgetsPage() {
                       </span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -374,9 +392,9 @@ export default function BudgetsPage() {
             )}
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="outline" className="flex-1 rounded-md" onClick={() => setModalOpen(false)}>Cancelar</Button>
-            <Button className="flex-1 rounded-md bg-blue-600 hover:bg-blue-700" onClick={save}>{editingId ? "Salvar" : "Criar"}</Button>
+          <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
+            <Button variant="outline" className="flex-1 font-bold" onClick={() => setModalOpen(false)}>Cancelar</Button>
+            <Button className="flex-[2] font-bold shadow-lg" onClick={save}>{editingId ? "Salvar Alterações" : "Criar Orçamento"}</Button>
           </div>
         </div>
       </Modal>
@@ -389,9 +407,9 @@ export default function BudgetsPage() {
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-300">As transações não serão afetadas.</p>
         </div>
-        <div className="flex gap-3 mt-4">
-          <Button variant="outline" className="flex-1 rounded-md" onClick={() => setDeleteId(null)}>Cancelar</Button>
-          <Button variant="destructive" className="flex-1 rounded-md" onClick={confirmDelete}>Excluir</Button>
+        <div className="flex gap-4 mt-6">
+          <Button variant="outline" className="flex-1 font-bold" onClick={() => setDeleteId(null)}>Cancelar</Button>
+          <Button variant="destructive" className="flex-1 font-bold shadow-lg shadow-red-500/20" onClick={confirmDelete}>Excluir</Button>
         </div>
       </Modal>
     </div>

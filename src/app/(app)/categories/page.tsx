@@ -253,8 +253,8 @@ export default function CategoriesPage() {
               </button>
             </div>
             
-            <Button onClick={openCreate} className="rounded-lg font-semibold">
-              <Plus className="mr-2 h-4 w-4" /> Nova
+            <Button onClick={openCreate} className="font-bold shadow-lg shadow-blue-500/20 px-6">
+              <Plus className="mr-2 h-5 w-5" /> Nova
             </Button>
           </div>
         </div>
@@ -264,32 +264,34 @@ export default function CategoriesPage() {
         {/* Search & Filter */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
           <div className="lg:col-span-2 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Buscar categorias..."
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <Input
+              placeholder="Buscar categorias ou tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-11 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="pl-11 h-12"
             />
           </div>
 
-          <div className="flex gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg lg:col-span-2">
+          <div className="flex gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl lg:col-span-2 border border-slate-200/50 dark:border-slate-700/50">
             {[
               { key: "all", label: "Todas" },
               { key: "income", label: "Receitas" },
               { key: "expense", label: "Despesas" },
             ].map(({ key, label }) => (
-              <button 
+              <Button 
                 key={key} 
+                variant="ghost"
                 onClick={() => setFilterType(key)}
                 className={cn(
-                  "flex-1 rounded-md py-2 text-xs font-semibold transition-all",
-                  filterType === key ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  "flex-1 rounded-lg py-2 h-9 text-xs font-bold transition-all shadow-none",
+                  filterType === key 
+                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" 
+                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-transparent"
                 )}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -304,9 +306,9 @@ export default function CategoriesPage() {
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Bem-vindo!</h2>
             <p className="text-slate-500 max-w-sm mb-6">Configure as categorias padrão para organizar suas transações.</p>
-            <Button onClick={seedCategories} disabled={seeding}>
-              {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-              {seeding ? "Gerando..." : "Gerar Categorias Padrão"}
+            <Button onClick={seedCategories} disabled={seeding} size="lg" className="font-bold shadow-xl shadow-blue-500/20 px-8">
+              {seeding ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+              {seeding ? "Gerando ecossistema..." : "Gerar Categorias Padrão"}
             </Button>
           </motion.div>
         )}
@@ -355,16 +357,19 @@ export default function CategoriesPage() {
           <div className="space-y-5 pt-2">
             <div className="grid grid-cols-2 gap-3">
               {(["income", "expense"] as const).map((t) => (
-                <button key={t} onClick={() => set("type", t)}
+                <Button 
+                  key={t} 
+                  variant="ghost"
+                  onClick={() => set("type", t)}
                   className={cn(
-                    "h-12 rounded-lg font-semibold text-sm transition-all border-2",
+                    "h-14 rounded-xl font-bold text-sm transition-all border-2 shadow-none",
                     form.type === t 
-                      ? (t === "income" ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "border-red-500 bg-red-50 text-red-700")
-                      : "border-slate-200 bg-slate-50 text-slate-500"
+                      ? (t === "income" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "border-red-500 bg-red-50/50 text-red-700 dark:bg-red-500/10 dark:text-red-400")
+                      : "border-slate-100 bg-slate-50/50 text-slate-400 dark:border-slate-800 dark:bg-slate-900/50"
                   )}
                 >
                   {t === "income" ? "Receita" : "Despesa"}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -403,10 +408,10 @@ export default function CategoriesPage() {
               <TagInput value={form.tags} onChange={tags => set("tags", tags)} placeholder="Adicionar tags..." />
             </Field>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <Button variant="outline" onClick={() => setModalOpen(false)} className="rounded-md">Cancelar</Button>
-              <Button onClick={save} className="rounded-md bg-blue-600 hover:bg-blue-700">
-                {editingId ? "Salvar" : "Criar"}
+            <div className="flex justify-end gap-4 pt-6 border-t border-slate-100 dark:border-slate-700 mt-2">
+              <Button variant="outline" onClick={() => setModalOpen(false)} className="font-bold">Cancelar</Button>
+              <Button onClick={save} className="font-bold shadow-lg px-8">
+                {editingId ? "Salvar Alterações" : "Criar Categoria"}
               </Button>
             </div>
           </div>
@@ -420,9 +425,9 @@ export default function CategoriesPage() {
             <p className="text-slate-600 dark:text-slate-300 font-semibold mb-1">Confirmar Exclusão?</p>
             <p className="text-sm text-slate-500">Transações ficarão sem categoria.</p>
           </div>
-          <div className="mt-4 flex gap-3">
-            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 rounded-md">Cancelar</Button>
-            <Button variant="destructive" onClick={confirmDelete} className="flex-1 rounded-md">Excluir</Button>
+          <div className="mt-6 flex gap-4">
+            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 font-bold">Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="flex-1 font-bold shadow-lg shadow-red-500/20">Excluir</Button>
           </div>
         </Modal>
       </div>
@@ -442,8 +447,11 @@ function CategoryCard({ category, spent, onEdit, onDelete }: { category: any, sp
 
   return (
     <motion.div 
-      whileHover={{ y: -4 }}
-      className="group relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all cursor-pointer"
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
+      className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between mb-4">
         <div 
@@ -454,12 +462,22 @@ function CategoryCard({ category, spent, onEdit, onDelete }: { category: any, sp
         </div>
         
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-          <button onClick={() => onEdit(category)} className="h-8 w-8 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all">
+          <Button 
+            variant="secondary"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onEdit(category); }} 
+            className="h-8 w-8 bg-white/80 dark:bg-slate-700/80 text-slate-400 hover:text-blue-600 shadow-sm border-none"
+          >
             <Edit className="h-3.5 w-3.5" />
-          </button>
-          <button onClick={() => onDelete(category.id)} className="h-8 w-8 rounded-md bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
+          </Button>
+          <Button 
+            variant="secondary"
+            size="icon"
+            onClick={(e) => { e.stopPropagation(); onDelete(category.id); }} 
+            className="h-8 w-8 bg-white/80 dark:bg-slate-700/80 text-slate-400 hover:text-red-500 shadow-sm border-none"
+          >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 

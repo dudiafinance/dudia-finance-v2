@@ -274,21 +274,22 @@ export default function TransactionsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
+              variant="secondary"
               onClick={() => setShowBalances(!showBalances)}
-              className="h-11 px-5 rounded-md bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 transition-all flex items-center gap-3"
+              className="gap-3 bg-slate-800/50 border-slate-700 text-white hover:bg-slate-800"
             >
               {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span className="font-medium text-sm">{showBalances ? "Ocultar" : "Mostrar"}</span>
-            </button>
+              <span>{showBalances ? "Ocultar" : "Mostrar"}</span>
+            </Button>
 
-            <button
+            <Button
               onClick={openCreate}
-              className="h-11 px-6 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all flex items-center gap-3 font-semibold"
+              className="gap-3 font-bold"
             >
               <Plus className="h-5 w-5" />
-              <span className="font-semibold text-sm">Novo Lançamento</span>
-            </button>
+              <span>Novo Lançamento</span>
+            </Button>
           </div>
         </div>
 
@@ -338,66 +339,79 @@ export default function TransactionsPage() {
         <div className="mb-6 flex flex-col md:flex-row items-center gap-4">
           <div className="relative group flex-1 w-full max-w-xl">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <input
+            <Input
               type="text"
               placeholder="Pesquisar transações..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-11 w-full rounded-md border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+              className="pl-11 h-11"
             />
           </div>
 
-          <div className="flex gap-1 rounded-md bg-slate-100 dark:bg-slate-800 p-1">
+          <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
             {[
               { key: "all", label: "Geral" },
               { key: "income", label: "Entradas" },
               { key: "expense", label: "Saídas" },
               { key: "transfer", label: "Transfer" },
             ].map(({ key, label }) => (
-              <button
+              <Button
                 key={key}
+                variant={filterType === key ? "secondary" : "ghost"}
+                size="sm"
                 onClick={() => setFilterType(key)}
-                className={cn("px-4 py-2 rounded text-xs font-semibold transition-all",
-                  filterType === key ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                className={cn(
+                  "px-4 transition-all rounded-lg",
+                  filterType === key ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
                 )}
               >
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
-          <button
+          <Button
+            variant={showFilters ? "soft" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
-            className={cn("h-11 px-5 rounded-md border transition-all flex items-center gap-2 font-medium text-sm",
-              showFilters ? "border-blue-500 bg-blue-50 text-blue-600" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700"
+            className={cn("gap-2 border-slate-200 dark:border-slate-700",
+              showFilters && "border-blue-200 bg-blue-50 text-blue-600"
             )}
           >
             <Filter className="h-4 w-4" />
             <span>Filtros</span>
-          </button>
+          </Button>
         </div>
 
         {showFilters && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mb-6 overflow-hidden">
             <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 flex flex-wrap gap-6">
               <div className="space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Status</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Status</p>
                 <div className="flex gap-2">
                   {[{ key: "all", label: "Todos" }, { key: "paid", label: "Confirmados" }, { key: "pending", label: "Pendentes" }].map(({ key, label }) => (
-                    <button key={key} onClick={() => setFilterPaid(key)}
-                      className={cn("px-4 py-2 rounded text-xs font-semibold transition-all",
-                        filterPaid === key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      )}>
+                    <Button 
+                      key={key} 
+                      size="sm"
+                      variant={filterPaid === key ? "secondary" : "outline"}
+                      onClick={() => setFilterPaid(key)}
+                      className={cn("transition-all border-slate-200 dark:border-slate-700",
+                        filterPaid === key ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-md" : "hover:bg-slate-100"
+                      )}
+                    >
                       {label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
               <div className="flex-1 min-w-[200px] flex items-end justify-end">
-                <button onClick={() => { setFilterPaid("all"); setFilterType("all"); setSearchTerm(""); }} 
-                  className="text-xs font-semibold text-slate-400 hover:text-red-500 flex items-center gap-2">
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setFilterPaid("all"); setFilterType("all"); setSearchTerm(""); }} 
+                  className="text-slate-400 hover:text-red-500 gap-2 font-bold"
+                >
                   <X className="h-4 w-4" /> Limpar
-                </button>
+                </Button>
               </div>
             </div>
           </motion.div>
@@ -495,20 +509,23 @@ export default function TransactionsPage() {
         title={editingId ? "Editar Transação" : "Nova Transação"}
         description="Defina os parâmetros da transação" size="lg">
         <div className="space-y-5 pt-2">
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-700 rounded-lg">
+          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
             {[
-              { key: "expense", label: "Despesa" },
-              { key: "income", label: "Receita" },
-              { key: "transfer", label: "Transfer" },
-            ].map(({ key, label }) => (
-              <button key={key} onClick={() => { set("type", key); set("categoryId", ""); }}
-                className={cn("flex-1 py-2.5 rounded text-xs font-semibold transition-all",
+              { key: "expense", label: "Despesa", color: "text-red-500" },
+              { key: "income", label: "Receita", color: "text-emerald-500" },
+              { key: "transfer", label: "Transfer", color: "text-blue-500" },
+            ].map(({ key, label, color }) => (
+              <Button 
+                key={key} 
+                variant="ghost"
+                onClick={() => { set("type", key); set("categoryId", ""); }}
+                className={cn("flex-1 transition-all",
                   form.type === key 
                     ? (key === "expense" ? "bg-red-500 text-white" : key === "income" ? "bg-emerald-500 text-white" : "bg-blue-500 text-white")
-                    : "text-slate-500 hover:text-slate-700"
+                    : cn("text-slate-500", `hover:${color}`)
                 )}>
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -552,19 +569,23 @@ export default function TransactionsPage() {
 
           <FormDivider label="Recorrência" />
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {[
               { key: "single", label: "Único", icon: FileText },
               { key: "fixed", label: "Fixo", icon: RefreshCw },
               { key: "recurring", label: "Parcelado", icon: Repeat2 },
             ].map(({ key, label, icon: Icon }) => (
-              <button key={key} onClick={() => set("subtype", key)}
-                className={cn("flex items-center justify-center gap-2 p-3 rounded-md border transition-all text-xs font-medium",
-                  form.subtype === key ? "border-blue-500 bg-blue-50 text-blue-600" : "border-slate-200 text-slate-500 hover:border-slate-300"
-                )}>
+              <Button 
+                key={key} 
+                variant={form.subtype === key ? "soft" : "outline"}
+                onClick={() => set("subtype", key)}
+                className={cn("gap-2 h-14 border-slate-200 dark:border-slate-700",
+                  form.subtype === key && "border-blue-200"
+                )}
+              >
                 <Icon className="h-4 w-4" />
                 <span>{label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -619,15 +640,17 @@ export default function TransactionsPage() {
               onChange={(e) => set("notes", e.target.value)} className="rounded-md" />
           </Field>
 
-          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
             {editingId && (
-              <Button type="button" variant="ghost" onClick={() => setDeleteId(editingId)} className="text-red-500">
-                <Trash2 className="h-4 w-4" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteId(editingId)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+                <Trash2 className="h-5 w-5" />
               </Button>
             )}
-            <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1 rounded-md font-medium">Cancelar</Button>
-            <Button onClick={save} className="flex-[2] rounded-md font-semibold bg-slate-900 text-white hover:bg-slate-800">
-              {editingId ? "Salvar" : "Efetivar"}
+            <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1 font-bold border-slate-200">
+              Cancelar
+            </Button>
+            <Button onClick={save} className="flex-[2] font-bold shadow-lg">
+              {editingId ? "Salvar Alterações" : "Efetivar Transação"}
             </Button>
           </div>
         </div>
