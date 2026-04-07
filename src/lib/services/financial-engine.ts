@@ -22,7 +22,7 @@ export class FinancialEngine {
     let currentInvoiceMonth = now.getMonth() + 1;
     let currentInvoiceYear = now.getFullYear();
 
-    if (now.getDate() > card.closingDay) {
+    if (now.getDate() >= card.closingDay) {
       currentInvoiceMonth++;
       if (currentInvoiceMonth > 12) {
         currentInvoiceMonth = 1;

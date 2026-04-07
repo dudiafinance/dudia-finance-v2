@@ -61,6 +61,38 @@ const GRADIENT_PRESETS = [
   { label: "Rose", value: "from-[#DB2777] to-[#831843]", color: "#DB2777" },
 ];
 
+function getInvoiceStatus(card: any, viewMonth: number, viewYear: number) {
+  if (!card) return "FUTURA";
+  const now = new Date();
+  const currentOpenMonth = getSuggestedInvoice(card, now.toISOString().split('T')[0]).month;
+  const currentOpenYear = getSuggestedInvoice(card, now.toISOString().split('T')[0]).year;
+
+  const viewTotalMonths = viewYear * 12 + viewMonth;
+  const currentOpenTotalMonths = currentOpenYear * 12 + currentOpenMonth;
+
+  if (viewTotalMonths < currentOpenTotalMonths) return "FECHADA";
+  if (viewTotalMonths === currentOpenTotalMonths) return "ABERTA";
+  return "FUTURA";
+}
+
+function getSuggestedInvoice(card: any, dateStr: string) {
+  const d = new Date(dateStr + 'T12:00:00'); // Evitar timezone issues
+  let m = d.getMonth() + 1;
+  let y = d.getFullYear();
+
+  // Regra base: Comprou no mes N, paga no mes N+1
+  m++;
+  if (m > 12) { m = 1; y++; }
+
+  // Regra de Fechamento: Se passou do dia de corte, pula +1
+  if (card && d.getDate() >= card.closingDay) {
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+
+  return { month: m, year: y };
+}
+
 // --- Components ---
 
 function NetworkLogo({ network }: { network: string }) {
@@ -311,14 +343,16 @@ export default function CreditCardsPage() {
                     <div className="flex items-center gap-2">
                        <AnimatePresence mode="wait">
                         <motion.div 
-                          key={currentMonth > new Date().getMonth() + 1 ? 'future' : 'open'}
+                          key={getInvoiceStatus(selectedCard, currentMonth, currentYear)}
                           initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                           className={cn(
-                            "px-3 py-1 rounded-full text-[10px] font-black uppercase",
-                            currentMonth > new Date().getMonth() + 1 ? "bg-blue-100 text-blue-600" : "bg-emerald-100 text-emerald-600"
+                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                            getInvoiceStatus(selectedCard, currentMonth, currentYear) === "FECHADA" ? "bg-rose-100 text-rose-600 shadow-sm border border-rose-200/50" :
+                            getInvoiceStatus(selectedCard, currentMonth, currentYear) === "ABERTA" ? "bg-emerald-100 text-emerald-600 border border-emerald-200/50" :
+                            "bg-blue-100 text-blue-600 border border-blue-200/50"
                           )}
                         >
-                          {currentMonth > new Date().getMonth() + 1 ? "Futura" : "Em Aberto"}
+                          {getInvoiceStatus(selectedCard, currentMonth, currentYear)}
                         </motion.div>
                        </AnimatePresence>
                     </div>
@@ -567,11 +601,22 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   const { data: categories = [] } = useCategories();
   const createTx = useCreateCardTransaction(selectedCard?.id || "");
 
+  const handleDateChange = (date: string) => {
+    const suggested = getSuggestedInvoice(selectedCard, date);
+    setForm(p => ({ 
+      ...p, 
+      date, 
+      invoiceMonth: suggested.month, 
+      invoiceYear: suggested.year 
+    }));
+  };
+
   React.useEffect(() => {
     if (open) {
-      setForm(p => ({ ...p, invoiceMonth: currentMonth, invoiceYear: currentYear }));
+      const suggested = getSuggestedInvoice(selectedCard, form.date);
+      setForm(p => ({ ...p, invoiceMonth: suggested.month, invoiceYear: suggested.year }));
     }
-  }, [open, currentMonth, currentYear]);
+  }, [open, selectedCard]);
 
   const handleSubmit = () => {
     const isRefund = form.type === 'refund';
@@ -636,11 +681,38 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
              </div>
              <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Data da Operação</label>
-                <input type="date" value={form.date} onChange={e => setForm(p => ({...p, date: e.target.value}))} className="w-full bg-slate-50 border border-slate-100 rounded-2xl h-12 px-4 font-bold text-sm outline-none" />
+                <input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="w-full bg-slate-50 border border-slate-100 rounded-2xl h-12 px-4 font-bold text-sm outline-none focus:bg-white transition-all shadow-sm" />
              </div>
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1 sm:col-span-2">
+                <div className="flex justify-between items-end mb-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Fatura de Destino</label>
+                  <p className="text-[9px] text-emerald-600 font-bold italic">* Calculado pelo fechamento do cartão</p>
+                </div>
+                <div className="flex gap-2">
+                  <select 
+                    value={form.invoiceMonth} 
+                    onChange={e => setForm(p => ({...p, invoiceMonth: Number(e.target.value)}))}
+                    className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl h-12 px-4 font-bold text-sm outline-none appearance-none focus:bg-white transition-all"
+                  >
+                    {MONTH_NAMES.map((name, i) => (
+                      <option key={name} value={i + 1}>{name}</option>
+                    ))}
+                  </select>
+                  <select 
+                    value={form.invoiceYear} 
+                    onChange={e => setForm(p => ({...p, invoiceYear: Number(e.target.value)}))}
+                    className="w-28 bg-slate-50 border border-slate-100 rounded-2xl h-12 px-4 font-bold text-sm outline-none appearance-none focus:bg-white transition-all"
+                  >
+                    {[currentYear - 1, currentYear, currentYear + 1, currentYear + 2].map(y => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase ml-1">Tipo de Lançamento</label>
                 <select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value}))} className="w-full bg-slate-50 border border-slate-100 rounded-2xl h-12 px-4 font-bold text-sm outline-none">
