@@ -41,6 +41,18 @@ export function useDeleteAccount() {
   });
 }
 
+export function useCreateTransfer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch("/api/transfers", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
 // Categories
 export function useCategories() {
   return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<any[]>("/api/categories"), staleTime: FIVE_MINUTES });
