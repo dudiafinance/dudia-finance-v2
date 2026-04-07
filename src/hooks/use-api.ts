@@ -172,6 +172,15 @@ export function useDashboard(month?: number, year?: number) {
   });
 }
 
+// Reports
+export function useReports(period: "week" | "month" | "year") {
+  return useQuery({ 
+    queryKey: ["reports", period], 
+    queryFn: () => apiFetch<any>(`/api/reports?period=${period}`), 
+    staleTime: ONE_MINUTE 
+  });
+}
+
 // Notifications
 export function useNotifications() {
   return useQuery({ 
