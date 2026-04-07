@@ -170,7 +170,7 @@ export default function CreditCardsPage() {
                   onClick={() => setSelectedCardId(card.id)}
                   className={cn(
                     "relative min-w-[320px] xl:min-w-0 w-full h-52 rounded-[32px] p-6 text-white text-left transition-all duration-500 overflow-hidden group",
-                    `bg-gradient-to-br ${card.gradient}`,
+                    card.gradient ? `bg-gradient-to-br ${card.gradient}` : "bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700",
                     selectedCardId === card.id ? "shadow-2xl shadow-slate-200 ring-4 ring-white/30" : "opacity-60 saturate-[0.8]"
                   )}
                 >
@@ -288,7 +288,9 @@ export default function CreditCardsPage() {
                 
                 <div className="flex items-center bg-slate-50 rounded-[20px] p-1.5 border border-slate-100">
                   <button onClick={prevInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronLeft className="h-5 w-5 text-slate-600" /></button>
-                  <div className="px-4 text-xs font-black text-slate-900 border-x border-slate-200">HOJE</div>
+                  <div className="px-4 text-[10px] font-black text-slate-900 border-x border-slate-200 tabular-nums">
+                    {MONTH_NAMES[currentMonth - 1].slice(0, 3).toUpperCase()}/{String(currentYear).slice(2)}
+                  </div>
                   <button onClick={nextInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronRight className="h-5 w-5 text-slate-600" /></button>
                 </div>
               </div>
@@ -481,7 +483,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
       <div className="space-y-6 pt-2">
         
         {/* Preview Card Mockup */}
-        <div className={cn("w-full h-44 rounded-3xl p-6 text-white bg-gradient-to-br transition-all duration-500 flex flex-col shadow-xl", form.gradient)}>
+        <div className={cn("w-full h-44 rounded-3xl p-6 text-white bg-gradient-to-br transition-all duration-500 flex flex-col shadow-xl", form.gradient || "from-slate-800 to-slate-900")}>
            <div className="flex justify-between items-start">
               <span className="text-[10px] uppercase font-black tracking-widest opacity-60">{form.bank || "Banco"}</span>
               <Wifi className="h-5 w-5 opacity-40 rotate-90" />
