@@ -88,13 +88,16 @@ export const transactions = pgTable('transactions', {
   dueDate: date('due_date'),
   receiveDate: date('receive_date'),
   location: varchar('location', { length: 255 }),
+  linkedTransactionId: uuid('linked_transaction_id'), // Para transferências e estornos
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('transactions_user_id_idx').on(table.userId),
   index('transactions_date_idx').on(table.date),
+  index('transactions_user_id_date_idx').on(table.userId, table.date), // Otimização para filtros
   index('transactions_account_id_idx').on(table.accountId),
   index('transactions_category_id_idx').on(table.categoryId),
+  index('transactions_linked_tx_idx').on(table.linkedTransactionId),
 ]);
 
 // Orçamentos
@@ -306,6 +309,24 @@ export const notifications = pgTable('notifications', {
   index('notifications_is_read_idx').on(table.isRead),
 ]);
 
+// Trilha de Auditoria (Para conformidade e depuração em alta escala)
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // 'transaction', 'account', 'budget'
+  entityId: uuid('entity_id').notNull(),
+  action: varchar('action', { length: 50 }).notNull(), // 'create', 'update', 'delete', 'manual_balance_adjustment'
+  oldValue: jsonb('old_value'),
+  newValue: jsonb('new_value'),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('audit_logs_user_id_idx').on(table.userId),
+  index('audit_logs_entity_idx').on(table.entityType, table.entityId),
+  index('audit_logs_created_at_idx').on(table.createdAt),
+]);
+
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));
@@ -319,5 +340,9 @@ export const cardTransactionsRelations = relations(cardTransactions, ({ one }) =
   card: one(creditCards, { fields: [cardTransactions.cardId], references: [creditCards.id] }),
   user: one(users, { fields: [cardTransactions.userId], references: [users.id] }),
   category: one(categories, { fields: [cardTransactions.categoryId], references: [categories.id] }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }));
 

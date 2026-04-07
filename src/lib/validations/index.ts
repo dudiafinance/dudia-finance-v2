@@ -120,3 +120,15 @@ export const goalContributionSchema = z.object({
   status: z.enum(["pending", "paid", "cancelled"]).default("pending"),
   notes: z.string().max(1000).optional().nullable(),
 });
+
+export const transferSchema = z.object({
+  fromAccountId: z.string().uuid("Conta de origem inválida"),
+  toAccountId: z.string().uuid("Conta de destino inválida"),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  description: z.string().min(1, "Descrição obrigatória").max(255),
+  date: z.string().min(1, "Data obrigatória"),
+  categoryId: z.string().uuid().optional().nullable(),
+}).refine((data) => data.fromAccountId !== data.toAccountId, {
+  message: "As contas de origem e destino devem ser diferentes",
+  path: ["toAccountId"],
+});
