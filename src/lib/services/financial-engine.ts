@@ -234,36 +234,65 @@ export class FinancialEngine {
   }
 
   /**
-   * Registra uma contribuição em uma meta e atualiza o saldo atual da meta
+   * Realiza um depósito em uma meta vindo de uma conta bancária (Atômico)
    */
-  static async addGoalContribution(data: {
+  static async depositToGoal(data: {
     userId: string,
     goalId: string,
-    month: number,
-    year: number,
+    accountId: string,
     amount: string,
-    notes?: string
+    description: string,
+    date: string,
+    categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
-      const [newContribution] = await tx
-        .insert(goalContributions)
-        .values({
-          ...data,
-          originalAmount: data.amount,
-          status: "paid",
-        })
-        .returning();
+      // 1. Criar transação de saída na conta
+      const [expense] = await tx.insert(transactions).values({
+        userId: data.userId,
+        accountId: data.accountId,
+        categoryId: data.categoryId,
+        amount: data.amount,
+        type: "expense",
+        subtype: "goal_deposit",
+        description: `Objetivo: ${data.description}`,
+        date: data.date,
+        isPaid: true
+      }).returning();
 
-      await tx.update(goals)
+      // 2. Reduzir saldo da conta
+      await tx.update(accounts)
+        .set({ 
+          balance: sql`${accounts.balance} - ${data.amount}`,
+          updatedAt: new Date()
+        })
+        .where(eq(accounts.id, data.accountId));
+
+      // 3. Aumentar valor atual da meta
+      const [updatedGoal] = await tx.update(goals)
         .set({ 
           currentAmount: sql`${goals.currentAmount} + ${data.amount}`,
           updatedAt: new Date()
         })
-        .where(and(eq(goals.id, data.goalId), eq(goals.userId, data.userId)));
+        .where(eq(goals.id, data.goalId))
+        .returning();
 
-      await this.logAudit(tx, data.userId, "goal_contribution", newContribution.id, "create", null, newContribution);
+      // 4. Registrar contribuição (opcional para histórico detalhado)
+      const d = new Date(data.date);
+      await tx.insert(goalContributions).values({
+        userId: data.userId,
+        goalId: data.goalId,
+        month: d.getMonth() + 1,
+        year: d.getFullYear(),
+        amount: data.amount,
+        originalAmount: data.amount,
+        status: "paid",
+        notes: `Depósito via ${data.description}`
+      });
 
-      return newContribution;
+      // 5. Auditoria
+      await this.logAudit(tx, data.userId, "goal", data.goalId, "update", null, { deposit: data.amount, accountId: data.accountId });
+
+      return { expense, goal: updatedGoal };
     });
   }
 }

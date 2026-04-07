@@ -157,6 +157,19 @@ export function useDeleteGoal() {
   });
 }
 
+export function useGoalDeposit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => apiFetch("/api/goals/deposit", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["goals"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+  });
+}
+
 // Dashboard – now accepts month/year
 export function useDashboard(month?: number, year?: number) {
   const params = new URLSearchParams();
