@@ -35,13 +35,10 @@ yarn-error.log*
 !.env.example
 
 # misc
-OLD_BACKUP/
-mcp-servers/
-HISTORICO_DESENVOLVIMENTO.md
-.kilo/
-.opensquad/
-.playwright-mcp/
-.claude/
+/tools/mcp-servers/
+/docs/HISTORICO_DESENVOLVIMENTO.md
+/tools/.opensquad/
+/tools/.playwright-mcp/
 
 # vercel
 .vercel
@@ -49,5 +46,4 @@ HISTORICO_DESENVOLVIMENTO.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
+.env*.local
