@@ -64,11 +64,14 @@ const GRADIENT_PRESETS = [
 function getInvoiceStatus(card: any, viewMonth: number, viewYear: number) {
   if (!card) return "FUTURA";
   const now = new Date();
-  const currentOpenMonth = getSuggestedInvoice(card, now.toISOString().split('T')[0]).month;
-  const currentOpenYear = getSuggestedInvoice(card, now.toISOString().split('T')[0]).year;
+  
+  // A fatura "ABERTA" é aquela que o sistema sugere para uma compra feita HOJE.
+  const suggested = getSuggestedInvoice(card, now.toISOString().split('T')[0]);
+  const currentOpenMonth = suggested.month;
+  const currentOpenYear = suggested.year;
 
-  const viewTotalMonths = viewYear * 12 + viewMonth;
-  const currentOpenTotalMonths = currentOpenYear * 12 + currentOpenMonth;
+  const viewTotalMonths = Number(viewYear) * 12 + Number(viewMonth);
+  const currentOpenTotalMonths = Number(currentOpenYear) * 12 + Number(currentOpenMonth);
 
   if (viewTotalMonths < currentOpenTotalMonths) return "FECHADA";
   if (viewTotalMonths === currentOpenTotalMonths) return "ABERTA";
@@ -76,16 +79,17 @@ function getInvoiceStatus(card: any, viewMonth: number, viewYear: number) {
 }
 
 function getSuggestedInvoice(card: any, dateStr: string) {
-  const d = new Date(dateStr + 'T12:00:00'); // Evitar timezone issues
+  const d = new Date(dateStr + 'T12:00:00'); 
   let m = d.getMonth() + 1;
   let y = d.getFullYear();
 
-  // Regra base: Comprou no mes N, paga no mes N+1
+  // Regra base: Comprou no mes N, paga no mes N+1 (Due date naming)
   m++;
   if (m > 12) { m = 1; y++; }
 
-  // Regra de Fechamento: Se passou do dia de corte, pula +1
-  if (card && d.getDate() >= card.closingDay) {
+  // Regra de Fechamento: Se passou do dia de corte (vencido/inclusive), joga para a PRÓXIMA fatura
+  const closing = card ? Number(card.closingDay) : 30;
+  if (d.getDate() >= closing) {
     m++;
     if (m > 12) { m = 1; y++; }
   }
@@ -149,6 +153,12 @@ export default function CreditCardsPage() {
     else setCurrentMonth(m => m - 1);
   };
 
+  const goToToday = () => {
+    const suggested = getSuggestedInvoice(selectedCard, new Date().toISOString().split('T')[0]);
+    setCurrentMonth(suggested.month);
+    setCurrentYear(suggested.year);
+  };
+
   if (isLoadingCards) return <div className="p-8 text-slate-400">Carregando cartões...</div>;
 
   return (
@@ -203,7 +213,7 @@ export default function CreditCardsPage() {
                   className={cn(
                     "relative min-w-[320px] xl:min-w-0 w-full h-52 rounded-[32px] p-6 text-white text-left transition-all duration-500 overflow-hidden group",
                     card.gradient ? `bg-gradient-to-br ${card.gradient}` : "bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700",
-                    selectedCardId === card.id ? "shadow-2xl shadow-slate-200 ring-4 ring-white/30" : "opacity-60 saturate-[0.8]"
+                    selectedCardId === card.id ? "shadow-2xl shadow-slate-200 ring-4 ring-white/30 scale-[1.02]" : "opacity-80 scale-[0.98] saturate-[0.5]"
                   )}
                 >
                   {/* Glass Effect */}
@@ -245,18 +255,13 @@ export default function CreditCardsPage() {
                     </div>
                   </div>
 
-                  {/* Edit/Delete Overlay */}
-                  <div className={cn(
-                    "absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity",
-                    selectedCardId === card.id ? "opacity-100" : ""
-                  )}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setEditingCard(card); setIsCardModalOpen(true); }}
-                      className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors backdrop-blur-md border border-white/10"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                  </div>
+                  {/* Constant Edit Button */}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setEditingCard(card); setIsCardModalOpen(true); }}
+                    className="absolute top-4 right-4 z-20 p-2 bg-white/20 hover:bg-white/40 rounded-xl transition-all backdrop-blur-md border border-white/20"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </button>
                 </motion.button>
               ))}
             </div>
@@ -318,11 +323,14 @@ export default function CreditCardsPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center bg-slate-50 rounded-[20px] p-1.5 border border-slate-100">
+                <div className="flex items-center bg-slate-50 rounded-[24px] p-1 border border-slate-100">
                   <button onClick={prevInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronLeft className="h-5 w-5 text-slate-600" /></button>
-                  <div className="px-4 text-[10px] font-black text-slate-900 border-x border-slate-200 tabular-nums">
-                    {MONTH_NAMES[currentMonth - 1].slice(0, 3).toUpperCase()}/{String(currentYear).slice(2)}
-                  </div>
+                  <button 
+                    onClick={goToToday}
+                    className="px-4 text-[10px] font-black text-slate-900 border-x border-slate-200 hover:text-emerald-600 transition-colors uppercase tracking-widest"
+                  >
+                    Hoje
+                  </button>
                   <button onClick={nextInvoice} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronRight className="h-5 w-5 text-slate-600" /></button>
                 </div>
               </div>
