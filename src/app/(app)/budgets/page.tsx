@@ -137,24 +137,26 @@ export default function BudgetsPage() {
     };
   }, [budgetStats]);
 
-  if (isLoading) return <div className="h-96 w-full animate-pulse bg-slate-50/50 rounded-3xl border border-slate-100" />;
+  if (isLoading) return <div className="h-96 w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-lg" />;
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header Premium */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Orçamentos</h1>
-          <p className="text-slate-500 mt-1">Controle seus gastos com precisão absoluta.</p>
+    <div className="min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Orçamentos</h1>
+            <p className="text-sm text-slate-500 mt-1">Controle seus gastos por categoria.</p>
+          </div>
+          <Button onClick={openCreate} className="rounded-lg font-semibold bg-blue-600 hover:bg-blue-700">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Limite
+          </Button>
         </div>
-        <Button onClick={openCreate} className="bg-slate-900 hover:bg-black text-white shadow-lg shadow-slate-200">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Limite
-        </Button>
       </div>
 
-      {/* Main Stats Card - Glassmorphism */}
-      <div className="relative overflow-hidden rounded-[2.5rem] bg-slate-900 p-8 text-white shadow-2xl">
+      {/* Main Stats Card */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 m-6 shadow-sm">
         <div className="relative z-10 grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="space-y-2">
             <p className="text-sm font-medium text-slate-400">Total Planejado (Mês)</p>

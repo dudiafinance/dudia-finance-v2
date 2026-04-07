@@ -206,198 +206,167 @@ export default function AccountsPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="h-12 w-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-400 font-medium animate-pulse">Sincronizando suas contas...</p>
+        <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-500 font-medium animate-pulse">Sincronizando contas...</p>
       </div>
     );
   }
 
   return (
-    <div className="w-full animate-in fade-in duration-700">
-      {/* Header Imersivo */}
-      <div className="relative overflow-hidden pt-12 pb-24 px-8 mb-[-60px]">
-        <div className="absolute inset-0 bg-slate-900" />
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 opacity-80" />
-        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] bg-emerald-500/10 blur-[120px] rounded-full" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-8">
+    <div className="w-full animate-in fade-in duration-500">
+      {/* Header */}
+      <div className="bg-slate-900 border-b border-slate-700 px-6 pt-8 pb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-               <div className="h-8 w-1.5 bg-emerald-500 rounded-full" />
-               <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter">Minhas Contas</h1>
+              <div className="h-8 w-1 bg-blue-500 rounded-full" />
+              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Minhas Contas</h1>
             </div>
-            <p className="text-slate-400 text-lg font-medium">Gestão centralizada de todo o seu ecossistema financeiro.</p>
+            <p className="text-slate-400 font-medium">Gestão centralizada do seu ecossistema financeiro.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-             <button
-                onClick={() => setShowBalances(!showBalances)}
-                className="h-14 px-6 rounded-2xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all flex items-center gap-3 backdrop-blur-md"
-              >
-                {showBalances ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                <span className="font-bold text-sm uppercase tracking-widest">{showBalances ? "Ocultar" : "Mostrar"}</span>
-              </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setShowBalances(!showBalances)}
+              className="h-11 px-5 rounded-md bg-slate-800 border border-slate-700 text-white hover:bg-slate-700 transition-all flex items-center gap-3"
+            >
+              {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="font-medium text-sm">{showBalances ? "Ocultar" : "Mostrar"}</span>
+            </button>
 
-              <button
-                onClick={() => setTransferModalOpen(true)}
-                className="h-14 px-6 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 text-indigo-100 hover:bg-indigo-500/30 transition-all flex items-center gap-3 backdrop-blur-md"
-              >
-                <ArrowRightLeft className="h-5 w-5" />
-                <span className="font-bold text-sm uppercase tracking-widest">Transferir</span>
-              </button>
+            <button
+              onClick={() => setTransferModalOpen(true)}
+              className="h-11 px-5 rounded-md bg-blue-600/20 border border-blue-500/30 text-blue-300 hover:bg-blue-600/30 transition-all flex items-center gap-3"
+            >
+              <ArrowRightLeft className="h-4 w-4" />
+              <span className="font-medium text-sm">Transferir</span>
+            </button>
 
-              <button
-                onClick={openCreate}
-                className="h-14 px-8 rounded-2xl bg-emerald-500 text-slate-950 hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-3 shadow-[0_20px_50px_rgba(16,185,129,0.3)]"
-              >
-                <Plus className="h-6 w-6 font-bold" />
-                <span className="font-black text-sm uppercase tracking-widest">Nova Conta</span>
-              </button>
+            <button
+              onClick={openCreate}
+              className="h-11 px-6 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-all flex items-center gap-3 font-semibold"
+            >
+              <Plus className="h-5 w-5" />
+              <span className="font-semibold text-sm">Nova Conta</span>
+            </button>
           </div>
         </div>
 
-        {/* Estatísticas Flutuantes */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-[1200px]">
-           <div className="glass-card p-8 rounded-[40px] border-white/10 bg-white/5">
-              <div className="flex items-center gap-3 mb-4 text-emerald-400">
-                 <Wallet className="h-5 w-5" />
-                 <span className="text-[11px] font-black uppercase tracking-[0.2em]">Saldo Disponível</span>
-              </div>
-              <p className="text-4xl font-black text-white tracking-tighter tabular-nums">
-                {showBalances ? fmt(totalBalance) : "••••••"}
-              </p>
-              <div className="mt-4 flex items-center gap-2 text-slate-500 text-xs font-bold">
-                 <span>{accounts.filter(a => a.includeInTotal).length} CONTAS E CARTEIRAS INCLUSAS</span>
-              </div>
-           </div>
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
+            <div className="flex items-center gap-2 mb-2 text-emerald-400">
+              <Wallet className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Saldo Disponível</span>
+            </div>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {showBalances ? fmt(totalBalance) : "••••••"}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">{accounts.filter(a => a.includeInTotal).length} contas inclusas</p>
+          </div>
 
-           <div className="glass-card p-8 rounded-[40px] border-white/10 bg-white/5">
-              <div className="flex items-center gap-3 mb-4 text-amber-400">
-                 <TrendingUp className="h-5 w-5" />
-                 <span className="text-[11px] font-black uppercase tracking-[0.2em]">Investimentos</span>
-              </div>
-              <p className="text-4xl font-black text-white tracking-tighter tabular-nums">
-                {showBalances ? fmt(totalInvestments) : "••••••"}
-              </p>
-              <div className="mt-4 flex items-center gap-2 text-slate-500 text-xs font-bold font-mono">
-                 <span>LIQUIDEZ IMEDIATA E FIXA</span>
-              </div>
-           </div>
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
+            <div className="flex items-center gap-2 mb-2 text-amber-400">
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Investimentos</span>
+            </div>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {showBalances ? fmt(totalInvestments) : "••••••"}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Liquidez imediata</p>
+          </div>
 
-           <div className="glass-card p-8 rounded-[40px] border-white/10 bg-white/5">
-              <div className="flex items-center gap-3 mb-4 text-violet-400">
-                 <CreditCard className="h-5 w-5" />
-                 <span className="text-[11px] font-black uppercase tracking-[0.2em]">Pendências Cartão</span>
-              </div>
-              <p className="text-4xl font-black text-white tracking-tighter tabular-nums">
-                {showBalances ? fmt(totalCredit) : "••••••"}
-              </p>
-              <div className="mt-4 flex items-center gap-2 text-slate-500 text-xs font-bold">
-                 <span>TOTAL EM FATURAS ABERTAS</span>
-              </div>
-           </div>
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
+            <div className="flex items-center gap-2 mb-2 text-violet-400">
+              <CreditCard className="h-4 w-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Pendências Cartão</span>
+            </div>
+            <p className="text-2xl font-bold text-white tabular-nums">
+              {showBalances ? fmt(totalCredit) : "••••••"}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">Faturas abertas</p>
+          </div>
         </div>
       </div>
 
-      {/* Conteúdo Principal */}
-      <div className="px-8 pb-32">
-        <div className="mb-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-           <div className="relative group flex-1 max-w-2xl">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Pesquisar por nome ou banco..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-16 w-full rounded-[24px] border-white/20 bg-white/60 pl-16 pr-8 text-base font-bold text-slate-900 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 backdrop-blur-xl transition-all"
-              />
-           </div>
+      {/* Content */}
+      <div className="px-6 py-8">
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative group flex-1 max-w-xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Pesquisar por nome ou banco..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="h-11 w-full rounded-md border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+            />
+          </div>
         </div>
 
-        <div className="space-y-20">
-          {groupedByType.map(({ value: type, label, icon: Icon, gradient, items }, typeIdx) => (
-            <section key={type} className="animate-in slide-in-from-bottom-8 duration-700 delay-100">
-              <div className="flex items-center gap-4 mb-8">
-                 <div className={cn("h-10 w-10 rounded-2xl flex items-center justify-center bg-gradient-to-br shadow-lg", gradient)}>
-                   <Icon className="h-5 w-5 text-white" />
-                 </div>
-                 <h2 className="text-xl font-black text-slate-900 uppercase tracking-widest">{label}</h2>
-                 <div className="h-px flex-1 bg-slate-200" />
-                 <span className="text-slate-400 font-bold">{items.length} itens</span>
+        <div className="space-y-10">
+          {groupedByType.map(({ value: type, label, icon: Icon, gradient, items }) => (
+            <section key={type}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", gradient)}>
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white uppercase tracking-wider">{label}</h2>
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                <span className="text-slate-500 font-medium text-sm">{items.length}</span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6">
-                {items.map((a: any, idx: number) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {items.map((a: any) => {
                   const AccIcon = getIcon(a.type);
                   const balance = Number(a.balance);
                   
                   return (
                     <motion.div
                       key={a.id}
-                      whileHover={{ y: -10 }}
-                      className="group relative overflow-hidden glass-card rounded-[44px] bg-white border-white p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] hover:shadow-[0_40px_80px_rgba(0,0,0,0.08)] transition-all cursor-pointer active:scale-[0.98]"
+                      whileHover={{ y: -4 }}
+                      className="group relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all cursor-pointer"
                       onClick={() => openEdit(a)}
                     >
-                      {/* Background Efeito */}
-                      <div className="absolute top-0 right-0 p-8 h-32 w-32 flex items-center justify-center opacity-[0.03] group-hover:opacity-[0.08] group-hover:scale-125 transition-all">
-                         <AccIcon className="h-32 w-32" />
-                      </div>
-
-                      <div className="flex items-start justify-between mb-8">
+                      <div className="flex items-start justify-between mb-4">
                         <div 
-                          className="h-16 w-16 rounded-[28px] flex items-center justify-center shadow-lg transition-transform group-hover:rotate-6"
+                          className="h-12 w-12 rounded-lg flex items-center justify-center"
                           style={{ backgroundColor: a.color }}
                         >
-                          <AccIcon className="h-8 w-8 text-white" />
+                          <AccIcon className="h-6 w-6 text-white" />
                         </div>
                         
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                           <button onClick={(e) => { e.stopPropagation(); openEdit(a); }}
-                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-colors">
+                            className="h-8 w-8 flex items-center justify-center rounded-md bg-slate-100 text-slate-600 hover:bg-slate-900 hover:text-white transition-colors">
                             <Edit className="h-4 w-4" />
                           </button>
                           <button onClick={(e) => { e.stopPropagation(); setDeleteId(a.id); }}
-                            className="h-10 w-10 flex items-center justify-center rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors">
+                            className="h-8 w-8 flex items-center justify-center rounded-md bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-colors">
                             <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="text-xl font-black text-slate-900 truncate tracking-tight">{a.name}</h3>
-                        <p className="text-sm font-bold text-slate-400 flex items-center gap-2">
-                           {a.bank ? <span>{a.bank}</span> : <span className="uppercase tracking-widest text-[10px] opacity-60">{label}</span>}
+                      <div className="space-y-1 mb-4">
+                        <h3 className="text-base font-semibold text-slate-900 dark:text-white truncate">{a.name}</h3>
+                        <p className="text-xs text-slate-500">{a.bank || label}</p>
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Saldo</span>
+                          {!a.includeInTotal && (
+                            <span className="bg-slate-100 dark:bg-slate-700 text-slate-500 text-[10px] font-semibold px-2 py-0.5 rounded">OFF</span>
+                          )}
+                        </div>
+                        <p className={cn(
+                          "text-xl font-bold tabular-nums",
+                          balance < 0 ? "text-red-500" : "text-slate-900 dark:text-white"
+                        )}>
+                          {showBalances ? fmt(balance) : "••••••"}
                         </p>
                       </div>
-
-                      <div className="mt-8 pt-6 border-t border-slate-100/60">
-                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">SALDO ATUAL</span>
-                            {!a.includeInTotal && (
-                              <span className="bg-slate-100 text-slate-400 text-[9px] font-black px-2 py-0.5 rounded-full">OFF-TOTAL</span>
-                            )}
-                         </div>
-                         <div className="flex items-end justify-between gap-4">
-                            <p className={cn(
-                              "text-3xl font-black tracking-tighter tabular-nums",
-                              balance < 0 ? "text-red-500" : "text-slate-900"
-                            )}>
-                              {showBalances ? fmt(balance) : "••••••"}
-                            </p>
-                            <div className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-50 text-slate-300 group-hover:bg-emerald-50 group-hover:text-emerald-500 transition-colors">
-                               <ChevronRight className="h-5 w-5" />
-                            </div>
-                         </div>
-                      </div>
-
-                      {/* Info Detalhes (Mono) */}
-                      {a.number && (
-                        <div className="mt-4 flex items-center gap-2 text-[10px] font-mono font-bold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <span>AG: {a.agency}</span>
-                           <span className="h-1 w-1 rounded-full bg-slate-200" />
-                           <span>CC: {a.number}</span>
-                        </div>
-                      )}
                     </motion.div>
                   );
                 })}
@@ -407,31 +376,31 @@ export default function AccountsPage() {
         </div>
       </div>
 
-      {/* Modal de Nova/Editar Conta */}
+      {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-        title={editingId ? "Editar Conta" : "Nova Conta Bancária"}
-        description="Configure os parâmetros fundamentais desta conta" size="lg">
-        <div className="space-y-6 pt-4">
+        title={editingId ? "Editar Conta" : "Nova Conta"}
+        size="lg">
+        <div className="space-y-5 pt-2">
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-widest text-slate-400 mb-4">Escolha a Categoria</label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Tipo da Conta</label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {ACCOUNT_TYPES.map(({ value, label, icon: Icon, gradient }) => (
                 <button key={value} type="button" onClick={() => set("type", value)}
-                  className={cn("relative flex flex-col items-center gap-3 rounded-[28px] border-2 p-5 transition-all group overflow-hidden",
+                  className={cn("relative flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all",
                     form.type === value 
-                      ? "border-emerald-500 bg-emerald-50/50" 
-                      : "border-slate-100 bg-slate-50/30 text-slate-500 hover:border-slate-200"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                      : "border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300"
                   )}>
                   {form.type === value && (
-                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-500" />
+                    <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-blue-500" />
                   )}
-                  <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shadow-md", 
-                    form.type === value ? gradient : "bg-white text-slate-400"
+                  <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", 
+                    form.type === value ? gradient : "bg-slate-100 dark:bg-slate-700"
                   )}>
-                    <Icon className={cn("h-6 w-6", form.type === value ? "text-white" : "text-slate-400")} />
+                    <Icon className={cn("h-5 w-5", form.type === value ? "text-white" : "text-slate-400")} />
                   </div>
-                  <span className={cn("text-[11px] font-black uppercase tracking-tighter text-center leading-tight",
-                    form.type === value ? "text-emerald-700" : "text-slate-400"
+                  <span className={cn("text-[11px] font-semibold text-center",
+                    form.type === value ? "text-blue-600" : "text-slate-500"
                   )}>{label}</span>
                 </button>
               ))}
@@ -439,172 +408,149 @@ export default function AccountsPage() {
           </div>
 
           <FormRow>
-            <Field label="Nome de Exibição" required error={errors.name}>
-              <Input placeholder="Ex: Conta Principal, Reserva..." value={form.name}
-                onChange={(e) => set("name", e.target.value)} error={!!errors.name} className="h-14 rounded-2xl font-bold" />
+            <Field label="Nome" required error={errors.name}>
+              <Input placeholder="Ex: Conta Principal..." value={form.name}
+                onChange={(e) => set("name", e.target.value)} error={!!errors.name} className="h-11 rounded-md" />
             </Field>
-            <Field label="Banco / Instituição">
-              <Input placeholder="Ex: Nubank, Itaú..." value={form.bank}
-                onChange={(e) => set("bank", e.target.value)} className="h-14 rounded-2xl font-bold" />
+            <Field label="Banco">
+              <Input placeholder="Ex: Nubank..." value={form.bank}
+                onChange={(e) => set("bank", e.target.value)} className="h-11 rounded-md" />
             </Field>
           </FormRow>
 
           <FormRow>
-            <Field label="Saldo Inicial / Atual">
+            <Field label="Saldo">
               <div className="relative">
-                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-sm font-black text-slate-400">R$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
                 <Input type="number" step="0.01" placeholder="0,00"
-                  value={form.balance} onChange={(e) => set("balance", e.target.value)} className="pl-12 h-14 rounded-2xl font-black text-xl" />
+                  value={form.balance} onChange={(e) => set("balance", e.target.value)} className="pl-10 h-11 rounded-md font-semibold" />
               </div>
             </Field>
-            <Field label="Moeda Padrão">
-              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)} className="h-14 rounded-2xl font-bold">
-                <option value="BRL">🇧🇷 Real Brasileiro (BRL)</option>
-                <option value="USD">🇺🇸 Dólar Americano (USD)</option>
-                <option value="EUR">🇪🇺 Euro (EUR)</option>
+            <Field label="Moeda">
+              <Select value={form.currency} onChange={(e) => set("currency", e.target.value)} className="h-11 rounded-md">
+                <option value="BRL">BRL - Real</option>
+                <option value="USD">USD - Dólar</option>
+                <option value="EUR">EUR - Euro</option>
               </Select>
             </Field>
           </FormRow>
 
           {(form.type === "checking" || form.type === "savings") && (
             <FormRow>
-              <Field label="Agência (Opcional)">
-                <Input placeholder="0001" value={form.agency} onChange={(e) => set("agency", e.target.value)} className="h-14 rounded-2xl" />
+              <Field label="Agência">
+                <Input placeholder="0001" value={form.agency} onChange={(e) => set("agency", e.target.value)} className="h-11 rounded-md" />
               </Field>
-              <Field label="Conta (Opcional)">
-                <Input placeholder="12345-6" value={form.number} onChange={(e) => set("number", e.target.value)} className="h-14 rounded-2xl" />
+              <Field label="Conta">
+                <Input placeholder="12345-6" value={form.number} onChange={(e) => set("number", e.target.value)} className="h-11 rounded-md" />
               </Field>
             </FormRow>
           )}
 
-          <FormDivider label="Design e Visibilidade" />
+          <FormDivider label="Visualização" />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-             <Field label="Cor do Tema">
-               <ColorPicker value={form.color} onChange={(c) => set("color", c)} />
-             </Field>
-             <label className="flex items-center gap-4 p-6 rounded-[28px] border-2 border-slate-100 bg-slate-50/30 cursor-pointer hover:border-emerald-200 transition-colors">
-                <div className="relative flex items-center">
-                  <input type="checkbox" checked={form.includeInTotal} onChange={(e) => set("includeInTotal", e.target.checked)}
-                    className="peer sr-only" />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-                </div>
-                <div>
-                   <p className="text-sm font-black text-slate-800 uppercase tracking-tight">Incluir no Total</p>
-                   <p className="text-[11px] text-slate-400 font-bold uppercase leading-tight">Soma no dashboard geral</p>
-                </div>
-             </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <Field label="Cor">
+              <ColorPicker value={form.color} onChange={(c) => set("color", c)} />
+            </Field>
+            <label className="flex items-center gap-3 p-4 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-blue-300 transition-colors">
+              <input type="checkbox" checked={form.includeInTotal} onChange={(e) => set("includeInTotal", e.target.checked)}
+                className="w-5 h-5 rounded border-slate-300 text-blue-500 focus:ring-blue-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Incluir no Total</p>
+                <p className="text-xs text-slate-500">Soma no dashboard geral</p>
+              </div>
+            </label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-            <Button variant="outline" onClick={() => setModalOpen(false)} className="h-14 px-8 rounded-2xl font-bold">Cancelar</Button>
-            <Button onClick={save} className="h-14 px-10 rounded-2xl bg-emerald-500 text-slate-950 font-black uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-95 transition-all">
-              {editingId ? "Salvar Alterações" : "Criar Conta"}
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="outline" onClick={() => setModalOpen(false)} className="rounded-md font-medium">Cancelar</Button>
+            <Button onClick={save} className="rounded-md font-semibold bg-blue-600 hover:bg-blue-700">
+              {editingId ? "Salvar" : "Criar Conta"}
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Modal de Transferência */}
+      {/* Transfer Modal */}
       <Modal open={transferModalOpen} onClose={() => setTransferModalOpen(false)}
-        title="Atalho de Transferência"
-        description="Mova saldo entre suas contas de forma rápida e segura" size="lg">
-        <div className="space-y-6 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-             <div className="space-y-4">
-                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">De (Origem)</label>
-                <div className="grid grid-cols-1 gap-2">
-                   {accounts.filter(a => a.type !== 'credit_card').map((a: any) => (
-                      <button 
-                        key={a.id}
-                        onClick={() => setTransferForm(f => ({ ...f, fromAccountId: a.id }))}
-                        className={cn("flex flex-col p-4 rounded-2xl border-2 transition-all",
-                          transferForm.fromAccountId === a.id ? "border-red-500 bg-red-50" : "border-slate-100 opacity-60 hover:opacity-100"
-                        )}
-                      >
-                         <p className="text-xs font-black uppercase tracking-tight truncate">{a.name}</p>
-                         <p className="text-[10px] font-bold text-slate-400">{fmt(Number(a.balance))}</p>
-                      </button>
-                   ))}
-                </div>
-             </div>
-             
-             <div className="hidden md:flex flex-col items-center justify-center text-slate-300">
-                <ArrowRight className="h-8 w-8" />
-             </div>
-
-             <div className="space-y-4">
-                <label className="text-[11px] font-black uppercase tracking-widest text-slate-400">Para (Destino)</label>
-                <div className="grid grid-cols-1 gap-2">
-                   {accounts.filter(a => a.id !== transferForm.fromAccountId).map((a: any) => (
-                      <button 
-                        key={a.id}
-                        onClick={() => setTransferForm(f => ({ ...f, toAccountId: a.id }))}
-                        className={cn("flex flex-col p-4 rounded-2xl border-2 transition-all",
-                          transferForm.toAccountId === a.id ? "border-emerald-500 bg-emerald-50" : "border-slate-100 opacity-60 hover:opacity-100"
-                        )}
-                      >
-                         <p className="text-xs font-black uppercase tracking-tight truncate">{a.name}</p>
-                         <p className="text-[10px] font-bold text-slate-400">{fmt(Number(a.balance))}</p>
-                      </button>
-                   ))}
-                </div>
-             </div>
+        title="Transferência entre Contas"
+        size="lg">
+        <div className="space-y-5 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">De (Origem)</label>
+              {accounts.filter(a => a.type !== 'credit_card').map((a: any) => (
+                <button 
+                  key={a.id}
+                  onClick={() => setTransferForm(f => ({ ...f, fromAccountId: a.id }))}
+                  className={cn("w-full flex flex-col p-3 rounded-lg border-2 transition-all text-left",
+                    transferForm.fromAccountId === a.id ? "border-red-500 bg-red-50 dark:bg-red-900/20" : "border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100"
+                  )}
+                >
+                  <p className="text-sm font-semibold truncate">{a.name}</p>
+                  <p className="text-xs text-slate-500">{fmt(Number(a.balance))}</p>
+                </button>
+              ))}
+            </div>
+            
+            <div className="space-y-3">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Para (Destino)</label>
+              {accounts.filter(a => a.id !== transferForm.fromAccountId).map((a: any) => (
+                <button 
+                  key={a.id}
+                  onClick={() => setTransferForm(f => ({ ...f, toAccountId: a.id }))}
+                  className={cn("w-full flex flex-col p-3 rounded-lg border-2 transition-all text-left",
+                    transferForm.toAccountId === a.id ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" : "border-slate-200 dark:border-slate-700 opacity-60 hover:opacity-100"
+                  )}
+                >
+                  <p className="text-sm font-semibold truncate">{a.name}</p>
+                  <p className="text-xs text-slate-500">{fmt(Number(a.balance))}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100">
-             <Field label="Valor da Transferência">
-                <Input type="number" step="0.01" value={transferForm.amount}
-                  onChange={(e) => setTransferForm(f => ({ ...f, amount: e.target.value }))}
-                  placeholder="0,00" className="h-16 text-2xl font-black rounded-3xl" />
-             </Field>
-             <Field label="Data">
-                <Input type="date" value={transferForm.date}
-                  onChange={(e) => setTransferForm(f => ({ ...f, date: e.target.value }))}
-                  className="h-16 font-bold rounded-3xl" />
-             </Field>
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <Field label="Valor">
+              <Input type="number" step="0.01" value={transferForm.amount}
+                onChange={(e) => setTransferForm(f => ({ ...f, amount: e.target.value }))}
+                placeholder="0,00" className="h-11 rounded-md font-semibold" />
+            </Field>
+            <Field label="Data">
+              <Input type="date" value={transferForm.date}
+                onChange={(e) => setTransferForm(f => ({ ...f, date: e.target.value }))}
+                className="h-11 rounded-md" />
+            </Field>
           </div>
 
-          <Field label="Descrição Curta">
-             <Input value={transferForm.description}
-               onChange={(e) => setTransferForm(f => ({ ...f, description: e.target.value }))}
-               className="h-14 rounded-2xl" />
+          <Field label="Descrição">
+            <Input value={transferForm.description}
+              onChange={(e) => setTransferForm(f => ({ ...f, description: e.target.value }))}
+              className="h-11 rounded-md" />
           </Field>
 
-          <Field label="Categoria (Opcional)">
-             <Select value={transferForm.categoryId}
-               onChange={(e) => setTransferForm(f => ({ ...f, categoryId: e.target.value }))}
-               className="h-14 rounded-2xl">
-               <option value="">Nenhuma</option>
-               {categories.map((c: any) => (
-                 <option key={c.id} value={c.id}>{c.name}</option>
-               ))}
-             </Select>
-          </Field>
-
-          <Button 
-            onClick={handleTransfer} 
-            className="w-full h-16 rounded-[28px] bg-indigo-600 text-white font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 active:scale-95 transition-all">
+          <Button onClick={handleTransfer} 
+            className="w-full rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700">
             Confirmar Transferência
           </Button>
         </div>
       </Modal>
 
-      {/* Modal Exclusão */}
+      {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Conta" size="sm">
-        <div className="p-4 space-y-6">
-          <div className="flex flex-col items-center gap-4 text-center">
-             <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center text-red-600">
-                <Trash2 className="h-8 w-8" />
-             </div>
-             <div>
-                <h3 className="text-xl font-black text-slate-900">Confirmar Exclusão?</h3>
-                <p className="text-sm text-slate-500 mt-2">Esta ação ocultará a conta, mas o histórico de transações será preservado para integridade dos relatórios.</p>
-             </div>
+        <div className="space-y-4">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="h-14 w-14 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Confirmar Exclusão?</h3>
+              <p className="text-sm text-slate-500 mt-1">O histórico será preservado.</p>
+            </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 h-12 rounded-xl font-bold">Voltar</Button>
-            <Button variant="destructive" onClick={confirmDelete} className="flex-1 h-12 rounded-xl font-black uppercase tracking-tighter text-sm">Sim, Excluir</Button>
+            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 rounded-md font-medium">Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="flex-1 rounded-md font-semibold">Excluir</Button>
           </div>
         </div>
       </Modal>

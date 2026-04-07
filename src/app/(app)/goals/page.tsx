@@ -161,51 +161,46 @@ export default function GoalsPage() {
     };
   }, [goals]);
 
-  if (isLoading) return <div className="h-96 w-full animate-pulse bg-slate-50/50 rounded-3xl border border-slate-100" />;
+  if (isLoading) return <div className="h-96 w-full animate-pulse bg-slate-100 dark:bg-slate-800 rounded-lg" />;
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header Premium */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Suas Metas</h1>
-          <p className="text-slate-500 mt-1">Transforme seus sonhos em realidade, um passo de cada vez.</p>
+    <div className="min-h-screen pb-20">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Suas Metas</h1>
+            <p className="text-sm text-slate-500 mt-1">Transforme seus sonhos em realidade.</p>
+          </div>
+          <Button onClick={openCreate} className="rounded-lg font-semibold bg-emerald-500 hover:bg-emerald-600 text-white">
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Meta
+          </Button>
         </div>
-        <Button onClick={openCreate} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200">
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Meta
-        </Button>
       </div>
 
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-6 text-white shadow-xl">
-          <div className="relative z-10">
-            <p className="text-sm font-medium text-slate-400">Total Guardado</p>
-            <h3 className="mt-2 text-3xl font-bold">{fmt(stats.totalCurrent)}</h3>
-            <div className="mt-4 flex items-center gap-2">
-              <div className="h-1.5 flex-1 rounded-full bg-slate-800">
+      {/* Stats */}
+      <div className="px-6 py-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 mb-6">
+          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5">
+            <p className="text-sm font-medium text-slate-500">Total Guardado</p>
+            <h3 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{fmt(stats.totalCurrent)}</h3>
+            <div className="mt-3 flex items-center gap-2">
+              <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-700">
                 <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(stats.progress, 100)}%` }} />
               </div>
-              <span className="text-xs font-semibold text-emerald-400">{stats.progress.toFixed(1)}%</span>
+              <span className="text-xs font-semibold text-emerald-500">{stats.progress.toFixed(1)}%</span>
             </div>
           </div>
-          <div className="absolute -right-4 -top-4 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
-        </div>
-        
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Metas Ativas</p>
-          <div className="mt-2 flex items-baseline gap-2">
-            <h3 className="text-3xl font-bold text-slate-900">{stats.active}</h3>
-            <span className="text-sm text-slate-400">objetivos</span>
+          
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5">
+            <p className="text-sm font-medium text-slate-500">Metas Ativas</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats.active}</h3>
+              <span className="text-sm text-slate-400">objetivos</span>
+            </div>
+            <p className="mt-4 text-xs text-slate-400">De um total de {stats.total} metas criadas</p>
           </div>
-          <p className="mt-4 text-xs text-slate-400">De um total de {stats.total} metas criadas</p>
-        </div>
-
-        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Valor Alvo Total</p>
-          <h3 className="mt-2 text-3xl font-bold text-slate-900">{fmt(stats.totalTarget)}</h3>
-          <p className="mt-4 text-xs text-slate-400 italic">Faltam {fmt(Math.max(stats.totalTarget - stats.totalCurrent, 0))}</p>
         </div>
       </div>
 
