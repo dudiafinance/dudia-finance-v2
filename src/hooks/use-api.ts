@@ -316,6 +316,7 @@ export function usePayCardInvoice() {
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["card-transactions"] });
+      qc.invalidateQueries({ queryKey: ["invoice-status"] });
     },
   });
 }

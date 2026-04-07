@@ -4,6 +4,7 @@ import {
   accounts, 
   creditCards, 
   cardTransactions, 
+  creditCardInvoices,
   auditLogs,
   goals,
   goalContributions
@@ -335,6 +336,8 @@ export class FinancialEngine {
     amount: string,
     description: string,
     date: string,
+    month?: number,
+    year?: number,
     categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
@@ -361,7 +364,37 @@ export class FinancialEngine {
         .set({ usedAmount: sql`${creditCards.usedAmount} - ${data.amount}`, updatedAt: new Date() })
         .where(eq(creditCards.id, data.cardId));
 
-      await this.logAudit(tx, data.userId, "credit_card", data.cardId, "update", null, { payment: data.amount });
+      // 4. Marcar fatura como PAGA se mês/ano fornecidos
+      if (data.month && data.year) {
+        const [existing] = await tx
+          .select()
+          .from(creditCardInvoices)
+          .where(
+            and(
+              eq(creditCardInvoices.cardId, data.cardId),
+              eq(creditCardInvoices.userId, data.userId),
+              eq(creditCardInvoices.month, data.month),
+              eq(creditCardInvoices.year, data.year)
+            )
+          )
+          .limit(1);
+
+        if (existing) {
+          await tx.update(creditCardInvoices)
+            .set({ status: "PAGA", updatedAt: new Date() })
+            .where(eq(creditCardInvoices.id, existing.id));
+        } else {
+          await tx.insert(creditCardInvoices).values({
+            cardId: data.cardId,
+            userId: data.userId,
+            month: data.month,
+            year: data.year,
+            status: "PAGA",
+          });
+        }
+      }
+
+      await this.logAudit(tx, data.userId, "credit_card", data.cardId, "update", null, { payment: data.amount, month: data.month, year: data.year });
       
       return bankTx;
     });

@@ -68,10 +68,6 @@ function getSuggestedInvoice(card: any, dateStr: string) {
   let m = d.getMonth() + 1;
   let y = d.getFullYear();
 
-  // Regra base: Comprou no mes N, paga no mes N+1 (Due date naming)
-  m++;
-  if (m > 12) { m = 1; y++; }
-
   // Regra de Fechamento: Se passou do dia de corte (vencido/inclusive), joga para a PRÓXIMA fatura
   const closing = card ? Number(card.closingDay) : 30;
   if (d.getDate() >= closing) {
@@ -471,6 +467,8 @@ export default function CreditCardsPage() {
         card={selectedCard}
         total={invoiceTotal}
         accounts={accounts}
+        month={currentMonth}
+        year={currentYear}
       />
 
       <EditTxModal 
@@ -749,7 +747,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   );
 }
 
-function PayInvoiceModal({ open, onClose, card, total, accounts }: any) {
+function PayInvoiceModal({ open, onClose, card, total, accounts, month, year }: any) {
   const [form, setForm] = useState({ accountId: "", amount: String(total), date: new Date().toISOString().split('T')[0] });
   const payInvoice = usePayCardInvoice();
 
@@ -761,7 +759,9 @@ function PayInvoiceModal({ open, onClose, card, total, accounts }: any) {
       accountId: form.accountId,
       amount: Number(form.amount),
       description: `Fatura ${card.name}`,
-      date: form.date
+      date: form.date,
+      month,
+      year
     }, { onSuccess: onClose });
   };
 
