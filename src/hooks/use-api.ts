@@ -67,6 +67,15 @@ export function useDeleteCategory() {
   });
 }
 
+export function useCategoryStats(month?: number, year?: number) {
+  const params = new URLSearchParams();
+  if (month) params.set("month", String(month));
+  if (year) params.set("year", String(year));
+  const qs = params.toString();
+  const url = qs ? `/api/categories/stats?${qs}` : "/api/categories/stats";
+  return useQuery({ queryKey: ["category-stats", month ?? null, year ?? null], queryFn: () => apiFetch<Record<string, number>>(url) });
+}
+
 // Global Tags
 export function useTags() {
   return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<string[]>("/api/tags"), staleTime: FIVE_MINUTES });
