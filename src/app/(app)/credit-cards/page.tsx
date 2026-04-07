@@ -154,59 +154,61 @@ export default function CreditCardsPage() {
 
   return (
     <div className="relative min-h-screen bg-slate-50/50 overflow-x-hidden font-sans">
-      
-      {/* ── Background Aura ──────────────── */}
+           {/* ── Background Aura ──────────────── */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <motion.div 
           animate={{ 
-            backgroundColor: selectedCard?.color || '#cbd5e1',
-            opacity: [0.1, 0.15, 0.1]
+            backgroundColor: selectedCard?.color || '#820AD1',
+            opacity: [0.03, 0.08, 0.03]
           }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute -top-[20%] -left-[10%] w-[80%] h-[80%] rounded-full blur-[120px]"
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute -top-[10%] -left-[10%] w-[70%] h-[70%] rounded-full blur-[160px]"
         />
         <motion.div 
           animate={{ 
-            backgroundColor: selectedCard?.color || '#cbd5e1',
-            opacity: [0.05, 0.1, 0.05]
+            backgroundColor: selectedCard?.color || '#820AD1',
+            opacity: [0.02, 0.06, 0.02]
           }}
-          transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-          className="absolute -bottom-[10%] -right-[10%] w-[60%] h-[60%] rounded-full blur-[100px]"
+          transition={{ duration: 15, repeat: Infinity, delay: 2, ease: "easeInOut" }}
+          className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] rounded-full blur-[140px]"
         />
       </div>
 
-      <div className="relative z-10 max-w-5xl mx-auto pt-8 pb-32 px-4 sm:px-6">
+      <div className="relative z-10 max-w-[1440px] mx-auto pt-8 pb-32 px-4 sm:px-8">
         
         {/* ── Header ────────────────────────── */}
-        <header className="flex items-center justify-between mb-10">
+        <header className="flex items-center justify-between mb-12 px-2">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Wallet className="h-6 w-6 text-slate-400" />
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+              <div className="h-10 w-10 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                <Wallet className="h-6 w-6 text-slate-400" />
+              </div>
               Carteira
             </h1>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">DUDIA Finance Premium</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-1 ml-1">DUDIA Finance Premium</p>
           </div>
           <button 
             onClick={() => { setEditingCard(null); setIsCardModalOpen(true); }}
-            className="h-10 w-10 glass-card rounded-full flex items-center justify-center hover:bg-white hover:scale-110 transition-all duration-300 group"
+            className="h-12 w-12 glass-card rounded-2xl flex items-center justify-center hover:bg-white hover:scale-105 transition-all duration-300 group shadow-lg"
           >
-            <Plus className="h-5 w-5 text-slate-600 group-hover:text-black" />
+            <Plus className="h-6 w-6 text-slate-600 group-hover:text-black" />
           </button>
         </header>
 
         {/* ── Apple Wallet Style Carousel ───── */}
-        <section className="mb-12">
+        <section className="mb-16">
           {cards.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-16 glass-card rounded-[40px] border-dashed border-2 border-slate-200 text-center">
-              <div className="h-16 w-16 bg-white rounded-3xl flex items-center justify-center shadow-lg mb-4">
-                <CardIcon className="h-8 w-8 text-slate-300" />
+            <div className="flex flex-col items-center justify-center p-20 glass-card rounded-[48px] border-dashed border-2 border-slate-200 text-center">
+              <div className="h-20 w-20 bg-white rounded-[32px] flex items-center justify-center shadow-xl mb-6">
+                <CardIcon className="h-10 w-10 text-slate-300" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900">Nenhum cartão</h3>
-              <Button onClick={() => setIsCardModalOpen(true)} className="mt-6 rounded-2xl px-8 h-12 bg-slate-900">Cadastrar Primeiro Cartão</Button>
+              <h3 className="text-2xl font-bold text-slate-900">Configure sua Carteira</h3>
+              <p className="text-slate-400 max-w-xs mx-auto mt-2 text-sm font-medium">Adicione seus cartões para começar a gerenciar suas faturas com elegância.</p>
+              <Button onClick={() => setIsCardModalOpen(true)} className="mt-8 rounded-2xl px-10 h-14 bg-slate-900 text-white font-black hover:scale-105 transition-all">Começar Agora</Button>
             </div>
           ) : (
             <div className="relative group">
-              <div className="flex overflow-x-auto gap-6 px-4 py-8 no-scrollbar snap-x snap-mandatory perspective-[1000px]">
+              <div className="flex overflow-x-auto gap-8 px-2 py-10 no-scrollbar snap-x snap-mandatory perspective-[1200px]">
                 {cards.map((card, idx) => {
                   const isSelected = selectedCardId === card.id;
                   return (
@@ -214,50 +216,57 @@ export default function CreditCardsPage() {
                       key={card.id}
                       initial={false}
                       animate={{
-                        scale: isSelected ? 1 : 0.85,
-                        opacity: isSelected ? 1 : 0.6,
-                        y: isSelected ? 0 : 20,
-                        rotateY: isSelected ? 0 : (selectedCardId && cards.findIndex(c => c.id === selectedCardId) > idx ? 15 : -15)
+                        scale: isSelected ? 1 : 0.88,
+                        opacity: isSelected ? 1 : 0.4,
+                        y: isSelected ? 0 : 30,
+                        rotateY: isSelected ? 0 : (selectedCardId && cards.findIndex(c => c.id === selectedCardId) > idx ? 18 : -18),
+                        z: isSelected ? 0 : -100
                       }}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                      className="snap-center shrink-0 w-full max-w-[340px] cursor-pointer"
+                      transition={{ type: "spring", stiffness: 260, damping: 25 }}
+                      className="snap-center shrink-0 w-full max-w-[360px] cursor-pointer"
                       onClick={() => setSelectedCardId(card.id)}
                     >
                       <div className={cn(
-                        "relative h-52 rounded-[32px] p-6 text-white transition-all duration-500 overflow-hidden shadow-2xl premium-shadow group/card",
+                        "relative h-56 rounded-[40px] p-8 text-white transition-all duration-700 overflow-hidden shadow-2xl premium-shadow group/card ring-1 ring-white/10",
                         card.gradient ? `bg-gradient-to-br ${card.gradient}` : "bg-gradient-to-br from-slate-800 to-slate-900"
                       )}>
                         {/* Interactive Shine */}
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-[100%] group-hover/card:translate-x-[100%] transition-transform duration-1000" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-[120%] group-hover/card:translate-x-[120%] transition-transform duration-1000" />
                         
                         <div className="flex justify-between items-start relative z-10">
-                          <div>
-                            <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">{card.bank}</p>
-                            <h4 className="text-xl font-black text-white text-glow leading-tight truncate max-w-[200px]">{card.name}</h4>
+                          <div className="max-w-[70%]">
+                            <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.25em] mb-1">{card.bank}</p>
+                            <h4 className="text-2xl font-black text-white text-glow leading-tight truncate">{card.name}</h4>
                           </div>
-                          <NetworkLogo network={card.network} />
+                          <div className="h-10 w-14 glass-card rounded-xl flex items-center justify-center border-white/10">
+                            <NetworkLogo network={card.network} />
+                          </div>
                         </div>
 
                         <div className="mt-8 relative z-10 flex items-center gap-4">
-                          <div className="h-9 w-12 bg-gradient-to-br from-yellow-100 to-yellow-500 rounded-lg shadow-inner opacity-60" />
-                          <p className="font-mono text-lg tracking-[0.3em] text-white/80">•••• {card.lastDigits}</p>
+                          <div className="h-10 w-14 bg-gradient-to-br from-yellow-100 via-yellow-400 to-yellow-600 rounded-xl shadow-[inset_0_2px_4px_rgba(255,255,255,0.4)] opacity-80" />
+                          <p className="font-mono text-xl tracking-[0.35em] text-white/90 font-medium">•••• {card.lastDigits}</p>
                         </div>
 
                         <div className="mt-auto relative z-10 flex justify-between items-end">
-                           <div className="flex-1 mr-4">
-                              <div className="h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
+                           <div className="flex-1 mr-6">
+                              <div className="flex justify-between items-center mb-1.5 px-0.5">
+                                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">Utilizado</span>
+                                <span className="text-[10px] font-black text-white/80">{Math.round((Number(card.usedAmount) / Number(card.limit)) * 100)}%</span>
+                              </div>
+                              <div className="h-2 w-full bg-black/30 rounded-full overflow-hidden p-[1px]">
                                 <motion.div 
                                   initial={{ width: 0 }}
                                   animate={{ width: `${Math.min((Number(card.usedAmount) / Number(card.limit)) * 100, 100)}%` }}
-                                  className={cn("h-full rounded-full transition-all duration-700", (Number(card.usedAmount) / Number(card.limit)) > 0.8 ? "bg-rose-400 shadow-[0_0_10px_white]" : "bg-white/80 shadow-[0_0_10px_white]")}
+                                  className={cn("h-full rounded-full transition-all duration-1000", (Number(card.usedAmount) / Number(card.limit)) > 0.8 ? "bg-rose-400 shadow-[0_0_12px_rgba(251,113,133,0.6)]" : "bg-white shadow-[0_0_12px_rgba(255,255,255,0.6)]")}
                                 />
                               </div>
                            </div>
                            <button 
                             onClick={(e) => { e.stopPropagation(); setEditingCard(card); setIsCardModalOpen(true); }}
-                            className="p-2 glass-card rounded-xl opacity-0 group-hover/card:opacity-100 transition-opacity"
+                            className="h-10 w-10 glass-card rounded-2xl flex items-center justify-center opacity-0 group-hover/card:opacity-100 transform translate-y-2 group-hover/card:translate-y-0 transition-all duration-300"
                            >
-                            <Pencil className="h-3 w-3" />
+                            <Pencil className="h-4 w-4" />
                            </button>
                         </div>
                       </div>
@@ -272,114 +281,173 @@ export default function CreditCardsPage() {
         {/* ── Selected Card Dashboard ───────── */}
         {selectedCard && (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="space-y-10"
           >
             {/* Quick Invoice Summary */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-stretch">
                {/* Main Invoice Card */}
-               <div className="md:col-span-12 lg:col-span-7 glass-card rounded-[40px] p-8 relative overflow-hidden">
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-2 px-3 py-1 bg-white/40 dark:bg-black/20 rounded-full border border-white/20">
-                      <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                      <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">{MONTH_NAMES[currentMonth-1]} {currentYear}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button onClick={prevInvoice} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-white/50 transition-colors"><ChevronLeft className="h-4 w-4" /></button>
-                      <button onClick={goToToday} className="px-4 h-8 rounded-full text-[9px] font-black text-slate-600 uppercase tracking-widest hover:bg-white/50 transition-colors">Hoje</button>
-                      <button onClick={nextInvoice} className="h-8 w-8 rounded-full flex items-center justify-center hover:bg-white/50 transition-colors"><ChevronRight className="h-4 w-4" /></button>
+               <div className="md:col-span-12 lg:col-span-8 glass-card rounded-[48px] p-10 relative overflow-hidden flex flex-col justify-between min-h-[240px]">
+                  {/* Selector Header */}
+                  <div className="flex justify-center items-center mb-8">
+                    <div className="flex items-center gap-6 glass-card p-2 rounded-[28px] border-white/30 shadow-sm">
+                      <button 
+                        onClick={prevInvoice} 
+                        className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-white/80 transition-all active:scale-90 text-slate-400 hover:text-slate-900"
+                      >
+                        <ChevronLeft className="h-5 w-5" />
+                      </button>
+                      
+                      <button 
+                        onClick={goToToday}
+                        className="flex flex-col items-center min-w-[140px] group"
+                      >
+                        <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.3em] mb-0.5 group-hover:text-emerald-500 transition-colors">
+                          {currentYear}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">{MONTH_NAMES[currentMonth-1]}</span>
+                          {/* Indicator dot for 'Today' */}
+                          {currentMonth === new Date().getMonth() + 1 && currentYear === new Date().getFullYear() && (
+                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
+                          )}
+                        </div>
+                      </button>
+
+                      <button 
+                        onClick={nextInvoice} 
+                        className="h-11 w-11 rounded-2xl flex items-center justify-center hover:bg-white/80 transition-all active:scale-90 text-slate-400 hover:text-slate-900"
+                      >
+                        <ChevronRight className="h-5 w-5" />
+                      </button>
                     </div>
                   </div>
 
-                  <div className="flex items-end justify-between gap-4">
+                  <div className="flex items-end justify-between gap-8">
                     <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total da Fatura</p>
-                      <p className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tighter tabular-nums">{fmt(invoiceTotal)}</p>
+                      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2 px-1">Total da Fatura</p>
+                      <motion.p 
+                        key={invoiceTotal}
+                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        className="text-5xl sm:text-7xl font-black text-slate-900 tracking-tighter tabular-nums"
+                      >
+                        {fmt(invoiceTotal)}
+                      </motion.p>
                     </div>
                     
-                    <motion.button 
-                      key={currentInvoiceStatus}
-                      whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                      onClick={() => {
-                        const statuses = ["ABERTA", "FECHADA", "PAGA"];
-                        const next = statuses[(statuses.indexOf(currentInvoiceStatus) + 1) % statuses.length];
-                        updateInvoiceStatus.mutate({ month: currentMonth, year: currentYear, status: next });
-                      }}
-                      className={cn(
-                        "px-6 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-md",
-                        currentInvoiceStatus === "PAGA" ? "bg-emerald-500 text-white shadow-emerald-200" :
-                        currentInvoiceStatus === "FECHADA" ? "bg-rose-500 text-white shadow-rose-200" :
-                        "bg-blue-500 text-white shadow-blue-200"
-                      )}
-                    >
-                      {currentInvoiceStatus}
-                    </motion.button>
+                    <div className="flex flex-col items-end gap-3">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado Atual</p>
+                      <motion.button 
+                        key={currentInvoiceStatus}
+                        whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          const statuses = ["ABERTA", "FECHADA", "PAGA"];
+                          const next = statuses[(statuses.indexOf(currentInvoiceStatus) + 1) % statuses.length];
+                          updateInvoiceStatus.mutate({ month: currentMonth, year: currentYear, status: next });
+                        }}
+                        className={cn(
+                          "px-8 h-14 rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-slate-200/50 flex items-center gap-3",
+                          currentInvoiceStatus === "PAGA" ? "bg-emerald-500 text-white shadow-emerald-200/40" :
+                          currentInvoiceStatus === "FECHADA" ? "bg-rose-500 text-white shadow-rose-200/40" :
+                          "bg-blue-600 text-white shadow-blue-200/40"
+                        )}
+                      >
+                        {currentInvoiceStatus === "PAGA" && <CheckCircle2 className="h-4 w-4" />}
+                        {currentInvoiceStatus === "FECHADA" && <Lock className="h-3.5 w-3.5" />}
+                        {currentInvoiceStatus === "ABERTA" && <Unlock className="h-3.5 w-3.5" />}
+                        {currentInvoiceStatus}
+                      </motion.button>
+                    </div>
                   </div>
                </div>
 
                {/* Stats Grid */}
-               <div className="md:col-span-12 lg:col-span-5 grid grid-cols-2 gap-4">
-                  <div className="glass-card rounded-[40px] p-6 flex flex-col justify-between">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Limite Livre</p>
+               <div className="md:col-span-12 lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-6">
+                  <div className="glass-card rounded-[40px] p-8 flex flex-col justify-between group">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
+                      <Target className="h-3.5 w-3.5 text-emerald-500" /> Limite Livre
+                    </p>
                     <div>
-                      <p className="text-xl font-black text-slate-900 leading-none mb-1">{fmt(Number(selectedCard.limit) - Number(selectedCard.usedAmount))}</p>
-                      <p className="text-[10px] font-bold text-emerald-600">Disponível</p>
-                    </div>
-                  </div>
-                  <div className="glass-card rounded-[40px] p-6 flex flex-col justify-between">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Datas Chave</p>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                        <span className="opacity-60 font-medium">Venc.</span>
-                        <span>Dia {selectedCard.dueDay}</span>
-                      </div>
-                      <div className="flex justify-between text-[11px] font-bold text-slate-700">
-                        <span className="opacity-60 font-medium">Fecham.</span>
-                        <span>Dia {selectedCard.closingDay}</span>
+                      <p className="text-3xl font-black text-slate-900 leading-none mb-2 tabular-nums">
+                        {fmt(Number(selectedCard.limit) - Number(selectedCard.usedAmount))}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-tighter">Disponível para Compras</span>
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-2 flex gap-2">
+                  
+                  <div className="glass-card rounded-[40px] p-8 flex flex-col justify-around">
+                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                      <div className="flex items-center gap-3 text-slate-400">
+                        <div className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                          <Calendar className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Fechamento</span>
+                      </div>
+                      <span className="text-sm font-black text-slate-900">Dia {selectedCard.closingDay}</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-4">
+                      <div className="flex items-center gap-3 text-slate-400">
+                        <div className="h-8 w-8 rounded-xl bg-slate-50 flex items-center justify-center">
+                          <Clock className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Vencimento</span>
+                      </div>
+                      <span className="text-sm font-black text-slate-900">Dia {selectedCard.dueDay}</span>
+                    </div>
+                  </div>
+
+                  <div className="col-span-2 lg:col-span-1 flex gap-3">
                     <Button 
                       onClick={() => setIsPayModalOpen(true)}
-                      className="flex-1 h-16 rounded-3xl bg-slate-900 hover:bg-black text-white font-black text-xs tracking-widest uppercase shadow-xl"
+                      className="flex-1 h-18 rounded-[32px] bg-slate-900 hover:bg-black text-white font-black text-xs tracking-[0.2em] uppercase shadow-2xl transition-all hover:scale-[1.02] active:scale-95"
                     >
-                      Pagar Fatura
+                      Liquidar Fatura
                     </Button>
                     <button 
                       onClick={() => setIsLaunchModalOpen(true)}
-                      className="h-16 w-16 glass-card rounded-3xl flex items-center justify-center hover:bg-white hover:scale-105 transition-all text-slate-600"
+                      className="h-18 w-18 glass-card rounded-[32px] flex items-center justify-center hover:bg-white hover:scale-105 transition-all text-slate-600 shadow-xl"
                     >
-                      <Plus className="h-6 w-6" />
+                      <Plus className="h-7 w-7" />
                     </button>
                   </div>
                </div>
             </div>
 
             {/* ── Transaction List ──────────────── */}
-            <div className="space-y-6">
-              <div className="flex items-center justify-between px-2">
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">Movimentações</h3>
-                <span className="text-[10px] font-black text-slate-400 uppercase">{transactions.length} itens</span>
+            <div className="space-y-8">
+              <div className="flex items-center justify-between px-4 pb-2 border-b border-slate-200/50">
+                <div className="flex items-center gap-3">
+                  <ArrowRightLeft className="h-5 w-5 text-slate-400" />
+                  <h3 className="text-xl font-black text-slate-900 tracking-tight">Histórico do Período</h3>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{transactions.length} Lançamentos</span>
+                </div>
               </div>
 
               {isLoadingTx ? (
-                <div className="h-40 flex items-center justify-center">
-                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-6 w-6 border-2 border-slate-200 border-t-slate-800 rounded-full" />
+                <div className="h-60 flex items-center justify-center">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-8 w-8 border-4 border-slate-200 border-t-slate-800 rounded-full" />
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="py-20 glass-card rounded-[40px] text-center border-dashed border border-slate-200">
-                  <Clock className="h-10 w-10 text-slate-200 mx-auto mb-2" />
-                  <p className="text-slate-400 font-bold text-sm">Sem lançamentos para este período</p>
+                <div className="py-24 glass-card rounded-[56px] text-center border-dashed border-2 border-slate-200 max-w-2xl mx-auto">
+                  <div className="h-20 w-20 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <Clock className="h-10 w-10 text-slate-200" />
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 uppercase tracking-widest">Nada por aqui ainda</h4>
+                  <p className="text-slate-400 font-medium text-sm px-10 mt-2">Nenhum lançamento foi encontrado para {MONTH_NAMES[currentMonth-1]} de {currentYear}.</p>
                 </div>
               ) : (
                 <motion.div 
                   initial="hidden" animate="show"
                   variants={{
-                    show: { transition: { staggerChildren: 0.05 } }
+                    show: { transition: { staggerChildren: 0.08 } }
                   }}
-                  className="space-y-3"
+                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
                   {transactions.map((tx) => {
                     const cat = categories.find(c => c.id === tx.categoryId);
@@ -389,46 +457,49 @@ export default function CreditCardsPage() {
                     return (
                       <motion.div 
                         key={tx.id}
-                        variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}
-                        className="group flex items-center gap-4 p-4 glass-card rounded-[28px] hover:bg-white hover:shadow-2xl transition-all cursor-pointer"
+                        variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
+                        className="group flex items-center gap-5 p-6 glass-card rounded-[36px] hover:bg-white hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] transition-all cursor-pointer border-transparent hover:border-white/50"
                         onClick={() => { setEditingTx(tx); setIsEditModalOpen(true); }}
                       >
                         <div 
-                          className="h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner"
+                          className="h-16 w-16 rounded-[24px] flex items-center justify-center shrink-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] transition-transform group-hover:scale-110"
                           style={{ backgroundColor: `${color}15` }}
                         >
                           {isRefund ? (
-                            <ArrowDownLeft className="h-5 w-5 text-emerald-600" />
+                            <ArrowDownLeft className="h-7 w-7 text-emerald-600" />
                           ) : (
-                            <TrendingDown className="h-5 w-5" style={{ color }} />
+                            <TrendingDown className="h-7 w-7" style={{ color }} />
                           )}
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-bold text-slate-900 text-sm truncate">{tx.description}</p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-black text-slate-900 text-base truncate">{tx.description}</p>
                             {tx.launchType === 'installment' && (
-                              <span className="bg-slate-100 text-slate-500 text-[8px] font-black uppercase px-2 py-0.5 rounded-full">
-                                {tx.currentInstallment}/{tx.totalInstallments}x
+                              <span className="bg-slate-100 text-slate-500 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                                {tx.currentInstallment} de {tx.totalInstallments}
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                            {cat?.name ?? "Outros"} • {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '')}
-                          </p>
+                          <div className="flex items-center gap-2">
+                             <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
+                                {cat?.name ?? "Outros"} • {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                             </p>
+                          </div>
                         </div>
 
-                        <div className="text-right mr-2">
+                        <div className="text-right flex flex-col items-end gap-1">
                           <p className={cn(
-                            "font-black tabular-nums text-sm",
+                            "font-black tabular-nums text-lg",
                             isRefund ? "text-emerald-600" : "text-slate-900"
                           )}>
                             {isRefund ? `+${fmt(Math.abs(Number(tx.amount)))}` : fmt(Number(tx.amount))}
                           </p>
-                          <p className="text-[8px] font-black text-slate-400 uppercase">BRL</p>
-                        </div>
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ChevronRight className="h-4 w-4 text-slate-300" />
+                          <div className="flex items-center gap-1.5">
+                             <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">BRL</span>
+                             <ChevronRight className="h-4 w-4 text-slate-200 group-hover:translate-x-1 transition-transform" />
+                          </div>
                         </div>
                       </motion.div>
                     );
