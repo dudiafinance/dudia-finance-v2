@@ -30,14 +30,14 @@ import { useMobileNav } from "./mobile-nav-context";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/transactions", icon: ArrowRightLeft, label: "Transações" },
+  { href: "/credit-cards", icon: CreditCard, label: "Cartões" },
+  { href: "/goals", icon: Target, label: "Metas" },
+  { href: "/budgets", icon: PiggyBank, label: "Orçamentos" },
+  { href: "/accounts", icon: Wallet, label: "Contas" },
   { href: "/categories", icon: Layers, label: "Categorias" },
   { href: "/tags", icon: Tag, label: "Tags" },
-  { href: "/accounts", icon: Wallet, label: "Contas" },
-  { href: "/credit-cards", icon: CreditCard, label: "Cartões" },
-  { href: "/budgets", icon: PiggyBank, label: "Orçamentos" },
-  { href: "/goals", icon: Target, label: "Metas" },
-  { href: "/reports", icon: BarChart3, label: "Relatórios" },
   { href: "/forecast", icon: TrendingUp, label: "Previsão" },
+  { href: "/reports", icon: BarChart3, label: "Relatórios" },
   { href: "/settings", icon: Settings, label: "Configurações" },
 ];
 
