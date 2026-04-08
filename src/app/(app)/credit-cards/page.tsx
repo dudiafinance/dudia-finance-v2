@@ -223,7 +223,7 @@ export default function CreditCardsPage() {
                       whileHover={{ y: -4 }}
                       onClick={() => setSelectedCardId(card.id)}
                       className={cn(
-                        "cursor-pointer rounded-lg border p-5 transition-all",
+                        "cursor-pointer rounded-lg border p-5 transition-shadow",
                         isSelected 
                           ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500" 
                           : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-md"

@@ -30,11 +30,19 @@ export function Modal({ open, onClose, title, description, children, size = "md"
 
   useEffect(() => {
     if (open) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
     } else {
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => { 
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
+    };
   }, [open]);
 
   return (
@@ -46,7 +54,7 @@ export function Modal({ open, onClose, title, description, children, size = "md"
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-all"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
           />
 
           <motion.div

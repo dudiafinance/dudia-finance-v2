@@ -330,7 +330,7 @@ export default function AccountsPage() {
                     <motion.div
                       key={a.id}
                       whileHover={{ y: -4 }}
-                      className="group relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md transition-all cursor-pointer"
+                      className="group relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 hover:shadow-md cursor-pointer"
                       onClick={() => openEdit(a)}
                     >
                       <div className="flex items-start justify-between mb-4">
