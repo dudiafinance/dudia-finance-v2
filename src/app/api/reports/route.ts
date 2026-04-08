@@ -24,47 +24,51 @@ export async function GET(req: NextRequest) {
   } else if (period === "year") {
     startDate = new Date(now.getFullYear(), 0, 1);
   }
+  
+  const startStr = startDate.toISOString().slice(0, 10);
+  const endStr = endDate.toISOString().slice(0, 10);
 
   try {
-    // 1. Fetch Categories
+    // 1. Fetch Categories (Lightweight Map)
     const categories = await db
-      .select()
+      .select({ id: categoriesTable.id, name: categoriesTable.name, color: categoriesTable.color })
       .from(categoriesTable)
       .where(eq(categoriesTable.userId, userId));
 
     const catMap = Object.fromEntries(categories.map(c => [c.id, c]));
 
-    // 2. Fetch Bank Transactions
-    const bankTxs = await db
-      .select()
+    // 2. Fetch Bank Transactions Aggregated via SQL (O(1) memory instead of O(N))
+    const bankAgg = await db
+      .select({
+        type: transactions.type,
+        categoryId: transactions.categoryId,
+        total: sql<string>`sum(${transactions.amount})`,
+      })
       .from(transactions)
       .where(
         and(
           eq(transactions.userId, userId),
-          gte(transactions.date, startDate.toISOString().slice(0, 10)),
-          lte(transactions.date, endDate.toISOString().slice(0, 10))
+          gte(transactions.date, startStr),
+          lte(transactions.date, endStr)
         )
-      );
+      )
+      .groupBy(transactions.type, transactions.categoryId);
 
-    // 3. Fetch Card Transactions
-    // Special note: Card transactions use invoiceMonth/Year for 'actual' billing,
-    // but for reports we usually want 'date' of expense.
-    const cardTxs = await db
+    // 3. Fetch Card Transactions Aggregated via SQL
+    const cardAgg = await db
       .select({
-        id: cardTransactions.id,
-        amount: cardTransactions.amount,
-        date: cardTransactions.date,
         categoryId: cardTransactions.categoryId,
-        description: cardTransactions.description,
+        total: sql<string>`sum(${cardTransactions.amount})`,
       })
       .from(cardTransactions)
       .where(
         and(
           eq(cardTransactions.userId, userId),
-          gte(cardTransactions.date, startDate.toISOString().slice(0, 10)),
-          lte(cardTransactions.date, endDate.toISOString().slice(0, 10))
+          gte(cardTransactions.date, startStr),
+          lte(cardTransactions.date, endStr) // Note: using actual date, not invoice.
         )
-      );
+      )
+      .groupBy(cardTransactions.categoryId);
 
     // 4. Consolidation Logic
     let totalIncome = 0;
@@ -73,8 +77,8 @@ export async function GET(req: NextRequest) {
     const expenseByCat: Record<string, { value: number; color: string }> = {};
 
     // Process Bank
-    bankTxs.forEach(t => {
-      const amt = Number(t.amount);
+    bankAgg.forEach(t => {
+      const amt = Number(t.total || 0);
       const cat = catMap[t.categoryId as any];
       const catName = cat?.name ?? "Outros";
       const catColor = cat?.color ?? "#64748B";
@@ -90,8 +94,8 @@ export async function GET(req: NextRequest) {
     });
 
     // Process Card (all are expenses)
-    cardTxs.forEach(t => {
-      const amt = Number(t.amount);
+    cardAgg.forEach(t => {
+      const amt = Number(t.total || 0);
       const cat = catMap[t.categoryId as any];
       const catName = cat?.name ?? "Cartão (Sem Categoria)";
       const catColor = cat?.color ?? "#94a3b8";
@@ -101,35 +105,45 @@ export async function GET(req: NextRequest) {
       expenseByCat[catName].value += amt;
     });
 
-    // 5. Monthly Evolution (Last 6 months)
+    // 5. Monthly Evolution (Last 6 months) grouped by Month natively in SQL
     const history = [];
     const MONTHS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     
-    // We need to fetch data for the last 6 months specifically for the history chart
     const historyStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const histStartStr = historyStart.toISOString().slice(0, 10);
     
-    const [histBank, histCard] = await Promise.all([
-      db.select().from(transactions).where(and(eq(transactions.userId, userId), gte(transactions.date, historyStart.toISOString().slice(0, 10)))),
-      db.select().from(cardTransactions).where(and(eq(cardTransactions.userId, userId), gte(cardTransactions.date, historyStart.toISOString().slice(0, 10)))),
+    const [histBankAgg, histCardAgg] = await Promise.all([
+      db.select({
+        monthGroup: sql<string>`to_char(${transactions.date}, 'YYYY-MM')`,
+        type: transactions.type,
+        total: sql<string>`sum(${transactions.amount})`
+      })
+      .from(transactions)
+      .where(and(eq(transactions.userId, userId), gte(transactions.date, histStartStr)))
+      .groupBy(sql`to_char(${transactions.date}, 'YYYY-MM')`, transactions.type),
+
+      db.select({
+        monthGroup: sql<string>`to_char(${cardTransactions.date}, 'YYYY-MM')`,
+        total: sql<string>`sum(${cardTransactions.amount})`
+      })
+      .from(cardTransactions)
+      .where(and(eq(cardTransactions.userId, userId), gte(cardTransactions.date, histStartStr)))
+      .groupBy(sql`to_char(${cardTransactions.date}, 'YYYY-MM')`)
     ]);
 
+    // Map the grouped data to the last 6 months loop
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const m = d.getMonth();
       const y = d.getFullYear();
+      const targetGroup = `${y}-${String(m + 1).padStart(2, '0')}`;
     
-      const bankMonth = histBank.filter(t => {
-        const td = new Date(t.date);
-        return td.getMonth() === m && td.getFullYear() === y;
-      });
-      const cardMonth = histCard.filter(t => {
-        const td = new Date(t.date);
-        return td.getMonth() === m && td.getFullYear() === y;
-      });
+      const bankIncome = histBankAgg.find(h => h.monthGroup === targetGroup && h.type === 'income')?.total || 0;
+      const bankExpense = histBankAgg.find(h => h.monthGroup === targetGroup && h.type === 'expense')?.total || 0;
+      const cardExpense = histCardAgg.find(h => h.monthGroup === targetGroup)?.total || 0;
 
-      const income = bankMonth.filter(t => t.type === "income").reduce((s,t) => s + Number(t.amount), 0);
-      const expense = bankMonth.filter(t => t.type === "expense").reduce((s,t) => s + Number(t.amount), 0) +
-                    cardMonth.reduce((s,t) => s + Number(t.amount), 0);
+      const income = Number(bankIncome);
+      const expense = Number(bankExpense) + Number(cardExpense);
 
       history.push({ 
         month: MONTHS_PT[m], 
