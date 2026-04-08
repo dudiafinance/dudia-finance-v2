@@ -15,26 +15,6 @@ export type FinancialAction = "create" | "update" | "delete" | "transfer";
 
 export class FinancialEngine {
   /**
-   * Determina se uma transação de cartão deve afetar o 'usedAmount' atual
-   * Baseado no dia de fechamento do cartão.
-   */
-  private static isTransactionInCurrentInvoice(card: any, txMonth: number, txYear: number): boolean {
-    const now = new Date();
-    let currentInvoiceMonth = now.getMonth() + 1;
-    let currentInvoiceYear = now.getFullYear();
-
-    if (now.getDate() >= card.closingDay) {
-      currentInvoiceMonth++;
-      if (currentInvoiceMonth > 12) {
-        currentInvoiceMonth = 1;
-        currentInvoiceYear++;
-      }
-    }
-
-    return txMonth === currentInvoiceMonth && txYear === currentInvoiceYear;
-  }
-
-  /**
    * Registra um log de auditoria para cada operação financeira
    */
   private static async logAudit(
@@ -232,27 +212,45 @@ export class FinancialEngine {
   }
 
   /**
-   * Adiciona transação de cartão e atualiza o limite utilizado se for da fatura atual
+   * Recalcula o limite utilizado do cartão somando todas as transações de faturas NÃO PAGAS.
+   */
+  static async recalculateCardLimit(tx: any, cardId: string) {
+    const result = await tx
+      .select({
+        total: sql<string>`COALESCE(SUM(CAST(${cardTransactions.amount} AS DECIMAL(15,2))), 0)`,
+      })
+      .from(cardTransactions)
+      .leftJoin(
+        creditCardInvoices,
+        and(
+          eq(creditCardInvoices.cardId, cardTransactions.cardId),
+          eq(creditCardInvoices.month, cardTransactions.invoiceMonth),
+          eq(creditCardInvoices.year, cardTransactions.invoiceYear)
+        )
+      )
+      .where(
+        and(
+          eq(cardTransactions.cardId, cardId),
+          sql`( ${creditCardInvoices.status} IS NULL OR ${creditCardInvoices.status} != 'PAGA' )`
+        )
+      );
+
+    const usedAmount = result[0]?.total ?? "0";
+
+    await tx
+      .update(creditCards)
+      .set({ usedAmount, updatedAt: new Date() })
+      .where(eq(creditCards.id, cardId));
+  }
+
+  /**
+   * Adiciona transação de cartão e recalcula o limite (removido incremento manual p/ consistência)
    */
   static async addCardTransaction(data: typeof cardTransactions.$inferInsert) {
     return await db.transaction(async (tx) => {
       const [newTx] = await tx.insert(cardTransactions).values(data).returning();
-
-      const [card] = await tx
-        .select()
-        .from(creditCards)
-        .where(eq(creditCards.id, newTx.cardId))
-        .limit(1);
-
-      if (card && this.isTransactionInCurrentInvoice(card, newTx.invoiceMonth, newTx.invoiceYear)) {
-        await tx.update(creditCards)
-          .set({ 
-            usedAmount: sql`${creditCards.usedAmount} + ${newTx.amount}`,
-            updatedAt: new Date()
-          })
-          .where(eq(creditCards.id, newTx.cardId));
-      }
-
+      
+      await this.recalculateCardLimit(tx, newTx.cardId);
       await this.logAudit(tx, newTx.userId, "card_transaction", newTx.id, "create", null, newTx);
 
       return newTx;
@@ -260,23 +258,16 @@ export class FinancialEngine {
   }
 
   /**
-   * Remove uma transação de cartão e devolve o limite utilizado
+   * Remove uma transação de cartão e recalcula limite
    */
   static async deleteCardTransaction(id: string, userId: string) {
     return await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Lançamento não encontrado");
 
-      const [card] = await tx.select().from(creditCards).where(eq(creditCards.id, oldTx.cardId)).limit(1);
-
-      // Reverter limite se for da fatura atual
-      if (card && this.isTransactionInCurrentInvoice(card, oldTx.invoiceMonth, oldTx.invoiceYear)) {
-        await tx.update(creditCards)
-          .set({ usedAmount: sql`${creditCards.usedAmount} - ${oldTx.amount}` })
-          .where(eq(creditCards.id, oldTx.cardId));
-      }
-
       await tx.delete(cardTransactions).where(eq(cardTransactions.id, id));
+      
+      await this.recalculateCardLimit(tx, oldTx.cardId);
       await this.logAudit(tx, userId, "card_transaction", id, "delete", oldTx, null);
     });
   }
@@ -289,16 +280,7 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Lançamento não encontrado");
 
-      const [card] = await tx.select().from(creditCards).where(eq(creditCards.id, oldTx.cardId)).limit(1);
-
-      // 1. Reverter limite antigo
-      if (card && this.isTransactionInCurrentInvoice(card, oldTx.invoiceMonth, oldTx.invoiceYear)) {
-        await tx.update(creditCards)
-          .set({ usedAmount: sql`${creditCards.usedAmount} - ${oldTx.amount}` })
-          .where(eq(creditCards.id, oldTx.cardId));
-      }
-
-      // 2. Lógica de Atualização em Massa (Group) + Cascade Shift
+      // 1. Lógica de Atualização em Massa (Group) + Cascade Shift
       if (updateGroup && oldTx.groupId) {
         const monthDelta = (data.invoiceMonth && data.invoiceYear) 
           ? (data.invoiceYear * 12 + data.invoiceMonth) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth)
@@ -338,14 +320,10 @@ export class FinancialEngine {
           .where(eq(cardTransactions.id, id));
       }
 
-      // 3. Aplicar novo limite (após update)
-      const [newTx] = await tx.select().from(cardTransactions).where(eq(cardTransactions.id, id)).limit(1);
-      if (card && this.isTransactionInCurrentInvoice(card, newTx.invoiceMonth, newTx.invoiceYear)) {
-        await tx.update(creditCards)
-          .set({ usedAmount: sql`${creditCards.usedAmount} + ${newTx.amount}` })
-          .where(eq(creditCards.id, newTx.cardId));
-      }
+      // 2. Recalcular limite após updates
+      await this.recalculateCardLimit(tx, oldTx.cardId);
 
+      const [newTx] = await tx.select().from(cardTransactions).where(eq(cardTransactions.id, id)).limit(1);
       await this.logAudit(tx, userId, "card_transaction", id, "update", oldTx, newTx);
       return newTx;
     });
@@ -412,11 +390,6 @@ export class FinancialEngine {
         .set({ balance: sql`${accounts.balance} - ${data.amount}`, updatedAt: new Date() })
         .where(eq(accounts.id, data.accountId));
 
-      // 3. Reduzir limite utilizado do cartão (Abatimento)
-      await tx.update(creditCards)
-        .set({ usedAmount: sql`${creditCards.usedAmount} - ${data.amount}`, updatedAt: new Date() })
-        .where(eq(creditCards.id, data.cardId));
-
       // 4. Marcar fatura como PAGA se mês/ano fornecidos
       if (data.month && data.year) {
         const [existing] = await tx
@@ -446,6 +419,9 @@ export class FinancialEngine {
           });
         }
       }
+
+      // 5. Recalcular limite usando a função global agregada (abate automático das faturas pagas)
+      await this.recalculateCardLimit(tx, data.cardId);
 
       await this.logAudit(tx, data.userId, "credit_card", data.cardId, "update", null, { payment: data.amount, month: data.month, year: data.year });
       

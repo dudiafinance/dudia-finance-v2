@@ -2,53 +2,14 @@ import { db } from "@/lib/db";
 import { creditCards, cardTransactions } from "@/lib/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 
+import { FinancialEngine } from "@/lib/services/financial-engine";
+
 /**
  * Recalculate the used amount of a credit card.
- * Only counts transactions for the CURRENT open invoice month,
- * since past invoices are already paid.
+ * Sums all unpaid card transactions using the global engine.
  */
 export async function recalculateUsedAmount(cardId: string): Promise<void> {
-  const [card] = await db
-    .select()
-    .from(creditCards)
-    .where(eq(creditCards.id, cardId))
-    .limit(1);
-
-  if (!card) return;
-
-  // Determine the current open invoice month based on closing day
-  const now = new Date();
-  let invoiceMonth = now.getMonth() + 1;
-  let invoiceYear = now.getFullYear();
-
-  // If today is past the closing day, the current spend goes to next month's invoice
-  if (now.getDate() > card.closingDay) {
-    invoiceMonth++;
-    if (invoiceMonth > 12) {
-      invoiceMonth = 1;
-      invoiceYear++;
-    }
-  }
-
-  const result = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(CAST(${cardTransactions.amount} AS DECIMAL(15,2))), 0)`,
-    })
-    .from(cardTransactions)
-    .where(
-      and(
-        eq(cardTransactions.cardId, cardId),
-        eq(cardTransactions.invoiceMonth, invoiceMonth),
-        eq(cardTransactions.invoiceYear, invoiceYear)
-      )
-    );
-
-  const usedAmount = result[0]?.total ?? "0";
-
-  await db
-    .update(creditCards)
-    .set({ usedAmount, updatedAt: new Date() })
-    .where(eq(creditCards.id, cardId));
+  await FinancialEngine.recalculateCardLimit(db, cardId);
 }
 
 /**
