@@ -66,69 +66,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       isPending,
     } = parsed.data;
 
-    const results = [];
+    const results = await db.transaction(async (tx) => {
+      const txResults = [];
 
-    if (launchType === "single") {
-      const row = await FinancialEngine.addCardTransaction({
-        cardId,
-        userId,
-        categoryId: categoryId ?? null,
-        description,
-        amount: String(amount),
-        totalAmount: String(amount),
-        date,
-        invoiceMonth,
-        invoiceYear,
-        launchType: "single",
-        isPending,
-        tags: tags ?? null,
-        notes: notes ?? null,
-      });
-      results.push(row);
-    } else if (launchType === "installment") {
-      const n = totalInstallments ?? 1;
-      const start = startInstallment;
-      const amountInCents = Math.round(amount * 100);
-      const baseCents = Math.floor(amountInCents / n);
-      const remainderCents = amountInCents - baseCents * (n - 1);
-      const groupId = crypto.randomUUID();
-
-      let m = invoiceMonth;
-      let y = invoiceYear;
-
-      for (let i = start; i <= n; i++) {
-        const installmentCents = i === n ? remainderCents : baseCents;
-        const installmentAmount = installmentCents / 100;
-        const row = await FinancialEngine.addCardTransaction({
-          cardId,
-          userId,
-          categoryId: categoryId ?? null,
-          description: `${description} (${i}/${n})`,
-          amount: String(installmentAmount.toFixed(2)),
-          totalAmount: String(amount),
-          date,
-          invoiceMonth: m,
-          invoiceYear: y,
-          launchType: "installment",
-          totalInstallments: n,
-          currentInstallment: i,
-          groupId,
-          tags: tags ?? null,
-          isPending,
-          notes: notes ?? null,
-        });
-        results.push(row);
-
-        m++;
-        if (m > 12) { m = 1; y++; }
-      }
-    } else if (launchType === "fixed") {
-      const groupId = crypto.randomUUID();
-      let m = invoiceMonth;
-      let y = invoiceYear;
-
-      // Gerar 12 meses conforme pedido pelo usuário
-      for (let i = 0; i < 12; i++) {
+      if (launchType === "single") {
         const row = await FinancialEngine.addCardTransaction({
           cardId,
           userId,
@@ -137,21 +78,84 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           amount: String(amount),
           totalAmount: String(amount),
           date,
-          invoiceMonth: m,
-          invoiceYear: y,
-          launchType: "fixed",
-          groupId,
-          tags: tags ?? null,
+          invoiceMonth,
+          invoiceYear,
+          launchType: "single",
           isPending,
-          isFixed: true,
+          tags: tags ?? null,
           notes: notes ?? null,
-        });
-        results.push(row);
+        }, tx as any);
+        txResults.push(row);
+      } else if (launchType === "installment") {
+        const n = totalInstallments ?? 1;
+        const start = startInstallment;
+        const totalRemaining = n - start + 1;
+        
+        const amountInCents = Math.round(amount * 100);
+        const baseCents = Math.floor(amountInCents / n);
+        const remainderCents = amountInCents - baseCents * (n - 1);
+        const groupId = crypto.randomUUID();
 
-        m++;
-        if (m > 12) { m = 1; y++; }
+        let m = invoiceMonth;
+        let y = invoiceYear;
+
+        for (let i = start; i <= n; i++) {
+          const installmentCents = i === n ? remainderCents : baseCents;
+          const installmentAmount = installmentCents / 100;
+          const row = await FinancialEngine.addCardTransaction({
+            cardId,
+            userId,
+            categoryId: categoryId ?? null,
+            description: `${description} (${i}/${n})`,
+            amount: String(installmentAmount.toFixed(2)),
+            totalAmount: String(amount),
+            date,
+            invoiceMonth: m,
+            invoiceYear: y,
+            launchType: "installment",
+            totalInstallments: n,
+            currentInstallment: i,
+            groupId,
+            tags: tags ?? null,
+            isPending,
+            notes: notes ?? null,
+          }, tx as any);
+          txResults.push(row);
+
+          m++;
+          if (m > 12) { m = 1; y++; }
+        }
+      } else if (launchType === "fixed") {
+        const groupId = crypto.randomUUID();
+        let m = invoiceMonth;
+        let y = invoiceYear;
+
+        for (let i = 0; i < 12; i++) {
+          const row = await FinancialEngine.addCardTransaction({
+            cardId,
+            userId,
+            categoryId: categoryId ?? null,
+            description,
+            amount: String(amount),
+            totalAmount: String(amount),
+            date,
+            invoiceMonth: m,
+            invoiceYear: y,
+            launchType: "fixed",
+            groupId,
+            tags: tags ?? null,
+            isPending,
+            isFixed: true,
+            notes: notes ?? null,
+          }, tx as any);
+          txResults.push(row);
+
+          m++;
+          if (m > 12) { m = 1; y++; }
+        }
       }
-    }
+      return txResults;
+    });
 
     return NextResponse.json(results, { status: 201 });
   } catch (error: any) {

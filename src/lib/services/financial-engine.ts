@@ -261,17 +261,18 @@ export class FinancialEngine {
   }
 
   /**
-   * Adiciona transação de cartão e recalcula o limite (removido incremento manual p/ consistência)
+   * Adiciona transação de cartão e recalcula o limite
    */
-  static async addCardTransaction(data: typeof cardTransactions.$inferInsert) {
-    return await db.transaction(async (tx) => {
+  static async addCardTransaction(data: typeof cardTransactions.$inferInsert, externalTx?: any) {
+    const execute = async (tx: any) => {
       const [newTx] = await tx.insert(cardTransactions).values(data).returning();
-      
       await this.recalculateCardLimit(tx, newTx.cardId);
       await this.logAudit(tx, newTx.userId, "card_transaction", newTx.id, "create", null, newTx);
-
       return newTx;
-    });
+    };
+
+    if (externalTx) return await execute(externalTx);
+    return await db.transaction(execute);
   }
 
   /**

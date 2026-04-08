@@ -603,9 +603,10 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear }: any) {
   const [form, setForm] = useState({
     description: "", amount: "", type: "purchase", date: new Date().toISOString().split('T')[0],
-    categoryId: "", launchType: "single", totalInstallments: "2", isPending: false,
+    categoryId: "", launchType: "single", totalInstallments: "2", startInstallment: "1", isPending: false,
     invoiceMonth: currentMonth, invoiceYear: currentYear
   });
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const { data: categories = [] } = useCategories();
   const createTx = useCreateCardTransaction(selectedCard?.id || "");
@@ -708,18 +709,108 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
             </Select>
           </Field>
           {form.launchType === 'installment' && (
-            <Field label="Parcelas">
-              <Input type="number" min={2} value={form.totalInstallments} 
-                onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-11 rounded-md" />
-            </Field>
+            <div className="flex gap-2 w-full">
+              <Field label="Parcela Atual" className="flex-1">
+                <Input type="number" min={1} max={Number(form.totalInstallments)} value={form.startInstallment} 
+                  onChange={e => setForm(p => ({...p, startInstallment: e.target.value}))} className="h-11 rounded-md" />
+              </Field>
+              <Field label="De um Total" className="flex-1">
+                <Input type="number" min={2} value={form.totalInstallments} 
+                  onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-11 rounded-md" />
+              </Field>
+            </div>
           )}
         </FormRow>
 
         <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
           <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
-            disabled={!form.amount || !form.description || createTx.isPending}>
-            {createTx.isPending ? "Lançando..." : "Criar Lançamento"}
+          {form.launchType === 'installment' ? (
+            <Button onClick={() => setIsPreviewOpen(true)} className="flex-1 font-bold shadow-lg"
+              disabled={!form.amount || !form.description}>
+              Ver Parcelas
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
+              disabled={!form.amount || !form.description || createTx.isPending}>
+              {createTx.isPending ? "Lançando..." : "Criar Lançamento"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <InstallmentPreviewModal 
+        open={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        form={form}
+        onConfirm={() => {
+          setIsPreviewOpen(false);
+          handleSubmit();
+        }}
+        isSubmitting={createTx.isPending}
+      />
+    </Modal>
+  );
+}
+
+function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting }: any) {
+  const installments = useMemo(() => {
+    const n = Number(form.totalInstallments) || 1;
+    const start = Number(form.startInstallment) || 1;
+    const amount = Number(form.amount) || 0;
+    
+    const amountInCents = Math.round(amount * 100);
+    const baseCents = Math.floor(amountInCents / n);
+    const remainderCents = amountInCents - baseCents * (n - 1);
+
+    const items = [];
+    let m = form.invoiceMonth;
+    let y = form.invoiceYear;
+
+    for (let i = start; i <= n; i++) {
+      const installmentCents = i === n ? remainderCents : baseCents;
+      items.push({
+        num: i,
+        total: n,
+        amount: installmentCents / 100,
+        month: m,
+        year: y
+      });
+
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+    return items;
+  }, [form]);
+
+  return (
+    <Modal open={open} onClose={onClose} title="Pré-visualização das Parcelas" size="md">
+      <div className="space-y-4 pt-2">
+        <p className="text-sm text-slate-500">Confira abaixo os lançamentos que serão gerados nas suas próximas faturas:</p>
+        
+        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          {installments.map((item, idx) => (
+            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400">
+                  {item.num}/{item.total}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Fatura de {MONTH_NAMES[item.month-1]} {item.year}
+                  </p>
+                </div>
+              </div>
+              <p className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                {formatCurrency(item.amount, "BRL")}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
+          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Voltar</Button>
+          <Button onClick={onConfirm} className="flex-1 font-bold shadow-lg" disabled={isSubmitting}>
+            {isSubmitting ? "Lançando..." : "Confirmar Lançamentos"}
           </Button>
         </div>
       </div>
