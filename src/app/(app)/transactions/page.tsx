@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -598,12 +599,13 @@ export default function TransactionsPage() {
 
           <FormRow>
             <Field label="Categoria">
-              <Select value={form.categoryId} onChange={(e) => set("categoryId", e.target.value)} className="h-11 rounded-md">
-                <option value="">Sem categoria</option>
-                {relevantCategories.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+              <SearchableSelect 
+                options={relevantCategories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                value={form.categoryId}
+                onChange={val => set("categoryId", val)}
+                placeholder="Selecione a categoria..."
+                className="h-11 rounded-md"
+              />
             </Field>
             <Field label="Conta">
               <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)} className="h-11 rounded-md">

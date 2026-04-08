@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -333,12 +334,13 @@ export default function BudgetsPage() {
 
           <FormRow>
             <Field label="Categoria">
-              <Select value={form.categoryId} onChange={e => set("categoryId", e.target.value)} className="rounded-md">
-                <option value="">Todas as Categorias</option>
-                {categories.filter((c: any) => c.type === 'expense').map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+              <SearchableSelect 
+                options={categories.filter((c: any) => c.type === 'expense').map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                value={form.categoryId}
+                onChange={val => set("categoryId", val)}
+                placeholder="Todas as Categorias"
+                className="rounded-md h-11"
+              />
             </Field>
             <Field label="Recorrência">
               <Select value={form.period} onChange={e => set("period", e.target.value)} className="rounded-md">

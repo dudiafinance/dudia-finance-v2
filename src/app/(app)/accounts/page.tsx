@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -540,6 +541,16 @@ export default function AccountsPage() {
                 className="h-11 rounded-md" />
             </Field>
           </div>
+
+          <Field label="Categoria">
+            <SearchableSelect 
+              options={categories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+              value={transferForm.categoryId}
+              onChange={val => setTransferForm(f => ({ ...f, categoryId: val }))}
+              placeholder="Selecione a categoria..."
+              className="h-11 rounded-md"
+            />
+          </Field>
 
           <Field label="Descrição">
             <Input value={transferForm.description}

@@ -4,11 +4,13 @@ import React, { useState, useMemo } from "react";
 import { 
   Plus, ChevronRight, ChevronLeft, CreditCard as CardIcon,
   Calendar, Clock, TrendingDown, Trash2, Pencil,
-  CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft
+  CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft, Tag
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { TagInput } from "@/components/ui/tag-input";
 import { 
   useCreditCards, 
   useCardTransactions, 
@@ -605,7 +607,8 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
     description: "", amount: "", type: "purchase", date: new Date().toISOString().split('T')[0],
     categoryId: "", launchType: "single", totalInstallments: "2", startInstallment: "1", isPending: false,
     invoiceMonth: currentMonth, invoiceYear: currentYear,
-    amountMode: "total" as "total" | "installment"
+    amountMode: "total" as "total" | "installment",
+    tags: [] as string[]
   });
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -681,17 +684,27 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
 
           <FormRow>
             <Field label="Categoria">
-              <Select value={form.categoryId} onChange={e => setForm(p => ({...p, categoryId: e.target.value}))} className="h-12 rounded-xl">
-                <option value="">Sem categoria</option>
-                {expenseCategories.map((c: any) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+              <SearchableSelect 
+                options={expenseCategories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                value={form.categoryId}
+                onChange={val => setForm(p => ({...p, categoryId: val}))}
+                placeholder="Selecione a categoria..."
+                className="h-12 rounded-xl"
+              />
             </Field>
             <Field label="Data de Lançamento">
               <Input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="h-12 rounded-xl" />
             </Field>
           </FormRow>
+
+          <Field label="Tags">
+            <TagInput 
+              value={form.tags} 
+              onChange={tags => setForm(p => ({...p, tags}))}
+              placeholder="Adicionar tags (ex: #focado, #viagem)..."
+              className="rounded-xl border-slate-200"
+            />
+          </Field>
         </div>
 
         {/* Step 2: Payment Details */}
