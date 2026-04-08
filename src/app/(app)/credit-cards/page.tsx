@@ -604,7 +604,8 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   const [form, setForm] = useState({
     description: "", amount: "", type: "purchase", date: new Date().toISOString().split('T')[0],
     categoryId: "", launchType: "single", totalInstallments: "2", startInstallment: "1", isPending: false,
-    invoiceMonth: currentMonth, invoiceYear: currentYear
+    invoiceMonth: currentMonth, invoiceYear: currentYear,
+    amountMode: "total" as "total" | "installment"
   });
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -623,9 +624,16 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
     }
   }, [open, selectedCard]);
 
+  const calculatedTotal = useMemo(() => {
+    if (form.amountMode === "total") return Number(form.amount) || 0;
+    const n = Number(form.totalInstallments) || 1;
+    const p = Number(form.amount) || 0;
+    return n * p;
+  }, [form.amount, form.totalInstallments, form.amountMode]);
+
   const handleSubmit = () => {
     const isRefund = form.type === 'refund';
-    const amountVal = Math.abs(Number(form.amount)) * (isRefund ? -1 : 1);
+    const amountVal = Math.abs(calculatedTotal) * (isRefund ? -1 : 1);
     
     createTx.mutate({
       ...form,
@@ -637,102 +645,169 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   const expenseCategories = categories.filter((c: any) => c.type === 'expense');
 
   return (
-    <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
-      <div className="space-y-5 pt-2">
-        {/* Type Toggle */}
-        <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-          {[
-            { key: "purchase", label: "Compra", icon: TrendingDown },
-            { key: "refund", label: "Estorno", icon: ArrowDownLeft },
-          ].map(({ key, label }) => (
-            <Button 
-              key={key} 
-              variant={form.type === key ? "secondary" : "ghost"}
-              onClick={() => setForm(p => ({...p, type: key}))}
-              className={cn("flex-1 transition-all rounded-lg font-bold",
-                form.type === key ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-              )}
-            >
-              {label}
-            </Button>
-          ))}
+     <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
+      <div className="space-y-6 pt-2">
+        {/* Step 1: Basic Info */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-5 w-1 bg-blue-500 rounded-full" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Informações Básicas</span>
+          </div>
+          
+          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+            {[
+              { key: "purchase", label: "Compra", icon: TrendingDown },
+              { key: "refund", label: "Estorno", icon: ArrowDownLeft },
+            ].map(({ key, label }) => (
+              <Button 
+                key={key} 
+                variant={form.type === key ? "secondary" : "ghost"}
+                onClick={() => setForm(p => ({...p, type: key}))}
+                className={cn("flex-1 transition-all rounded-lg font-bold",
+                  form.type === key ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
+                )}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+
+          <Field label="Descrição" required>
+            <div className="relative">
+              <Input value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))}
+                placeholder="Ex: Supermercado, Amazon..." className="h-12 rounded-xl font-medium pl-4" />
+            </div>
+          </Field>
+
+          <FormRow>
+            <Field label="Categoria">
+              <Select value={form.categoryId} onChange={e => setForm(p => ({...p, categoryId: e.target.value}))} className="h-12 rounded-xl">
+                <option value="">Sem categoria</option>
+                {expenseCategories.map((c: any) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Data de Lançamento">
+              <Input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="h-12 rounded-xl" />
+            </Field>
+          </FormRow>
         </div>
 
-        {/* Amount */}
-        <Field label="Valor" required>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-slate-400">R$</span>
-            <Input type="number" step="0.01" value={form.amount} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
-              placeholder="0,00" className="pl-10 h-11 text-lg font-semibold rounded-md" />
-          </div>
-        </Field>
-
-        <Field label="Descrição" required>
-          <Input value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))}
-            placeholder="Ex: Supermercado, Netflix..." className="h-11 rounded-md font-medium" />
-        </Field>
-
-        <FormRow>
-          <Field label="Categoria">
-            <Select value={form.categoryId} onChange={e => setForm(p => ({...p, categoryId: e.target.value}))} className="h-11 rounded-md">
-              <option value="">Sem categoria</option>
-              {expenseCategories.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Data">
-            <Input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="h-11 rounded-md" />
-          </Field>
-        </FormRow>
-
-        <FormRow>
-          <Field label="Mês da Fatura">
-            <Select value={form.invoiceMonth} onChange={e => setForm(p => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-11 rounded-md">
-              {MONTH_NAMES.map((name, i) => (
-                <option key={name} value={i + 1}>{name}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Ano">
-            <Input type="number" value={form.invoiceYear} 
-              onChange={e => setForm(p => ({...p, invoiceYear: Number(e.target.value)}))} className="h-11 rounded-md" />
-          </Field>
-        </FormRow>
-
-        <FormRow>
-          <Field label="Tipo">
-            <Select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value}))} className="h-11 rounded-md">
-              <option value="single">À Vista</option>
-              <option value="installment" disabled={form.type === 'refund'}>Parcelado</option>
-              <option value="fixed" disabled={form.type === 'refund'}>Fixo/Mensal</option>
-            </Select>
-          </Field>
-          {form.launchType === 'installment' && (
-            <div className="flex gap-2 w-full">
-              <Field label="Parcela Atual" className="flex-1">
-                <Input type="number" min={1} max={Number(form.totalInstallments)} value={form.startInstallment} 
-                  onChange={e => setForm(p => ({...p, startInstallment: e.target.value}))} className="h-11 rounded-md" />
-              </Field>
-              <Field label="De um Total" className="flex-1">
-                <Input type="number" min={2} value={form.totalInstallments} 
-                  onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-11 rounded-md" />
-              </Field>
+        {/* Step 2: Payment Details */}
+        <div className="space-y-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-1 bg-amber-500 rounded-full" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pagamento</span>
             </div>
-          )}
-        </FormRow>
+            {form.launchType === 'installment' && (
+              <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                <Button 
+                  size="sm" 
+                  variant={form.amountMode === 'total' ? 'secondary' : 'ghost'}
+                  onClick={() => setForm(p => ({...p, amountMode: 'total'}))}
+                  className="h-7 text-[10px] px-2 font-bold rounded-md"
+                >
+                  $ TOTAL
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant={form.amountMode === 'installment' ? 'secondary' : 'ghost'}
+                  onClick={() => setForm(p => ({...p, amountMode: 'installment'}))}
+                  className="h-7 text-[10px] px-2 font-bold rounded-md"
+                >
+                  $ PARCELA
+                </Button>
+              </div>
+            )}
+          </div>
 
-        <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Cancelar</Button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label={form.amountMode === 'total' ? "Valor Total" : "Valor da Parcela"} required>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">R$</span>
+                <Input type="number" step="0.01" value={form.amount} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
+                  placeholder="0,00" className="pl-10 h-12 text-xl font-bold rounded-xl border-2 focus:border-blue-500" />
+                {form.amountMode === 'installment' && form.amount && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-md border border-emerald-500/20 animate-in fade-in zoom-in duration-300">
+                    <span className="text-[10px] font-bold">TOTAL: {formatCurrency(calculatedTotal, "BRL")}</span>
+                  </div>
+                )}
+              </div>
+            </Field>
+
+            <Field label="Tipo de Lançamento">
+              <Select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value as any}))} className="h-12 rounded-xl font-semibold">
+                <option value="single">À Vista</option>
+                <option value="installment" disabled={form.type === 'refund'}>Parcelado</option>
+                <option value="fixed" disabled={form.type === 'refund'}>Fixo/Mensal</option>
+              </Select>
+            </Field>
+          </div>
+
+          {form.launchType === 'installment' && (
+            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-4">
+              <Field label="Parcela Inicial" className="flex-1">
+                <div className="relative">
+                  <Input type="number" min={1} max={Number(form.totalInstallments)} value={form.startInstallment} 
+                    onChange={e => setForm(p => ({...p, startInstallment: e.target.value}))} className="h-12 rounded-xl text-center font-bold" />
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                </div>
+              </Field>
+              <Field label="Total de Parcelas" className="flex-1">
+                <div className="relative">
+                  <Input type="number" min={2} value={form.totalInstallments} 
+                    onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-12 rounded-xl text-center font-bold" />
+                  <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                </div>
+              </Field>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Step 3: Schedule */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-5 w-1 bg-emerald-500 rounded-full" />
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ciclo de Fatura</span>
+          </div>
+          
+          <FormRow>
+            <Field label="Mês Inicial">
+              <Select 
+                value={form.invoiceMonth} 
+                onChange={e => setForm(p => ({...p, invoiceMonth: Number(e.target.value)}))} 
+                className="h-12 rounded-xl font-medium"
+              >
+                {MONTH_NAMES.map((name, i) => (
+                  <option key={name} value={i + 1}>{name}</option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Ano">
+              <Input 
+                type="number" 
+                value={form.invoiceYear} 
+                onChange={e => setForm(p => ({...p, invoiceYear: Number(e.target.value)}))} 
+                className="h-12 rounded-xl font-medium" 
+              />
+            </Field>
+          </FormRow>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex gap-4 pt-6 border-t border-slate-100 dark:border-slate-700">
+          <Button variant="outline" onClick={onClose} className="flex-1 h-12 font-bold rounded-xl border-slate-200">Cancelar</Button>
           {form.launchType === 'installment' ? (
-            <Button onClick={() => setIsPreviewOpen(true)} className="flex-1 font-bold shadow-lg"
+            <Button onClick={() => setIsPreviewOpen(true)} className="flex-1 h-12 font-bold rounded-xl shadow-xl shadow-blue-500/20"
               disabled={!form.amount || !form.description}>
-              Ver Parcelas
+              Ver Parcelas Planejadas
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
+            <Button onClick={handleSubmit} className="flex-1 h-12 font-bold rounded-xl shadow-xl shadow-blue-500/20"
               disabled={!form.amount || !form.description || createTx.isPending}>
-              {createTx.isPending ? "Lançando..." : "Criar Lançamento"}
+              {createTx.isPending ? "Lançando..." : "Confirmar Lançamento"}
             </Button>
           )}
         </div>
@@ -756,9 +831,11 @@ function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting 
   const installments = useMemo(() => {
     const n = Number(form.totalInstallments) || 1;
     const start = Number(form.startInstallment) || 1;
-    const amount = Number(form.amount) || 0;
+    const totalAmount = form.amountMode === 'total' 
+      ? (Number(form.amount) || 0) 
+      : (Number(form.amount) || 0) * n;
     
-    const amountInCents = Math.round(amount * 100);
+    const amountInCents = Math.round(totalAmount * 100);
     const baseCents = Math.floor(amountInCents / n);
     const remainderCents = amountInCents - baseCents * (n - 1);
 
