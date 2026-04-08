@@ -146,7 +146,10 @@ export default function TransactionsPage() {
   };
   
   const allTagSuggestions = useMemo(() => 
-    Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[],
+    Array.from(new Set([
+      ...globalTags.map((t: any) => t.name), 
+      ...categories.flatMap((c: any) => c.tags ?? [])
+    ])) as string[],
     [globalTags, categories]
   );
   

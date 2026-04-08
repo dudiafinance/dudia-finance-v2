@@ -13,7 +13,7 @@ interface TagInputProps {
 }
 
 export function TagInput({
-  value,
+  value = [],
   onChange,
   placeholder = "Adicionar tag...",
   suggestions = [],
@@ -45,8 +45,11 @@ export function TagInput({
     }
   };
 
-  const filteredSuggestions = suggestions.filter(
-    (s) => !value.includes(s) && (input === "" || s.includes(input.toLowerCase()))
+  const safeValue = Array.isArray(value) ? value : [];
+  const safeSuggestions = Array.isArray(suggestions) ? suggestions : [];
+
+  const filteredSuggestions = safeSuggestions.filter(
+    (s) => typeof s === "string" && !safeValue.includes(s) && (input === "" || s.toLowerCase().includes(input.toLowerCase()))
   );
 
   return (
@@ -57,7 +60,7 @@ export function TagInput({
           className
         )}
       >
-        {value.map((tag) => (
+        {(value || []).map((tag) => (
           <span
             key={tag}
             className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300"
