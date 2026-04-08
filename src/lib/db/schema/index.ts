@@ -108,6 +108,8 @@ export const transactions = pgTable('transactions', {
   index('transactions_user_id_idx').on(table.userId),
   index('transactions_date_idx').on(table.date),
   index('transactions_user_id_date_idx').on(table.userId, table.date), // Otimização para filtros
+  index('transactions_account_ispaid_idx').on(table.accountId, table.isPaid), // Otimização para recálculo atômico de saldo
+  index('transactions_account_date_idx').on(table.accountId, table.date), // Otimização para extrato de conta
   index('transactions_account_id_idx').on(table.accountId),
   index('transactions_category_id_idx').on(table.categoryId),
   index('transactions_user_cat_date_idx').on(table.userId, table.categoryId, table.date), // Otimização para orçamentos

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { accounts } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
+import { FinancialEngine } from "@/lib/services/financial-engine";
 
 
 export async function GET() {
@@ -34,10 +35,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
 
+  // Cria a conta inicialmente com saldo 0
   const [row] = await db
     .insert(accounts)
-    .values({ ...parsed.data, userId, balance: String(parsed.data.balance) })
+    .values({ ...parsed.data, userId, balance: "0" })
     .returning();
+
+  const initialBalance = Number(parsed.data.balance);
+  
+  if (initialBalance !== 0) {
+    // Insere o saldo inicial como transação oficial (rastreabilidade total)
+    await FinancialEngine.addTransaction({
+      userId,
+      accountId: row.id,
+      amount: Math.abs(initialBalance).toString(),
+      type: initialBalance > 0 ? "income" : "expense",
+      description: "Saldo Inicial",
+      date: new Date().toISOString().split("T")[0],
+      isPaid: true
+    });
+
+    // O FinancialEngine.addTransaction já fará o recálculo e setará o balance correto na conta
+    row.balance = String(initialBalance);
+  }
 
   return NextResponse.json(row, { status: 201 });
 }

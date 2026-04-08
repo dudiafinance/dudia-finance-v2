@@ -37,24 +37,45 @@ export class FinancialEngine {
   }
 
   /**
-   * Adiciona uma transação comum e atualiza o saldo da conta
+   * Recalcula atômicamente o saldo de uma conta a partir de todo o histórico de transações pagas.
+   * Self-Healing Mechanism.
    */
+  static async recalculateAccountBalance(tx: any, accountId: string) {
+    const incomes = await tx
+      .select({
+        total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL(15,2))), 0)`
+      })
+      .from(transactions)
+      .where(and(eq(transactions.accountId, accountId), eq(transactions.isPaid, true), eq(transactions.type, 'income')));
+
+    const expenses = await tx
+      .select({
+        total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL(15,2))), 0)`
+      })
+      .from(transactions)
+      .where(and(eq(transactions.accountId, accountId), eq(transactions.isPaid, true), eq(transactions.type, 'expense')));
+
+    const totalIncome = Number(incomes[0]?.total ?? 0);
+    const totalExpense = Number(expenses[0]?.total ?? 0);
+    const newBalance = totalIncome - totalExpense;
+
+    await tx.update(accounts)
+      .set({ 
+        balance: String(newBalance),
+        updatedAt: new Date()
+      })
+      .where(eq(accounts.id, accountId));
+
+    return newBalance;
+  }
+
   static async addTransaction(data: typeof transactions.$inferInsert) {
     return await db.transaction(async (tx) => {
       // 1. Inserir a transação
       const [newTx] = await tx.insert(transactions).values(data).returning();
 
-      // 2. Atualizar o saldo da conta se for uma transação paga
-      if (newTx.isPaid) {
-        const amountChange = newTx.type === "income" ? newTx.amount : (Number(newTx.amount) * -1).toString();
-        
-        await tx.update(accounts)
-          .set({ 
-            balance: sql`${accounts.balance} + ${amountChange}`,
-            updatedAt: new Date()
-          })
-          .where(eq(accounts.id, newTx.accountId));
-      }
+      // 2. Recalcular o saldo da conta atômicamente (Self-Healing)
+      await this.recalculateAccountBalance(tx, newTx.accountId);
 
       // 3. Registrar auditoria
       await this.logAudit(tx, newTx.userId, "transaction", newTx.id, "create", null, newTx);
@@ -72,32 +93,21 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Transação não encontrada");
 
-      // 2. Reverter o efeito da transação antiga no saldo (se estava paga)
-      if (oldTx.isPaid) {
-        const oldAmountChange = oldTx.type === "income" ? (Number(oldTx.amount) * -1).toString() : oldTx.amount;
-        await tx.update(accounts)
-          .set({ balance: sql`${accounts.balance} + ${oldAmountChange}` })
-          .where(eq(accounts.id, oldTx.accountId));
-      }
-
-      // 3. Aplicar as atualizações
+      // 2. Aplicar as atualizações
       const [newTx] = await tx.update(transactions)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(transactions.id, id))
         .returning();
 
-      // 4. Aplicar o novo efeito no saldo (se a nova transação estiver paga)
-      if (newTx.isPaid) {
-        const newAmountChange = newTx.type === "income" ? newTx.amount : (Number(newTx.amount) * -1).toString();
-        await tx.update(accounts)
-          .set({ 
-            balance: sql`${accounts.balance} + ${newAmountChange}`,
-            updatedAt: new Date()
-          })
-          .where(eq(accounts.id, newTx.accountId));
+      // 3. Recalcular saldos (Self-Healing)
+      await this.recalculateAccountBalance(tx, newTx.accountId);
+      
+      // Se a conta mudou, recalcula a antiga também
+      if (oldTx.accountId !== newTx.accountId) {
+        await this.recalculateAccountBalance(tx, oldTx.accountId);
       }
 
-      // 5. Auditoria
+      // 4. Auditoria
       await this.logAudit(tx, userId, "transaction", id, "update", oldTx, newTx);
 
       return newTx;
@@ -112,15 +122,13 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Transação não encontrada");
 
-      // 1. Reverter saldo da conta
-      if (oldTx.isPaid) {
-        const oldAmountChange = oldTx.type === "income" ? (Number(oldTx.amount) * -1).toString() : oldTx.amount;
-        await tx.update(accounts)
-          .set({ balance: sql`${accounts.balance} + ${oldAmountChange}` })
-          .where(eq(accounts.id, oldTx.accountId));
-      }
+      // 1. Deletar a transação
+      await tx.delete(transactions).where(eq(transactions.id, id));
 
-      // 1b. Reverter saldo da meta (se for um depósito de meta)
+      // 2. Recalcular o saldo da conta (Self-Healing)
+      await this.recalculateAccountBalance(tx, oldTx.accountId);
+
+      // 2b. Reverter saldo da meta (se for um depósito de meta)
       if (oldTx.goalId) {
         await tx.update(goals)
           .set({ 
@@ -129,9 +137,6 @@ export class FinancialEngine {
           })
           .where(eq(goals.id, oldTx.goalId));
       }
-
-      // 2. Deletar
-      await tx.delete(transactions).where(eq(transactions.id, id));
 
       // 3. Auditoria
       await this.logAudit(tx, userId, "transaction", id, "delete", oldTx, null);
@@ -182,10 +187,6 @@ export class FinancialEngine {
         linkedTransactionId: linkedId
       }).returning();
 
-      await tx.update(accounts)
-        .set({ balance: sql`${accounts.balance} - ${data.amount}` })
-        .where(eq(accounts.id, data.fromAccountId));
-
       // 2. Entrada (Income) na conta de destino
       const [income] = await tx.insert(transactions).values({
         userId: data.userId,
@@ -200,11 +201,11 @@ export class FinancialEngine {
         linkedTransactionId: linkedId
       }).returning();
 
-      await tx.update(accounts)
-        .set({ balance: sql`${accounts.balance} + ${data.amount}` })
-        .where(eq(accounts.id, data.toAccountId));
+      // 3. Recalcular saldos (Self-Healing)
+      await this.recalculateAccountBalance(tx, data.fromAccountId);
+      await this.recalculateAccountBalance(tx, data.toAccountId);
 
-      // 3. Auditoria
+      // 4. Auditoria
       await this.logAudit(tx, data.userId, "transfer", linkedId, "transfer", null, { from: expense.id, to: income.id });
 
       return { expense, income };
