@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Search, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft,
   Edit, Trash2, Calendar, CheckCircle2, Clock, Filter, X, ChevronDown,
@@ -95,10 +95,54 @@ export default function TransactionsPage() {
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const { toast } = useToast();
-  const { data: transactions = [], isLoading: txLoading } = useTransactions();
+  
+  // States para Paginação e Filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterPaid, setFilterPaid] = useState("all");
+  const [page, setPage] = useState(1);
+  const [accumulatedItems, setAccumulatedItems] = useState<any[]>([]);
+
+  // Hook com filtros
+  const { data: txData, isLoading: txLoading, isFetching: txFetching } = useTransactions({
+    search: searchTerm,
+    type: filterType,
+    isPaid: filterPaid === "paid" ? "true" : filterPaid === "pending" ? "false" : undefined,
+    page: page,
+    limit: 50
+  });
+
   const { data: categories = [] } = useCategories();
   const { data: accountsData = [] } = useAccounts();
   const { data: globalTags = [] } = useTags();
+
+  // Resetar página e itens ao mudar filtros
+  const resetPagination = () => {
+    setPage(1);
+    setAccumulatedItems([]);
+  };
+
+  // Efeito para acumular itens quando os dados chegam
+  const items = txData?.items ?? [];
+  const metadata = txData?.metadata;
+
+  useEffect(() => {
+    if (page === 1) {
+      setAccumulatedItems(items);
+    } else {
+      setAccumulatedItems(prev => {
+        const ids = new Set(prev.map(i => i.id));
+        const newItems = items.filter(i => !ids.has(i.id));
+        return [...prev, ...newItems];
+      });
+    }
+  }, [items, page]);
+
+  const handleLoadMore = () => {
+    if (metadata?.hasMore) {
+      setPage(prev => prev + 1);
+    }
+  };
   
   const allTagSuggestions = useMemo(() => 
     Array.from(new Set([...globalTags, ...categories.flatMap((c: any) => c.tags ?? [])])) as string[],
@@ -109,9 +153,6 @@ export default function TransactionsPage() {
   const updateTransaction = useUpdateTransaction();
   const deleteTransaction = useDeleteTransaction();
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all"); // all, income, expense, transfer
-  const [filterPaid, setFilterPaid] = useState("all"); // all, paid, pending
   const [showFilters, setShowFilters] = useState(false);
   const [showBalances, setShowBalances] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -213,36 +254,22 @@ export default function TransactionsPage() {
     setDeleteId(null);
   };
 
-  const filtered = useMemo(() => {
-    return transactions.filter((t: any) => {
-      const matchSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (t.notes ?? "").toLowerCase().includes(searchTerm.toLowerCase());
-      const matchType = filterType === "all" || t.type === filterType;
-      const matchPaid =
-        filterPaid === "all" ||
-        (filterPaid === "paid" && t.isPaid) ||
-        (filterPaid === "pending" && !t.isPaid);
-      return matchSearch && matchType && matchPaid;
-    });
-  }, [transactions, searchTerm, filterType, filterPaid]);
-
   const grouped = useMemo(() => {
     const groups: Record<string, any[]> = {};
-    filtered.forEach((tx) => {
+    accumulatedItems.forEach((tx) => {
       const g = getRelativeGroupDate(tx.date);
       if (!groups[g]) groups[g] = [];
       groups[g].push(tx);
     });
     return Object.entries(groups).sort((a, b) => {
-      // Sort in descending order of actual dates for correct display
       const dateA = new Date(a[1][0].date).getTime();
       const dateB = new Date(b[1][0].date).getTime();
       return dateB - dateA;
     });
-  }, [filtered]);
+  }, [accumulatedItems]);
 
-  const totalIncome = filtered.filter((t: any) => t.type === "income").reduce((s: number, t: any) => s + Number(t.amount), 0);
-  const totalExpense = filtered.filter((t: any) => t.type === "expense").reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalIncome = metadata?.totalIncome ?? 0;
+  const totalExpense = metadata?.totalExpense ?? 0;
   const netBalance = totalIncome - totalExpense;
 
   const incomeCategories = categories.filter((c: any) => c.type === "income");
@@ -305,7 +332,7 @@ export default function TransactionsPage() {
             <p className="text-2xl font-bold text-white tabular-nums">
               {showBalances ? fmt(totalIncome) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{filtered.filter(t => t.type === 'income').length} entradas</p>
+            <p className="text-xs text-slate-500 mt-1">Acumulado filtrado</p>
           </div>
 
           <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
@@ -316,7 +343,7 @@ export default function TransactionsPage() {
             <p className="text-2xl font-bold text-white tabular-nums">
               {showBalances ? fmt(totalExpense) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{filtered.filter(t => t.type === 'expense').length} saídas</p>
+            <p className="text-xs text-slate-500 mt-1">Acumulado filtrado</p>
           </div>
 
           <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
@@ -345,7 +372,7 @@ export default function TransactionsPage() {
               type="text"
               placeholder="Pesquisar transações..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); resetPagination(); }}
               className="pl-11 h-11"
             />
           </div>
@@ -361,7 +388,7 @@ export default function TransactionsPage() {
                 key={key}
                 variant={filterType === key ? "secondary" : "ghost"}
                 size="sm"
-                onClick={() => setFilterType(key)}
+                onClick={() => { setFilterType(key); resetPagination(); }}
                 className={cn(
                   "px-4 transition-all rounded-lg",
                   filterType === key ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
@@ -395,7 +422,7 @@ export default function TransactionsPage() {
                       key={key} 
                       size="sm"
                       variant={filterPaid === key ? "secondary" : "outline"}
-                      onClick={() => setFilterPaid(key)}
+                      onClick={() => { setFilterPaid(key); resetPagination(); }}
                       className={cn("transition-all border-slate-200 dark:border-slate-700",
                         filterPaid === key ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-md" : "hover:bg-slate-100"
                       )}
@@ -409,7 +436,7 @@ export default function TransactionsPage() {
                 <Button 
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setFilterPaid("all"); setFilterType("all"); setSearchTerm(""); }} 
+                  onClick={() => { setFilterPaid("all"); setFilterType("all"); setSearchTerm(""); resetPagination(); }} 
                   className="text-slate-400 hover:text-red-500 gap-2 font-bold"
                 >
                   <X className="h-4 w-4" /> Limpar
@@ -502,6 +529,24 @@ export default function TransactionsPage() {
                 </div>
               </section>
             ))
+          )}
+          
+          {metadata?.hasMore && (
+            <div className="flex justify-center pt-8">
+              <Button 
+                variant="outline" 
+                onClick={handleLoadMore} 
+                disabled={txFetching}
+                className="gap-2 px-8 py-6 h-auto text-base font-bold text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+              >
+                {txFetching ? (
+                  <div className="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <ArrowRight className="h-5 w-5 rotate-90" />
+                )}
+                <span>Carregar mais transações</span>
+              </Button>
+            </div>
           )}
         </div>
       </div>

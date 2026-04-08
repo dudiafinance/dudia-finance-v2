@@ -122,24 +122,40 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Transação não encontrada");
 
-      // 1. Deletar a transação
-      await tx.delete(transactions).where(eq(transactions.id, id));
+      // Se for parte de uma transferência, apagar a transação vinculada também
+      if (oldTx.linkedTransactionId && oldTx.subtype === 'transfer') {
+        const linkedTxs = await tx.select().from(transactions).where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
+        
+        await tx.delete(transactions).where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
+        
+        // Recalcular saldos para todas as contas envolvidas (Self-Healing)
+        const accountIdsToRecalculate = [...new Set(linkedTxs.map(t => t.accountId))];
+        for (const accId of accountIdsToRecalculate) {
+          await this.recalculateAccountBalance(tx, accId);
+        }
 
-      // 2. Recalcular o saldo da conta (Self-Healing)
-      await this.recalculateAccountBalance(tx, oldTx.accountId);
+        // Auditoria
+        await this.logAudit(tx, userId, "transfer", oldTx.linkedTransactionId, "delete", linkedTxs, null);
+      } else {
+        // 1. Deletar a transação
+        await tx.delete(transactions).where(eq(transactions.id, id));
 
-      // 2b. Reverter saldo da meta (se for um depósito de meta)
-      if (oldTx.goalId) {
-        await tx.update(goals)
-          .set({ 
-            currentAmount: sql`${goals.currentAmount} - ${oldTx.amount}`,
-            updatedAt: new Date()
-          })
-          .where(eq(goals.id, oldTx.goalId));
+        // 2. Recalcular o saldo da conta (Self-Healing)
+        await this.recalculateAccountBalance(tx, oldTx.accountId);
+
+        // 2b. Reverter saldo da meta (se for um depósito de meta)
+        if (oldTx.goalId) {
+          await tx.update(goals)
+            .set({ 
+              currentAmount: sql`${goals.currentAmount} - ${oldTx.amount}`,
+              updatedAt: new Date()
+            })
+            .where(eq(goals.id, oldTx.goalId));
+        }
+
+        // 3. Auditoria
+        await this.logAudit(tx, userId, "transaction", id, "delete", oldTx, null);
       }
-
-      // 3. Auditoria
-      await this.logAudit(tx, userId, "transaction", id, "delete", oldTx, null);
     });
   }
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte, lte, ilike, or, count, SQL, sql } from "drizzle-orm";
 import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 import { FinancialEngine } from "@/lib/services/financial-engine";
@@ -14,28 +14,80 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const month = searchParams.get("month");
   const year = searchParams.get("year");
+  const page = Math.max(1, Number(searchParams.get("page") || 1));
+  const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || 50)));
+  const search = searchParams.get("search");
+  const type = searchParams.get("type");
+  const isPaid = searchParams.get("isPaid");
+  const accountId = searchParams.get("accountId");
+  const categoryId = searchParams.get("categoryId");
 
-  let conditions = and(eq(transactions.userId, userId)) as any;
+  const offset = (page - 1) * limit;
+
+  const where: SQL[] = [eq(transactions.userId, userId)];
 
   if (month && year) {
     const startOfMonth = new Date(Number(year), Number(month) - 1, 1).toISOString().split("T")[0];
     const endOfMonth = new Date(Number(year), Number(month), 0).toISOString().split("T")[0];
-    
-    conditions = and(
-      eq(transactions.userId, userId),
-      gte(transactions.date, startOfMonth),
-      lte(transactions.date, endOfMonth)
-    );
+    where.push(gte(transactions.date, startOfMonth));
+    where.push(lte(transactions.date, endOfMonth));
+  }
+
+  if (search) {
+    where.push(or(
+      ilike(transactions.description, `%${search}%`),
+      ilike(transactions.notes, `%${search}%`)
+    ) as SQL);
+  }
+
+  if (type && type !== "all") {
+    where.push(eq(transactions.type, type));
+  }
+
+  if (isPaid === "true" || isPaid === "false") {
+    where.push(eq(transactions.isPaid, isPaid === "true"));
+  }
+
+  if (accountId) {
+    where.push(eq(transactions.accountId, accountId));
+  }
+
+  if (categoryId) {
+    where.push(eq(transactions.categoryId, categoryId));
   }
 
   try {
+    const [counts] = await db
+      .select({ 
+        total: count(),
+        totalIncome: sql<string>`SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount} ELSE 0 END)`,
+        totalExpense: sql<string>`SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount} ELSE 0 END)`
+      })
+      .from(transactions)
+      .where(and(...where));
+
     const rows = await db
       .select()
       .from(transactions)
-      .where(conditions)
-      .orderBy(desc(transactions.date), desc(transactions.createdAt));
+      .where(and(...where))
+      .orderBy(desc(transactions.date), desc(transactions.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    return NextResponse.json(rows);
+    const total = Number(counts?.total || 0);
+
+    return NextResponse.json({
+      items: rows,
+      metadata: {
+        total,
+        totalIncome: Number(counts?.totalIncome || 0),
+        totalExpense: Number(counts?.totalExpense || 0),
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + rows.length < total
+      }
+    });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     return NextResponse.json({ error: "Erro ao buscar transações" }, { status: 500 });

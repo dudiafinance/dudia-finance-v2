@@ -115,8 +115,46 @@ export function useDeleteTag() {
 }
 
 // Transactions
-export function useTransactions() {
-  return useQuery({ queryKey: ["transactions"], queryFn: () => apiFetch<any[]>("/api/transactions"), staleTime: ONE_MINUTE });
+export type TransactionFilters = {
+  month?: number;
+  year?: number;
+  page?: number;
+  limit?: number;
+  search?: string;
+  type?: string;
+  isPaid?: string;
+  accountId?: string;
+  categoryId?: string;
+};
+
+export type PaginatedTransactions = {
+  items: any[];
+  metadata: {
+    total: number;
+    totalIncome: number;
+    totalExpense: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+};
+
+export function useTransactions(filters: TransactionFilters = {}) {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      params.append(key, String(value));
+    }
+  });
+  const qs = params.toString();
+  const url = qs ? `/api/transactions?${qs}` : "/api/transactions";
+
+  return useQuery({ 
+    queryKey: ["transactions", filters], 
+    queryFn: () => apiFetch<PaginatedTransactions>(url), 
+    staleTime: ONE_MINUTE 
+  });
 }
 export function useCreateTransaction() {
   const qc = useQueryClient();
