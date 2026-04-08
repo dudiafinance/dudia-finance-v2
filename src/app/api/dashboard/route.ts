@@ -2,93 +2,120 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, accounts, goals, cardTransactions, categories } from "@/lib/db/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sum, sql, count } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // Accept month/year from query params, default to current month
   const { searchParams } = new URL(req.url);
   const now = new Date();
   const selectedMonth = Number(searchParams.get("month")) || now.getMonth() + 1;
   const selectedYear = Number(searchParams.get("year")) || now.getFullYear();
 
+  // Selected date ranges
   const startOfMonth = new Date(selectedYear, selectedMonth - 1, 1).toISOString().split("T")[0];
   const endOfMonth = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
 
-  const [allAccounts, monthTransactions, allGoals, monthCardTx, allCategories] = await Promise.all([
-    db.select().from(accounts).where(eq(accounts.userId, userId)),
-    db
-      .select()
+  // Previous month ranges for variation
+  const prevDate = new Date(selectedYear, selectedMonth - 2, 1);
+  const prevMonth = prevDate.getMonth() + 1;
+  const prevYear = prevDate.getFullYear();
+  const startOfPrevMonth = new Date(prevYear, prevMonth - 1, 1).toISOString().split("T")[0];
+  const endOfPrevMonth = new Date(prevYear, prevMonth, 0).toISOString().split("T")[0];
+
+  const queries = await Promise.all([
+    // 0. Total Balance (All accounts, current)
+    db.select({ balance: sum(accounts.balance) })
+      .from(accounts)
+      .where(and(eq(accounts.userId, userId), eq(accounts.includeInTotal, true))),
+
+    // 1. Current Month Totals
+    db.select({
+      income: sql<string>`SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount} ELSE 0 END)`,
+      expense: sql<string>`SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount} ELSE 0 END)`
+    })
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.userId, userId),
-          gte(transactions.date, startOfMonth),
-          lte(transactions.date, endOfMonth)
-        )
-      ),
-    db.select().from(goals).where(eq(goals.userId, userId)),
-    db
-      .select()
+      .where(and(eq(transactions.userId, userId), gte(transactions.date, startOfMonth), lte(transactions.date, endOfMonth))),
+
+    // 2. Current Month Card
+    db.select({ total: sum(cardTransactions.amount) })
       .from(cardTransactions)
-      .where(
-        and(
-          eq(cardTransactions.userId, userId),
-          eq(cardTransactions.invoiceMonth, selectedMonth),
-          eq(cardTransactions.invoiceYear, selectedYear)
-        )
-      ),
+      .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, selectedMonth), eq(cardTransactions.invoiceYear, selectedYear))),
+
+    // 3. Previous Month Totals (For Variation)
+    db.select({
+      income: sql<string>`SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount} ELSE 0 END)`,
+      expense: sql<string>`SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount} ELSE 0 END)`
+    })
+      .from(transactions)
+      .where(and(eq(transactions.userId, userId), gte(transactions.date, startOfPrevMonth), lte(transactions.date, endOfPrevMonth))),
+
+    // 4. Previous Month Card
+    db.select({ total: sum(cardTransactions.amount) })
+      .from(cardTransactions)
+      .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, prevMonth), eq(cardTransactions.invoiceYear, prevYear))),
+
+    // 5. Recent Activity (Limited directly in SQL)
+    db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.date), desc(transactions.createdAt)).limit(10),
+
+    // 6. Recent Card Activity
+    db.select().from(cardTransactions).where(eq(cardTransactions.userId, userId)).orderBy(desc(cardTransactions.date), desc(cardTransactions.createdAt)).limit(10),
+
+    // 7. Top Expenses by Category (Transactions)
+    db.select({
+      categoryId: transactions.categoryId,
+      total: sum(transactions.amount),
+    })
+      .from(transactions)
+      .where(and(eq(transactions.userId, userId), eq(transactions.type, 'expense'), gte(transactions.date, startOfMonth), lte(transactions.date, endOfMonth)))
+      .groupBy(transactions.categoryId),
+
+    // 8. Top Expenses by Category (Card)
+    db.select({
+      categoryId: cardTransactions.categoryId,
+      total: sum(cardTransactions.amount),
+    })
+      .from(cardTransactions)
+      .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, selectedMonth), eq(cardTransactions.invoiceYear, selectedYear)))
+      .groupBy(cardTransactions.categoryId),
+
+    // 9. Categories Info
     db.select().from(categories).where(eq(categories.userId, userId)),
+
+    // 10. Goals
+    db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, 'active'))),
   ]);
 
-  // Balance: sum of all active bank accounts (always current, not filtered by month)
-  const totalBalance = allAccounts
-    .filter((a) => a.includeInTotal && a.type !== "credit_card")
-    .reduce((s, a) => s + Number(a.balance), 0);
+  const totalBalance = Number(queries[0][0]?.balance || 0);
+  const currentIncome = Number(queries[1][0]?.income || 0);
+  const currentExpense = Number(queries[1][0]?.expense || 0);
+  const currentCard = Number(queries[2][0]?.total || 0);
 
-  // Income / Expense from regular transactions
-  const totalIncome = monthTransactions
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + Number(t.amount), 0);
+  const prevIncome = Number(queries[3][0]?.income || 0);
+  const prevExpense = Number(queries[3][0]?.expense || 0);
+  const prevCard = Number(queries[4][0]?.total || 0);
 
-  const totalExpense = monthTransactions
-    .filter((t) => t.type === "expense")
-    .reduce((s, t) => s + Number(t.amount), 0);
+  // Reality check: monthly variation comparing net results
+  const currentNet = currentIncome - (currentExpense + currentCard);
+  const prevNet = prevIncome - (prevExpense + prevCard);
+  
+  // Real variation logic: absolute delta or percentage change of patrimony impact
+  const monthlyVariation = prevNet !== 0 ? ((currentNet - prevNet) / Math.abs(prevNet)) * 100 : 0;
 
-  // Card invoice total for the month
-  const totalCardInvoice = monthCardTx.reduce((s, t) => s + Number(t.amount), 0);
-
-  // Recent activity: last 5 combining transactions + card transactions for the selected month
-  const recentTx = monthTransactions
-    .sort((a, b) => {
-      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (dateDiff !== 0) return dateDiff;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })
-    .slice(0, 5);
-
-  const recentCard = monthCardTx
-    .sort((a, b) => {
-      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (dateDiff !== 0) return dateDiff;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })
-    .slice(0, 5);
-
+  // Recent Activity Merge
   const recentActivity = [
-    ...recentTx.map((t) => ({
+    ...queries[5].map(t => ({
       id: t.id,
       description: t.description,
       amount: Number(t.amount),
-      type: t.type as "income" | "expense",
+      type: t.type as any,
       date: t.date,
       source: "transaction" as const,
       categoryId: t.categoryId,
-      createdAt: t.createdAt,
+      createdAt: t.createdAt
     })),
-    ...recentCard.map((t) => ({
+    ...queries[6].map(t => ({
       id: t.id,
       description: t.description,
       amount: Number(t.amount),
@@ -96,58 +123,43 @@ export async function GET(req: NextRequest) {
       date: t.date,
       source: "card" as const,
       categoryId: t.categoryId,
-      createdAt: t.createdAt,
-    })),
-  ]
-    .sort((a, b) => {
-      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (dateDiff !== 0) return dateDiff;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    })
-    .slice(0, 5);
+      createdAt: t.createdAt
+    }))
+  ].sort((a, b) => {
+    const d = new Date(b.date).getTime() - new Date(a.date).getTime();
+    return d !== 0 ? d : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  }).slice(0, 7);
 
-  // Top 5 expense categories this month (includes card expenses)
+  // Top Expenses Merge (Transactions + Card)
   const catTotals: Record<string, number> = {};
+  queries[7].forEach(e => {
+    if (e.categoryId) catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + Number(e.total || 0);
+  });
+  queries[8].forEach(e => {
+    if (e.categoryId) catTotals[e.categoryId] = (catTotals[e.categoryId] || 0) + Number(e.total || 0);
+  });
 
-  for (const t of monthTransactions) {
-    if (t.type === "expense" && t.categoryId) {
-      catTotals[t.categoryId] = (catTotals[t.categoryId] ?? 0) + Number(t.amount);
-    }
-  }
-  for (const t of monthCardTx) {
-    if (t.categoryId) {
-      catTotals[t.categoryId] = (catTotals[t.categoryId] ?? 0) + Number(t.amount);
-    }
-  }
-
-  const topCatIds = Object.entries(catTotals)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([id]) => id);
-
-  const categoryMap = new Map(allCategories.map((c) => [c.id, c]));
-
-  const topExpenses = topCatIds.map((catId) => {
-    const cat = categoryMap.get(catId);
+  const catMap = new Map(queries[9].map(c => [c.id, c]));
+  const topExpenses = Object.entries(catTotals).map(([catId, total]) => {
+    const cat = catMap.get(catId);
     return {
       categoryId: catId,
       categoryName: cat?.name ?? "Sem categoria",
       categoryColor: cat?.color ?? "#94a3b8",
-      total: catTotals[catId],
+      total: total
     };
-  });
+  }).sort((a, b) => b.total - a.total).slice(0, 5);
 
   return NextResponse.json({
     selectedMonth,
     selectedYear,
     totalBalance,
-    totalIncome,
-    totalExpense,
-    totalCardInvoice,
-    monthlyVariation: totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome) * 100 : 0,
-    accounts: allAccounts,
+    totalIncome: currentIncome,
+    totalExpense: currentExpense,
+    totalCardInvoice: currentCard,
+    monthlyVariation,
     recentActivity,
-    goals: allGoals,
-    topExpenses,
+    goals: queries[10],
+    topExpenses
   });
 }

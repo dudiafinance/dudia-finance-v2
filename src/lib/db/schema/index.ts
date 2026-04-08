@@ -343,6 +343,7 @@ export const cardTransactions = pgTable('card_transactions', {
 }, (table) => [
   index('card_transactions_invoice_idx').on(table.invoiceMonth, table.invoiceYear),
   index('card_transactions_user_card_invoice_idx').on(table.userId, table.cardId, table.invoiceMonth, table.invoiceYear),
+  index('card_transactions_user_invoice_idx').on(table.userId, table.invoiceMonth, table.invoiceYear),
   index('card_transactions_user_id_idx').on(table.userId),
   index('card_transactions_date_idx').on(table.date),
   index('card_transactions_user_id_date_idx').on(table.userId, table.date), // Otimização para relatórios

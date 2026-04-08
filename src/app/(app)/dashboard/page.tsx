@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   const totalAllExpenses = totalExpense + totalCardInvoice;
   const savings = totalIncome - totalAllExpenses;
-  const savingsRate = totalIncome > 0 ? (savings / totalIncome) * 100 : 0;
+  const savingsRate = totalIncome > 0 ? Math.max(0, (savings / totalIncome) * 100) : 0;
 
   return (
     <div className="w-full animate-in fade-in duration-500">
