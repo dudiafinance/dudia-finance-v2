@@ -28,6 +28,7 @@ export const categorySchema = z.object({
   type: z.enum(["income", "expense"]),
   icon: z.string().max(50).optional(),
   color: z.string().max(7).default("#10B981"),
+  parentId: z.string().uuid().optional().nullable(),
   budgetAmount: z.coerce.number().positive().optional().nullable(),
   budgetPeriod: z.enum(["weekly", "monthly", "yearly"]).optional().nullable(),
   tags: z.array(z.string()).default([]),

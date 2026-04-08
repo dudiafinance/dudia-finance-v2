@@ -13,8 +13,7 @@ import {
   useCreateCategory, 
   useUpdateCategory, 
   useDeleteCategory, 
-  useTags, 
-  useUpdateTags,
+  useTags,
   useCategoryStats 
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
@@ -100,7 +99,6 @@ export default function CategoriesPage() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const { data: globalTags = [] } = useTags();
-  const updateTags = useUpdateTags();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");

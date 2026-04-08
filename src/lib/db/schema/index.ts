@@ -76,7 +76,21 @@ export const categories = pgTable('categories', {
   order: integer('order').default(0),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('categories_user_parent_idx').on(table.userId, table.parentId),
+]);
+
+// Tags Globais
+export const tags = pgTable('tags', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  name: varchar('name', { length: 50 }).notNull(),
+  color: varchar('color', { length: 7 }).default('#820AD1'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => [
+  index('tags_user_name_idx').on(table.userId, table.name),
+]);
 
 // Transações
 export const transactions = pgTable('transactions', {
@@ -259,6 +273,10 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   parent: one(categories, { fields: [categories.parentId], references: [categories.id] }),
   children: many(categories),
   transactions: many(transactions),
+}));
+
+export const tagsRelations = relations(tags, ({ one }) => ({
+  user: one(users, { fields: [tags.userId], references: [users.id] }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({

@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   ArrowRightLeft,
   Tags,
+  Tag,
+  Layers,
   Wallet,
   CreditCard,
   PiggyBank,
@@ -28,7 +30,8 @@ import { useMobileNav } from "./mobile-nav-context";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/transactions", icon: ArrowRightLeft, label: "Transações" },
-  { href: "/categories", icon: Tags, label: "Categorias" },
+  { href: "/categories", icon: Layers, label: "Categorias" },
+  { href: "/tags", icon: Tag, label: "Tags" },
   { href: "/accounts", icon: Wallet, label: "Contas" },
   { href: "/credit-cards", icon: CreditCard, label: "Cartões" },
   { href: "/budgets", icon: PiggyBank, label: "Orçamentos" },

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, count } from "drizzle-orm";
 import { categorySchema } from "@/lib/validations";
 
 
@@ -34,7 +34,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
 
-  const count = await db.select().from(categories).where(eq(categories.userId, userId));
+  const [{ count: itemsCount }] = await db
+    .select({ count: count() })
+    .from(categories)
+    .where(eq(categories.userId, userId));
 
   const { budgetAmount, ...rest } = parsed.data;
   const [row] = await db
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
       ...rest,
       ...(budgetAmount != null ? { budgetAmount: String(budgetAmount) } : {}),
       userId,
-      order: count.length,
+      order: itemsCount,
     })
     .returning();
 

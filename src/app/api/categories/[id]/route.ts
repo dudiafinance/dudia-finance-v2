@@ -18,6 +18,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const { budgetAmount, ...rest } = parsed.data;
+
+  // Anti-cycle validation (Self-Healing Hierarchy)
+  if (rest.parentId) {
+    if (rest.parentId === id) {
+      return NextResponse.json({ error: "Categoria não pode ser pai de si mesma" }, { status: 400 });
+    }
+
+    let currentParentId: string | null = rest.parentId;
+    let depth = 0;
+    while (currentParentId && depth < 10) {
+      const [parentCheck] = await db
+        .select({ id: categories.id, parentId: categories.parentId })
+        .from(categories)
+        .where(eq(categories.id, currentParentId))
+        .limit(1);
+
+      if (!parentCheck) break;
+      if (parentCheck.parentId === id) {
+        return NextResponse.json({ error: "Referência circular detectada. Categoria não pode ser filha de seu próprio descendente." }, { status: 400 });
+      }
+      currentParentId = parentCheck.parentId;
+      depth++;
+    }
+  }
   const [row] = await db
     .update(categories)
     .set({

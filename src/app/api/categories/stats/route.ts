@@ -47,19 +47,38 @@ export async function GET(req: NextRequest) {
         ),
     ]);
 
+    const userCategories = await db
+      .select({ id: categories.id, parentId: categories.parentId })
+      .from(categories)
+      .where(eq(categories.userId, userId));
+
+    const categoryMap = new Map(userCategories.map(c => [c.id, c.parentId]));
+
     const stats: Record<string, number> = {};
+
+    // Helper para adicionar valor na categoria e em todos os seus pais
+    const addAmountRecursive = (catId: string, amount: number) => {
+      let currentId: string | null = catId;
+      let depth = 0; // Anti-ciclo fallback
+
+      while (currentId && depth < 10) {
+        stats[currentId] = (stats[currentId] ?? 0) + amount;
+        currentId = categoryMap.get(currentId) || null;
+        depth++;
+      }
+    };
 
     // Regular transactions
     for (const t of monthTx) {
       if (t.type === "expense" && t.categoryId) {
-        stats[t.categoryId] = (stats[t.categoryId] ?? 0) + Number(t.amount);
+        addAmountRecursive(t.categoryId, Number(t.amount));
       }
     }
 
     // Card transactions
     for (const t of monthCardTx) {
       if (t.categoryId) {
-        stats[t.categoryId] = (stats[t.categoryId] ?? 0) + Number(t.amount);
+        addAmountRecursive(t.categoryId, Number(t.amount));
       }
     }
 

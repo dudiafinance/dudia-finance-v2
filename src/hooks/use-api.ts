@@ -90,12 +90,26 @@ export function useCategoryStats(month?: number, year?: number) {
 
 // Global Tags
 export function useTags() {
-  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<string[]>("/api/tags"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<any[]>("/api/tags"), staleTime: FIVE_MINUTES });
 }
-export function useUpdateTags() {
+export function useCreateTag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (tags: string[]) => apiFetch<string[]>("/api/tags", { method: "PUT", body: JSON.stringify(tags) }),
+    mutationFn: (data: any) => apiFetch<any>("/api/tags", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
+  });
+}
+export function useUpdateTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: any) => apiFetch<any>(`/api/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
+  });
+}
+export function useDeleteTag() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiFetch<{success: boolean}>(`/api/tags/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
