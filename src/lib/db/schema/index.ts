@@ -101,6 +101,7 @@ export const transactions = pgTable('transactions', {
   receiveDate: date('receive_date'),
   location: varchar('location', { length: 255 }),
   linkedTransactionId: uuid('linked_transaction_id'), // Para transferências e estornos
+  goalId: uuid('goal_id').references(() => goals.id), // Para depósitos de metas
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
@@ -165,7 +166,10 @@ export const goalContributions = pgTable('goal_contributions', {
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('goal_contributions_user_id_idx').on(table.userId),
+  index('goal_contributions_goal_id_idx').on(table.goalId),
+]);
 
 // Transações Recorrentes
 export const recurringTransactions = pgTable('recurring_transactions', {

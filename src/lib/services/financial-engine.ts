@@ -132,12 +132,22 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Transação não encontrada");
 
-      // 1. Reverter saldo
+      // 1. Reverter saldo da conta
       if (oldTx.isPaid) {
         const oldAmountChange = oldTx.type === "income" ? (Number(oldTx.amount) * -1).toString() : oldTx.amount;
         await tx.update(accounts)
           .set({ balance: sql`${accounts.balance} + ${oldAmountChange}` })
           .where(eq(accounts.id, oldTx.accountId));
+      }
+
+      // 1b. Reverter saldo da meta (se for um depósito de meta)
+      if (oldTx.goalId) {
+        await tx.update(goals)
+          .set({ 
+            currentAmount: sql`${goals.currentAmount} - ${oldTx.amount}`,
+            updatedAt: new Date()
+          })
+          .where(eq(goals.id, oldTx.goalId));
       }
 
       // 2. Deletar
@@ -477,7 +487,8 @@ export class FinancialEngine {
         subtype: "goal_deposit",
         description: `Objetivo: ${data.description}`,
         date: data.date,
-        isPaid: true
+        isPaid: true,
+        goalId: data.goalId // Vínculo explícito para reversão se deletada
       }).returning();
 
       // 2. Reduzir saldo da conta
@@ -489,9 +500,16 @@ export class FinancialEngine {
         .where(eq(accounts.id, data.accountId));
 
       // 3. Aumentar valor atual da meta
+      const newCurrentAmount = Number(goal.currentAmount) + Number(data.amount);
+      let newStatus = goal.status;
+      if (goal.targetAmount !== null && goal.targetAmount !== undefined && newCurrentAmount >= Number(goal.targetAmount)) {
+        newStatus = "completed";
+      }
+
       const [updatedGoal] = await tx.update(goals)
         .set({ 
-          currentAmount: sql`${goals.currentAmount} + ${data.amount}`,
+          currentAmount: String(newCurrentAmount),
+          status: newStatus,
           updatedAt: new Date()
         })
         .where(eq(goals.id, data.goalId))

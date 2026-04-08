@@ -356,7 +356,7 @@ export default function GoalsPage() {
             <Field label="Valor Atual">
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
-                <Input type="number" step="0.01" className="pl-10 h-11 rounded-md" value={form.currentAmount} onChange={e => set("currentAmount", e.target.value)} />
+                <Input disabled={!!editingId} title={editingId ? "O saldo atual só pode ser alterado através de depósitos." : ""} type="number" step="0.01" className="pl-10 h-11 rounded-md disabled:bg-slate-50 disabled:text-slate-500" value={form.currentAmount} onChange={e => set("currentAmount", e.target.value)} />
               </div>
             </Field>
           </div>
