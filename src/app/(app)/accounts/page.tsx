@@ -402,7 +402,7 @@ export default function AccountsPage() {
                   key={value} 
                   variant="ghost"
                   onClick={() => set("type", value)}
-                  className={cn("relative h-auto flex flex-col items-center gap-2 p-4 transition-all border-2",
+                  className={cn("relative h-auto flex flex-col items-center gap-2 p-4 transition-all border-2 whitespace-normal text-center",
                     form.type === value 
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20" 
                       : "border-slate-100 dark:border-slate-800 text-slate-500 hover:border-slate-300"
@@ -416,7 +416,7 @@ export default function AccountsPage() {
                   )}>
                     <Icon className={cn("h-5 w-5", form.type === value ? "text-white" : "text-slate-400")} />
                   </div>
-                  <span className={cn("text-[11px] font-bold uppercase tracking-widest",
+                  <span className={cn("text-[10px] font-bold uppercase tracking-wider text-center leading-tight",
                     form.type === value ? "text-blue-600 dark:text-blue-400" : "text-slate-500"
                   )}>{label}</span>
                 </Button>
