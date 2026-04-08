@@ -209,11 +209,11 @@ export default function ForecastPage() {
                           <p className="mb-2 text-xs font-bold text-slate-900 dark:text-white capitalize">{d.monthName}</p>
                           <div className="space-y-1">
                             <div className="flex items-center justify-between gap-8 text-[11px]">
-                              <span className="text-slate-500">Saldo Inicial:</span>
+                              <span className="text-slate-500">{d.isCurrent ? "Saldo Atual:" : "Saldo Inicial:"}</span>
                               <span className="font-medium text-slate-900 dark:text-slate-200">{fmt(d.startingBalance)}</span>
                             </div>
                             <div className="flex items-center justify-between gap-8 text-[11px]">
-                              <span className="text-slate-500">Resultado:</span>
+                              <span className="text-slate-500">{d.isCurrent ? "Próx. Entradas/Saídas:" : "Resultado:"}</span>
                               <span className={cn("font-medium", d.netBalance >= 0 ? "text-emerald-600" : "text-red-600")}>
                                 {d.netBalance >= 0 ? "+" : ""}{fmt(d.netBalance)}
                               </span>
