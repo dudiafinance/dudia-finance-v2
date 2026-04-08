@@ -110,6 +110,7 @@ export const transactions = pgTable('transactions', {
   index('transactions_user_id_date_idx').on(table.userId, table.date), // Otimização para filtros
   index('transactions_account_id_idx').on(table.accountId),
   index('transactions_category_id_idx').on(table.categoryId),
+  index('transactions_user_cat_date_idx').on(table.userId, table.categoryId, table.date), // Otimização para orçamentos
   index('transactions_linked_tx_idx').on(table.linkedTransactionId),
 ]);
 
@@ -323,7 +324,8 @@ export const cardTransactions = pgTable('card_transactions', {
   index('card_transactions_invoice_idx').on(table.invoiceMonth, table.invoiceYear),
   index('card_transactions_user_id_idx').on(table.userId),
   index('card_transactions_date_idx').on(table.date),
-  index('card_transactions_user_id_date_idx').on(table.userId, table.date),
+  index('card_transactions_user_id_date_idx').on(table.userId, table.date), // Otimização para relatórios
+  index('card_transactions_user_cat_date_idx').on(table.userId, table.categoryId, table.date), // Otimização para orçamentos
 ]);
 
 // Notificações
