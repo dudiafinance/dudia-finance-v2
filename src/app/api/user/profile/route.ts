@@ -14,11 +14,21 @@ export async function PUT(req: Request) {
     const { name, email, avatar } = await req.json();
 
     // Basic validation
-    if (!name || !email) {
-      return NextResponse.json(
-        { error: "Nome e Email são obrigatórios" },
-        { status: 400 }
-      );
+    if (!name || name.length < 2) {
+      return NextResponse.json({ error: "Nome deve ter pelo menos 2 caracteres" }, { status: 400 });
+    }
+    
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      return NextResponse.json({ error: "Email inválido" }, { status: 400 });
+    }
+
+    // Check if email belongs to another user
+    const existingUser = await db.query.users.findFirst({
+      where: (users, { and, eq, not }) => and(eq(users.email, email.toLowerCase().trim()), not(eq(users.id, session.user.id)))
+    });
+
+    if (existingUser) {
+      return NextResponse.json({ error: "Este email já está sendo usado por outra conta" }, { status: 400 });
     }
 
     await db

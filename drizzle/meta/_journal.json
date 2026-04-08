@@ -78,6 +78,13 @@
       "when": 1775587066477,
       "tag": "0010_fancy_boom_boom",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1775666561438,
+      "tag": "0011_first_rattler",
+      "breakpoints": true
     }
   ]
 }

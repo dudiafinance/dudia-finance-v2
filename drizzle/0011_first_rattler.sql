@@ -1,0 +1,2 @@
+ALTER TABLE "users" ADD COLUMN "notification_preferences" jsonb DEFAULT '{"budgetAlerts":true,"recurringReminders":true,"monthlyReports":true,"promotions":true}'::jsonb;--> statement-breakpoint
+ALTER TABLE "users" ADD COLUMN "open_router_api_key" text;

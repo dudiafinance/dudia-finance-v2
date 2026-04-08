@@ -25,6 +25,18 @@ export const users = pgTable('users', {
   timezone: varchar('timezone', { length: 50 }).default('America/Sao_Paulo'),
   emailVerified: timestamp('email_verified'),
   tags: jsonb('tags').$type<string[]>().default([]),
+  notificationPreferences: jsonb('notification_preferences').$type<{
+    budgetAlerts?: boolean;
+    recurringReminders?: boolean;
+    monthlyReports?: boolean;
+    promotions?: boolean;
+  }>().default({
+    budgetAlerts: true,
+    recurringReminders: true,
+    monthlyReports: true,
+    promotions: true
+  }),
+  openRouterApiKey: text('open_router_api_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
