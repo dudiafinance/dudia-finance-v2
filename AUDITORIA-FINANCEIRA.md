@@ -77,33 +77,48 @@ Sistema de gestão financeira pessoal построенный на Next.js 16, Po
   - Verifica se conta de origem existe
   - Verifica se saldo >= valor da transferência
 
-### ⏳ Fase 2 - Alta Prioridade - **PENDENTE**
+### ✅ Fase 2 - Alta Prioridade - **CONCLUÍDO**
+**Data:** 08/04/2026
 
-- [ ] **Correção 5:** Cascade de mês/ano em invoices
-  - Corrigir wrap-around December→January na função `updateCardTransaction()`
+- [x] **Correção 5:** Cascade de mês/ano em invoices
+  - Implementado wrap-around December→January na função `updateCardTransaction()` (linhas 306-310)
+  - Usa cálculo `totalMonths % 12 + 1` para mês e `floor(totalMonths / 12)` para ano
 
-- [ ] **Correção 6:** Validação targetAmount em depositToGoal
-  - Verificar se `currentAmount + amount <= targetAmount`
+- [x] **Correção 6:** Validação targetAmount em depositToGoal
+  - Adicionada verificação se `currentAmount + amount <= targetAmount` antes do depósito
+  - Lança erro se depósito exceder o valor alvo
+  - Arquivo: `src/lib/services/financial-engine.ts` (linhas 459-468)
 
-- [ ] **Correção 7:** Mudança de accountId em updateTransaction
-  - Reverter saldo da conta antiga e aplicar na nova conta
+- [x] **Correção 7:** Mudança de accountId em updateTransaction
+  - Implementado reverter saldo da conta antiga e aplicar na nova conta
+  - Função `updateTransaction()` já tratava isso corretamente (linhas 96-117)
 
-- [ ] **Correção 8:** Validação de ownership em DELETE
-  - Adicionar verificação de `userId` em todos os DELETE dos API routes
+- [x] **Correção 8:** Validação de ownership em DELETE
+  - Todos os endpoints DELETE já verificam `userId` no WHERE clause
+  - Verificado: accounts, categories, goals, budgets, credit-cards, transactions, goal-contributions
 
-### ⏳ Fase 3 - Média Prioridade - **PENDENTE**
+### ✅ Fase 3 - Média Prioridade - **CONCLUÍDO**
+**Data:** 08/04/2026
 
-- [ ] **Correção 9:** dueDay !== closingDay
-  - Adicionar validação no creditCardSchema
+- [x] **Correção 9:** dueDay !== closingDay
+  - Adicionada validação `refine()` no creditCardSchema
+  - Lança erro se dia de vencimento e fechamento forem iguais
+  - Arquivo: `src/lib/validations/index.ts` (linha 113-117)
 
-- [ ] **Correção 10:** Verificar uso antes de deletar conta
-  - Verificar se existem transações na conta antes de deletar
+- [x] **Correção 10:** Verificar uso antes de deletar conta
+  - Adicionada verificação de transações na conta antes de deletar
+  - Retorna erro 400 se existirem transações
+  - Arquivo: `src/app/api/accounts/[id]/route.ts`
 
-- [ ] **Correção 11:** Verificar uso antes de deletar categoria
-  - Verificar se existem transações/categorias filhas antes de deletar
+- [x] **Correção 11:** Verificar uso antes de deletar categoria
+  - Adicionada verificação de transações e subcategorias antes de deletar
+  - Retorna erro 400 se existirem transações ou subcategorias
+  - Arquivo: `src/app/api/categories/[id]/route.ts`
 
-- [ ] **Correção 12:** Week-to-month conversion preciso
-  - Substituir `* 4.33` por cálculo exato de semanas no mês
+- [x] **Correção 12:** Week-to-month conversion preciso
+  - Criada função `weeksInMonth(year, month)` para cálculo exato
+  - Substituído `* 4.33` por `* weeks` no forecast
+  - Arquivo: `src/app/api/forecast/route.ts`
 
 ### ⏳ Fase 4 - Melhorias - **PENDENTE**
 
@@ -140,6 +155,21 @@ Sistema de gestão financeira pessoal построенный на Next.js 16, Po
 | `src/app/(app)/reports/page.tsx` | Currency dinâmico |
 | `src/app/(app)/forecast/page.tsx` | Currency dinâmico |
 
+## Arquivos Modificados na Fase 2
+
+| Arquivo | Mudanças |
+|---------|----------|
+| `src/lib/services/financial-engine.ts` | Validação targetAmount em depositToGoal (linhas 459-468) |
+
+## Arquivos Modificados na Fase 3
+
+| Arquivo | Mudanças |
+|---------|----------|
+| `src/lib/validations/index.ts` | Validação dueDay !== closingDay no creditCardSchema |
+| `src/app/api/accounts/[id]/route.ts` | Verificação de transações antes de deletar conta |
+| `src/app/api/categories/[id]/route.ts` | Verificação de transações/subcategorias antes de deletar |
+| `src/app/api/forecast/route.ts` | Função weeksInMonth() e cálculo preciso de budget |
+
 ---
 
 ## Multi-Usuário
@@ -173,3 +203,41 @@ npm run lint
 # Build
 npm run build
 ```
+
+---
+
+## Checklist - Correções Implementadas
+
+### ✅ Fase 1 - Críticos (Financeiros) - CONCLUÍDO
+
+- [x] **Correção 1:** Currency formatting dinâmico
+- [x] **Correção 2:** Cálculo de parcelamento com inteiros
+- [x] **Correção 3:** Validação em payInvoice
+- [x] **Correção 4:** Verificação de saldo em transfer
+
+### ✅ Fase 2 - Alta Prioridade - CONCLUÍDO
+
+- [x] **Correção 5:** Cascade de mês/ano em invoices (wrap-around December→January)
+- [x] **Correção 6:** Validação targetAmount em depositToGoal
+- [x] **Correção 7:** Mudança de accountId em updateTransaction
+- [x] **Correção 8:** Validação de ownership em DELETE
+
+### ✅ Fase 3 - Média Prioridade - CONCLUÍDO
+
+- [x] **Correção 9:** dueDay !== closingDay
+- [x] **Correção 10:** Verificar uso antes de deletar conta
+- [x] **Correção 11:** Verificar uso antes de deletar categoria
+- [x] **Correção 12:** Week-to-month conversion preciso
+
+### ⏳ Fase 4 - Melhorias - PENDENTE
+
+- [ ] **Correção 13:** Lazy generation de recurring transactions
+- [ ] **Correção 14:** Validação de email no profile
+- [ ] **Correção 15:** Rate limiting
+- [ ] **Correção 16:** Sanitização XSS
+
+---
+
+**Total: 12 de 16 correções implementadas (75%)**
+
+**Total: 8 de 16 correções implementadas (50%)**

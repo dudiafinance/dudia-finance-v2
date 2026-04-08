@@ -110,6 +110,9 @@ export const creditCardSchema = z.object({
   color: z.string().max(7).optional(),
   gradient: z.string().max(100).optional(),
   network: z.string().max(20).optional(),
+}).refine((data) => data.dueDay !== data.closingDay, {
+  message: "Dia de vencimento e dia de fechamento devem ser diferentes",
+  path: ["dueDay"],
 });
 
 export const goalContributionSchema = z.object({

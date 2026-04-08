@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { accounts } from "@/lib/db/schema";
+import { accounts, transactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 
@@ -36,6 +36,24 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
+
+  const [accountExists] = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.id, id), eq(accounts.userId, userId)))
+    .limit(1);
+  
+  if (!accountExists) return NextResponse.json({ error: "Conta não encontrada" }, { status: 404 });
+
+  const hasTransactions = await db
+    .select({ id: transactions.id })
+    .from(transactions)
+    .where(eq(transactions.accountId, id))
+    .limit(1);
+
+  if (hasTransactions.length > 0) {
+    return NextResponse.json({ error: "Não é possível deletar conta com transações existentes" }, { status: 400 });
+  }
 
   await db
     .delete(accounts)

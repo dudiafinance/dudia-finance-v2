@@ -456,6 +456,17 @@ export class FinancialEngine {
     categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
+      // 0. Validar targetAmount antes de depositar
+      const [goal] = await tx.select().from(goals).where(and(eq(goals.id, data.goalId), eq(goals.userId, data.userId))).limit(1);
+      if (!goal) throw new Error("Meta não encontrada");
+      
+      if (goal.targetAmount !== null && goal.targetAmount !== undefined) {
+        const newAmount = Number(goal.currentAmount) + Number(data.amount);
+        if (newAmount > Number(goal.targetAmount)) {
+          throw new Error(`Depósito excede o valor alvo. Valor atual: ${goal.currentAmount}, Alvo: ${goal.targetAmount}, Depósito: ${data.amount}`);
+        }
+      }
+
       // 1. Criar transação de saída na conta
       const [expense] = await tx.insert(transactions).values({
         userId: data.userId,

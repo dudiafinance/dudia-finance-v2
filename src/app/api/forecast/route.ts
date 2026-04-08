@@ -17,6 +17,12 @@ function monthEnd(year: number, month: number): string {
   return new Date(year, month, 0).toISOString().split("T")[0];
 }
 
+function weeksInMonth(year: number, month: number): number {
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return Math.ceil((firstDay + daysInMonth) / 7);
+}
+
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -41,13 +47,16 @@ export async function GET() {
   const fixedIncome = allTransactions.filter((t) => t.subtype === "fixed" && t.type === "income");
   const fixedExpense = allTransactions.filter((t) => t.subtype === "fixed" && t.type === "expense");
 
-  // Budget monthly amounts
-  const budgetMonthly = allBudgets.reduce((sum, b) => {
-    const amt = Number(b.amount);
-    if (b.period === "weekly") return sum + amt * 4.33;
-    if (b.period === "yearly") return sum + amt / 12;
-    return sum + amt;
-  }, 0);
+  // Budget monthly amounts for a specific year/month
+  function getBudgetMonthlyForMonth(year: number, month: number): number {
+    const weeks = weeksInMonth(year, month);
+    return allBudgets.reduce((sum, b) => {
+      const amt = Number(b.amount);
+      if (b.period === "weekly") return sum + (amt * weeks);
+      if (b.period === "yearly") return sum + amt / 12;
+      return sum + amt;
+    }, 0);
+  }
 
   // Goal contributions for a specific month
   function getGoalContributionsForMonth(year: number, month: number): number {
@@ -133,6 +142,7 @@ export async function GET() {
       const projRecIncome = getRecurringForMonth(y, m, "income");
       const projRecExpense = getRecurringForMonth(y, m, "expense");
 
+      const budgetMonthly = getBudgetMonthlyForMonth(y, m);
       const netBalance = (income + projRecIncome) - (expenses + projRecExpense) - cardInvoice - budgetMonthly - monthGoalContributions;
       cumulativeBalance += netBalance;
 
@@ -164,6 +174,7 @@ export async function GET() {
         .filter((t) => t.invoiceMonth === m && t.invoiceYear === y)
         .reduce((s, t) => s + Number(t.amount), 0);
 
+      const budgetMonthly = getBudgetMonthlyForMonth(y, m);
       const monthStartingBalance = cumulativeBalance;
       const netBalance = projIncome - projExpense - cardInvoice - budgetMonthly - monthGoalContributions;
       cumulativeBalance += netBalance;
