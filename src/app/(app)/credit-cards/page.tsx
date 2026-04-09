@@ -79,12 +79,12 @@ type CategoryItem = {
 };
 
 const GRADIENT_PRESETS = [
-  { label: "Nubank", value: "from-[#820AD1] to-[#4B0082]", color: "#820AD1" },
-  { label: "Inter", value: "from-[#FF7A00] to-[#E65100]", color: "#FF7A00" },
-  { label: "Itau", value: "from-[#0047BB] to-[#002D72]", color: "#0047BB" },
-  { label: "XP", value: "from-[#111111] to-[#333333]", color: "#111111" },
-  { label: "Emerald", value: "from-[#059669] to-[#065F46]", color: "#059669" },
-  { label: "Rose", value: "from-[#DB2777] to-[#831843]", color: "#DB2777" },
+  { label: "Nubank", value: "bg-gradient-to-br from-[#820AD1] to-[#4B0082]", color: "#820AD1" },
+  { label: "Inter", value: "bg-gradient-to-br from-[#FF7A00] to-[#E65100]", color: "#FF7A00" },
+  { label: "Itau", value: "bg-gradient-to-br from-[#0047BB] to-[#002D72]", color: "#0047BB" },
+  { label: "XP", value: "bg-gradient-to-br from-[#111111] to-[#333333]", color: "#111111" },
+  { label: "Emerald", value: "bg-gradient-to-br from-[#059669] to-[#065F46]", color: "#059669" },
+  { label: "Rose", value: "bg-gradient-to-br from-[#DB2777] to-[#831843]", color: "#DB2777" },
 ];
 
 function getSuggestedInvoice(card: CreditCard | null | undefined, dateStr: string) {
@@ -280,7 +280,9 @@ export default function CreditCardsPage() {
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "h-10 w-10 rounded-lg flex items-center justify-center",
-                            card.gradient ? `bg-gradient-to-br ${card.gradient}` : "bg-slate-800"
+                            card.gradient 
+                              ? (card.gradient.includes('bg-gradient') ? card.gradient : `bg-gradient-to-br ${card.gradient}`) 
+                              : "bg-slate-800"
                           )}>
                             <CardIcon className="h-5 w-5 text-white" />
                           </div>
