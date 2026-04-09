@@ -61,7 +61,8 @@ export const budgetSchema = z.object({
   alertsEnabled: z.boolean().default(true),
   alertThreshold: z.coerce.number().min(50).max(100).default(80),
 }).refine((data) => {
-  if (data.endDate && data.endDate <= data.startDate) return false;
+  if (data.endDate === undefined || data.startDate === undefined) return true;
+  if (data.endDate && data.startDate && data.endDate <= data.startDate) return false;
   return true;
 }, { message: "Data de fim deve ser posterior à data de início", path: ["endDate"] });
 
@@ -77,11 +78,13 @@ export const goalSchema = z.object({
   status: z.enum(["active", "completed", "cancelled"]).default("active"),
   notes: z.string().max(1000).optional().nullable(),
 }).refine((data) => {
-  if (!data.targetAmount && !data.monthlyContribution) return false;
-  return true;
+  // Ignora validação se algum dos campos de valor estiver ausente (provável update parcial)
+  if (data.targetAmount === undefined || data.monthlyContribution === undefined) return true;
+  return !!data.targetAmount || !!data.monthlyContribution;
 }, {
   message: "Preencha o valor alvo ou o valor mensal",
 }).refine((data) => {
+  if (data.endDate === undefined || data.startDate === undefined) return true;
   if (data.endDate && data.startDate && data.endDate <= data.startDate) return false;
   return true;
 }, { message: "Data de fim deve ser posterior à data de início", path: ["endDate"] });
@@ -137,7 +140,10 @@ export const transferSchema = z.object({
   description: z.string().min(1, "Descrição obrigatória").max(255),
   date: z.string().min(1, "Data obrigatória"),
   categoryId: z.string().uuid().optional().nullable(),
-}).refine((data) => data.fromAccountId !== data.toAccountId, {
+}).refine((data) => {
+  if (data.fromAccountId === undefined || data.toAccountId === undefined) return true;
+  return data.fromAccountId !== data.toAccountId;
+}, {
   message: "As contas de origem e destino devem ser diferentes",
   path: ["toAccountId"],
 });

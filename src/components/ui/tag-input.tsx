@@ -56,20 +56,20 @@ export function TagInput({
     <div ref={containerRef} className="relative">
       <div
         className={cn(
-          "flex min-h-[40px] w-full flex-wrap items-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 transition-colors focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500",
+          "flex min-h-[40px] w-full flex-wrap items-center gap-2 rounded-md border border-border/50 bg-secondary/30 px-3 py-2 transition-all focus-within:border-foreground focus-within:bg-background shadow-precision",
           className
         )}
       >
         {(value || []).map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center gap-1 rounded-full bg-blue-100 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300"
+            className="inline-flex items-center gap-1.5 rounded bg-foreground px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-background shadow-sm"
           >
-            #{tag}
+            {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="ml-0.5 text-blue-500 hover:text-blue-700 dark:hover:text-blue-200"
+              className="ml-0.5 text-background/60 hover:text-background transition-colors"
             >
               <X className="h-3 w-3" />
             </button>
@@ -88,22 +88,22 @@ export function TagInput({
             }, 150);
           }}
           placeholder={value.length === 0 ? placeholder : ""}
-          className="min-w-[100px] flex-1 bg-transparent text-sm text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+          className="min-w-[100px] flex-1 bg-transparent text-[11px] font-bold uppercase tracking-widest text-foreground outline-none placeholder:text-muted-foreground/50"
         />
       </div>
 
       {/* Suggestions dropdown */}
       {showSuggestions && filteredSuggestions.length > 0 && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1.5 w-full rounded-md border border-border/50 bg-background shadow-precision">
           <div className="p-1">
             {filteredSuggestions.map((s) => (
               <button
                 key={s}
                 type="button"
                 onMouseDown={(e) => { e.preventDefault(); addTag(s); }}
-                className="flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
               >
-                <span className="text-blue-500">#</span>
+                <span className="text-foreground/40">#</span>
                 {s}
               </button>
             ))}

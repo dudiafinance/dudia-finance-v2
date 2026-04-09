@@ -67,7 +67,7 @@ export default function ForecastPage() {
   if (error) {
     return (
       <div className="w-full min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
-        <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4 border border-red-500/20">
+        <div className="h-16 w-16 rounded-full bg-error-subtle flex items-center justify-center text-error mb-4 border border-error-subtle">
           <Info className="h-8 w-8" />
         </div>
         <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Erro de Projeção</h2>
@@ -84,18 +84,18 @@ export default function ForecastPage() {
     { 
       label: "Projeção (12m)", 
       value: fmt(data[12]?.cumulativeBalance ?? 0), 
-      color: (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-emerald-500" : "text-red-500" 
+      color: (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-success" : "text-error" 
     },
     { 
       label: "Melhor Mensal", 
       value: fmt(bestMonth?.netBalance ?? 0), 
-      color: "text-emerald-500", 
+      color: "text-success", 
       sub: bestMonth?.monthName 
     },
     { 
       label: "Gargalo Crítico", 
       value: fmt(worstMonth?.netBalance ?? 0), 
-      color: "text-red-500", 
+      color: "text-error", 
       sub: worstMonth?.monthName 
     },
   ];
@@ -177,7 +177,7 @@ export default function ForecastPage() {
                   fill="url(#colorBalance)" 
                   animationDuration={1500}
                 />
-                <ReferenceLine y={0} stroke="var(--destructive)" strokeDasharray="3 3" />
+                <ReferenceLine y={0} stroke="var(--error)" strokeDasharray="3 3" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -230,7 +230,7 @@ export default function ForecastPage() {
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between items-end">
                       <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Resultado Projetado</p>
-                      <p className={cn("text-sm font-bold tabular-nums", m.netBalance >= 0 ? "text-emerald-500" : "text-red-500")}>
+                      <p className={cn("text-sm font-bold tabular-nums", m.netBalance >= 0 ? "text-success" : "text-error")}>
                         {m.netBalance >= 0 ? "+" : ""}{fmt(m.netBalance)}
                       </p>
                     </div>
@@ -250,10 +250,10 @@ export default function ForecastPage() {
                   {/* Bars visual */}
                   <div className="space-y-2">
                     <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
-                      <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${incomeWidth}%` }} />
+                      <div className="h-full bg-success rounded-full transition-all" style={{ width: `${incomeWidth}%` }} />
                     </div>
                     <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
-                      <div className="h-full bg-red-400 rounded-full transition-all" style={{ width: `${commitWidth}%` }} />
+                      <div className="h-full bg-error rounded-full transition-all" style={{ width: `${commitWidth}%` }} />
                     </div>
                   </div>
                 </motion.div>

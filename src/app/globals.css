@@ -66,6 +66,10 @@
   --ring: oklch(0.205 0 0);
   --radius: 0.5rem;
   
+  --success: oklch(0.627 0.194 149.214); /* Tech Emerald */
+  --warning: oklch(0.769 0.188 70.08); /* Amber Tech */
+  --error: var(--destructive);
+  
   /* Sidebar Light - Technical Look */
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -96,6 +100,10 @@
   --border: oklch(0.205 0 0); /* Zinc 800 approx */
   --input: oklch(0.205 0 0);
   --ring: oklch(0.706 0.01 0); /* Zinc 400 approx */
+  
+  --success: oklch(0.696 0.17 162.48); /* Lighter Tech Emerald */
+  --warning: oklch(0.841 0.141 77.03); /* Lighter Amber */
+  --error: var(--destructive);
   
   /* Sidebar Dark - Immersive Black */
   --sidebar: oklch(0.129 0 0);
@@ -139,6 +147,18 @@
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  .text-success { color: var(--success); }
+  .text-warning { color: var(--warning); }
+  .text-error { color: var(--error); }
+  
+  .bg-success-subtle { background-color: color-mix(in oklch, var(--success), transparent 90%); }
+  .bg-warning-subtle { background-color: color-mix(in oklch, var(--warning), transparent 90%); }
+  .bg-error-subtle { background-color: color-mix(in oklch, var(--error), transparent 90%); }
+  
+  .border-success-subtle { border-color: color-mix(in oklch, var(--success), transparent 80%); }
+  .border-warning-subtle { border-color: color-mix(in oklch, var(--warning), transparent 80%); }
+  .border-error-subtle { border-color: color-mix(in oklch, var(--error), transparent 80%); }
 
   /* Custom Scrollbar for Precision Look */
   ::-webkit-scrollbar {

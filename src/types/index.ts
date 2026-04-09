@@ -138,12 +138,70 @@ export type DashboardSummary = {
   totalIncome: number;
   totalExpense: number;
   monthlyVariation: number;
+  totalAllExpenses: number;
+  totalCardInvoice: number;
+  savings: number;
+  savingsRate: number;
+  topExpenses: {
+    categoryId: string;
+    categoryName: string;
+    total: number;
+  }[];
+  recentActivity: {
+    id: string;
+    description: string;
+    amount: number;
+    type: 'income' | 'expense';
+    date: string;
+    source: 'account' | 'card';
+  }[];
+};
+
+export type ReportSummary = {
+  stats: {
+    income: number;
+    expense: number;
+    net: number;
+  };
+  incomeByCat: { name: string; value: number }[];
+  expenseByCat: { name: string; value: number; color?: string }[];
+  history: { label: string; income: number; expense: number }[];
+};
+
+export type TransferPayload = {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  description: string;
+  date: string;
+  categoryId?: string;
+};
+
+export type GoalDepositPayload = {
+  goalId: string;
+  accountId: string;
+  amount: number;
+  date: string;
+  description: string;
+};
+
+export type InvoiceStatusResponse = {
+  status: 'ABERTA' | 'FECHADA' | 'PAGA';
 };
 
 export type ChartData = {
   name: string;
   value: number;
   color?: string;
+};
+
+export type Tag = {
+  id: string;
+  userId: string;
+  name: string;
+  color?: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CreditCard = {

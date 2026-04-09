@@ -164,8 +164,8 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-4">
                   {passwordRequirements.map((req, index) => (
                     <div key={index} className="flex items-center gap-2">
-                      <div className={cn("h-1 w-1 rounded-full", req.met ? "bg-emerald-500" : "bg-border")} />
-                      <span className={cn("text-[8px] font-bold uppercase tracking-tight", req.met ? "text-emerald-500" : "text-muted-foreground")}>
+                      <div className={cn("h-1 w-1 rounded-full", req.met ? "bg-success" : "bg-border")} />
+                      <span className={cn("text-[8px] font-bold uppercase tracking-tight", req.met ? "text-success" : "text-muted-foreground")}>
                         {req.text}
                       </span>
                     </div>

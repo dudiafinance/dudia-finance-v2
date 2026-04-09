@@ -194,7 +194,7 @@ export default function CreditCardsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <TrendingDown className="h-3 w-3 text-red-500" />
+              <TrendingDown className="h-3 w-3 text-error" />
               Fatura do Período
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -204,7 +204,7 @@ export default function CreditCardsPage() {
 
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <Wallet className="h-3 w-3 text-emerald-500" />
+              <Wallet className="h-3 w-3 text-success" />
               Disponível
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -220,8 +220,8 @@ export default function CreditCardsPage() {
             <div className="flex items-center gap-2">
               <p className="text-xl font-bold text-foreground uppercase tabular-nums">{currentInvoiceStatus}</p>
               <div className={cn("h-2 w-2 rounded-full", 
-                currentInvoiceStatus === 'ABERTA' ? 'bg-emerald-500' : 
-                currentInvoiceStatus === 'PAGA' ? 'bg-emerald-500' : 'bg-red-500'
+                currentInvoiceStatus === 'ABERTA' ? 'bg-success' : 
+                currentInvoiceStatus === 'PAGA' ? 'bg-success' : 'bg-error'
               )} />
             </div>
           </div>
@@ -557,7 +557,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
   const handleSubmit = () => {
     const payload = { ...form, limit: Number(form.limit), dueDay: Number(form.dueDay), closingDay: Number(form.closingDay) };
     if (editingCard) {
-      updateCard.mutate({ id: editingCard.id, ...payload }, { 
+      updateCard.mutate({ id: editingCard.id, ...payload } as any, { 
         onSuccess: () => {
           toast("Cartão atualizado!");
           onClose();
@@ -567,7 +567,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
         }
       });
     } else {
-      createCard.mutate(payload, { 
+      createCard.mutate(payload as any, { 
         onSuccess: () => {
           toast("Cartão criado!");
           onClose();
@@ -706,7 +706,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
       ...form,
       amount: amountVal,
       categoryId: form.categoryId || undefined,
-    }, { onSuccess: onClose });
+    } as any, { onSuccess: onClose });
   };
 
   const expenseCategories = (categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense');
@@ -1040,9 +1040,9 @@ function EditTxModal({ open, onClose, tx, card }: { open: boolean, onClose: () =
       id: tx.id,
       ...form,
       amount: amountVal,
-      categoryId: form.categoryId || null,
+      categoryId: form.categoryId || undefined,
       updateGroup
-    }, { onSuccess: onClose });
+    } as any, { onSuccess: onClose });
   };
 
   const handleDelete = () => {

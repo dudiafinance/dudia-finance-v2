@@ -70,9 +70,10 @@ export async function GET(req: Request) {
           .where(eq(recurringTransactions.id, rec.id));
 
         results.push({ id: rec.id, status: "success", txId: newTx.id });
-      } catch (error: any) {
+      } catch (error) {
         console.error(`[CRON] Erro ao processar recorrência ${rec.id}:`, error);
-        results.push({ id: rec.id, status: "error", message: error.message });
+        const message = error instanceof Error ? error.message : "Erro desconhecido";
+        results.push({ id: rec.id, status: "error", message });
       }
     }
 
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
       processed: pendingRecurrences.length,
       results,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("[CRON] Erro crítico no worker:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }

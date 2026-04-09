@@ -25,27 +25,29 @@ export function ColorPicker({ value, onChange }: ColorPickerProps) {
             type="button"
             onClick={() => onChange(color)}
             className={cn(
-              "h-8 w-8 rounded-full border-2 transition-transform hover:scale-110",
-              value === color ? "border-slate-800 scale-110" : "border-transparent"
+              "h-7 w-7 rounded-full border-2 transition-all hover:scale-110 shadow-precision",
+              value === color ? "border-foreground scale-110 shadow-lg ring-2 ring-background ring-offset-1" : "border-transparent opacity-60 hover:opacity-100"
             )}
             style={{ backgroundColor: color }}
           >
-            {value === color && <Check className="h-4 w-4 text-white mx-auto" strokeWidth={3} />}
+            {value === color && <Check className="h-3.5 w-3.5 text-white mx-auto drop-shadow-sm" strokeWidth={4} />}
           </button>
         ))}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4 p-2 bg-secondary/30 rounded-lg border border-border/50 shadow-precision w-fit">
         <div
-          className="h-8 w-8 shrink-0 rounded-full border-2 border-slate-200"
+          className="h-6 w-6 shrink-0 rounded-full border border-white/10 shadow-inner"
           style={{ backgroundColor: value }}
         />
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-20 cursor-pointer rounded border border-slate-200 bg-transparent px-1 text-xs"
-        />
-        <span className="text-xs text-slate-500 font-mono">{value}</span>
+        <div className="flex items-center gap-2 border-l border-border/50 pl-4">
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="h-6 w-10 cursor-pointer rounded bg-transparent border-0 p-0"
+          />
+          <span className="text-[10px] text-muted-foreground font-bold tabular-nums tracking-widest uppercase">{value}</span>
+        </div>
       </div>
     </div>
   );

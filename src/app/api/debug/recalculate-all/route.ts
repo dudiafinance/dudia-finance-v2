@@ -16,8 +16,9 @@ export async function POST() {
       message: "Sincronização concluída com sucesso.",
       summary 
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Sync error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

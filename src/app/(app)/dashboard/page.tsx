@@ -131,7 +131,7 @@ export default function DashboardPage() {
               </p>
               <div className={cn(
                 "flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border tabular-nums shadow-precision",
-                monthlyVariation >= 0 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
+                monthlyVariation >= 0 ? "bg-success-subtle text-success border-success-subtle" : "bg-error-subtle text-error border-error-subtle"
               )}>
                 {monthlyVariation >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 <span>{Math.abs(monthlyVariation).toFixed(1)}%</span>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mb-12 shadow-precision">
           <div className="bg-background p-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-              <ArrowUpRight className="h-3 w-3 text-emerald-500" />
+              <ArrowUpRight className="h-3 w-3 text-success" />
               Receitas do Mês
             </p>
             <p className="text-2xl font-bold tabular-nums text-foreground">{showBalances ? fmt(totalIncome) : "••••••"}</p>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
 
           <div className="bg-background p-6">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-              <ArrowDownRight className="h-3 w-3 text-red-500" />
+              <ArrowDownRight className="h-3 w-3 text-error" />
               Despesas Acumuladas
             </p>
             <div className="flex items-baseline gap-2">
@@ -169,12 +169,12 @@ export default function DashboardPage() {
           <div className="bg-background p-6">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Zap className="h-3 w-3 text-amber-500" />
+                <Zap className="h-3 w-3 text-warning" />
                 Economia Líquida
               </p>
               <span className="text-[10px] font-bold text-muted-foreground tabular-nums">{savingsRate.toFixed(1)}%</span>
             </div>
-            <p className={cn("text-2xl font-bold tabular-nums", savings >= 0 ? "text-foreground" : "text-red-500")}>
+            <p className={cn("text-2xl font-bold tabular-nums", savings >= 0 ? "text-foreground" : "text-error")}>
               {showBalances ? fmt(savings) : "••••••"}
             </p>
             <div className="mt-4 h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/20">
@@ -249,7 +249,7 @@ export default function DashboardPage() {
                     >
                       <div className={cn(
                         "h-8 w-8 rounded flex items-center justify-center shrink-0 border border-border/50",
-                        t.type === "income" ? "text-emerald-500" : "text-foreground"
+                        t.type === "income" ? "text-success" : "text-foreground"
                       )}>
                         {t.source === "card" ? <CreditCard className="h-4 w-4" />
                           : t.type === "income" ? <ArrowUpRight className="h-4 w-4" />

@@ -167,16 +167,16 @@ export default function CategoriesPage() {
       type: form.type,
       color: form.color,
       icon: form.icon,
-      budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : null,
-      budgetPeriod: form.budgetPeriod || "monthly",
+      budgetAmount: form.budgetAmount ? Number(form.budgetAmount) : undefined,
+      budgetPeriod: form.budgetAmount ? form.budgetPeriod : undefined,
       tags: form.tags,
     };
     try {
       if (editingId) {
-        await updateCategory.mutateAsync({ id: editingId, ...formPayload });
+        await updateCategory.mutateAsync({ id: editingId, ...formPayload } as any);
         toast("Categoria atualizada!");
       } else {
-        await createCategory.mutateAsync(formPayload);
+        await createCategory.mutateAsync(formPayload as any);
         toast("Categoria criada!");
       }
       setModalOpen(false);

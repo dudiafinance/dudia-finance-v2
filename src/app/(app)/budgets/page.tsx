@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import {
-  Plus, Edit, Trash2, AlertTriangle, CheckCircle2,
+  Plus, Edit, Trash2, CheckCircle2,
   Bell, Filter, Zap, TrendingUp
 } from "lucide-react";
 import {
@@ -99,7 +99,7 @@ export default function BudgetsPage() {
       categoryId: b.categoryId ?? "",
       amount: String(Number(b.amount)),
       period: b.period,
-      startDate: new Date(b.startDate).toISOString().split("T")[0],
+      startDate: b.startDate ? new Date(b.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: b.endDate ? new Date(b.endDate).toISOString().split("T")[0] : "",
       alertsEnabled: b.alertsEnabled,
       alertThreshold: String(b.alertThreshold),
@@ -122,15 +122,15 @@ export default function BudgetsPage() {
       name: form.name,
       categoryId: form.categoryId || undefined,
       amount: Number(form.amount),
-      period: form.period,
+      period: form.period as any,
       startDate: form.startDate,
       endDate: form.endDate || undefined,
       alertsEnabled: form.alertsEnabled,
       alertThreshold: Number(form.alertThreshold),
     };
     try {
-      if (editingId) await updateBudget.mutateAsync({ id: editingId, ...formPayload });
-      else await createBudget.mutateAsync(formPayload);
+      if (editingId) await updateBudget.mutateAsync({ id: editingId, ...formPayload } as any);
+      else await createBudget.mutateAsync(formPayload as any);
       toast(editingId ? "Orçamento atualizado!" : "Orçamento criado!");
       setModalOpen(false);
     } catch (e) {
@@ -202,12 +202,12 @@ export default function BudgetsPage() {
           <div className="bg-background p-5">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <TrendingUp className="h-3 w-3 text-red-500" />
+                <TrendingUp className="h-3 w-3 text-error" />
                 Execução Atual
               </p>
               <span className={cn(
                 "text-[9px] font-bold tabular-nums px-1.5 py-0.5 rounded border shadow-precision",
-                stats.usagePercent > 100 ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                stats.usagePercent > 100 ? "bg-error-subtle text-error border-error-subtle" : "bg-success-subtle text-success border-success-subtle"
               )}>
                 {stats.usagePercent.toFixed(1)}%
               </span>
@@ -219,21 +219,20 @@ export default function BudgetsPage() {
 
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <Zap className="h-3 w-3 text-amber-500" />
+              <Zap className="h-3 w-3 text-warning" />
               Status de Limite
             </p>
             <div className="flex items-center gap-2">
               <p className="text-xl font-bold text-foreground uppercase tabular-nums">
                 {stats.overBudgetCount > 0 ? "Excedido" : "Nominal"}
               </p>
-              {stats.overBudgetCount > 0 && <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />}
+              {stats.overBudgetCount > 0 && <div className="h-2 w-2 rounded-full bg-error animate-pulse" />}
             </div>
           </div>
         </div>
       </div>
 
       <div className="px-6 py-8">
-        {/* Budget List */}
         {budgetStats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
             <Filter className="h-12 w-12 mb-4" />
@@ -278,7 +277,7 @@ export default function BudgetsPage() {
                             {b.period}
                           </span>
                           {b.alertsEnabled && (
-                            <span className="flex items-center gap-1 text-[8px] font-bold text-amber-500 uppercase tracking-widest">
+                            <span className="flex items-center gap-1 text-[8px] font-bold text-warning uppercase tracking-widest">
                               <Bell className="h-2.5 w-2.5" /> {b.alertThreshold}%
                             </span>
                           )}
@@ -299,7 +298,7 @@ export default function BudgetsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={(e) => { e.stopPropagation(); setDeleteId(b.id); }} 
-                        className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        className="h-8 w-8 text-muted-foreground hover:text-error hover:bg-error-subtle"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -308,7 +307,7 @@ export default function BudgetsPage() {
 
                   <div className="space-y-4 relative z-10">
                     <div className="flex justify-between items-end">
-                      <span className={cn("text-lg font-bold tabular-nums tracking-tight", isOver ? "text-red-500" : "text-foreground")}>
+                      <span className={cn("text-lg font-bold tabular-nums tracking-tight", isOver ? "text-error" : "text-foreground")}>
                         {fmt(spent)}
                       </span>
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Teto: {fmt(amount)}</span>
@@ -317,7 +316,7 @@ export default function BudgetsPage() {
                       <div 
                         className={cn(
                           "h-full rounded-full transition-all duration-1000",
-                          isOver ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-foreground"
+                          isOver ? "bg-error" : isWarning ? "bg-warning" : "bg-foreground"
                         )} 
                         style={{ width: `${pct}%` }} 
                       />
@@ -325,7 +324,7 @@ export default function BudgetsPage() {
                     <div className="flex items-center justify-between">
                       <span className={cn(
                         "text-[9px] font-bold uppercase tracking-widest",
-                        isOver ? "text-red-500" : isWarning ? "text-amber-500" : "text-muted-foreground"
+                        isOver ? "text-error" : isWarning ? "text-warning" : "text-muted-foreground"
                       )}>
                         {isOver ? "Limite Excedido" : isWarning ? "Alerta de Teto" : "Consumo Regular"}
                       </span>
@@ -335,7 +334,6 @@ export default function BudgetsPage() {
                     </div>
                   </div>
 
-                  {/* Backdrop Accent */}
                   {cat && (
                     <div className="absolute top-0 right-0 h-16 w-16 opacity-5 blur-3xl rounded-full -mr-8 -mt-8" style={{ backgroundColor: cat.color }} />
                   )}
@@ -345,6 +343,115 @@ export default function BudgetsPage() {
           </div>
         )}
       </div>
+
+      {/* Modal */}
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Editar Orçamento" : "Novo Orçamento"} size="md">
+        <div className="space-y-8 pt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="space-y-6">
+              <Field label="Nome do Orçamento" required error={errors.name}>
+                <Input placeholder="Ex: Mercado & Alimentação" value={form.name} onChange={e => set("name", e.target.value)} 
+                  className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground transition-all" />
+              </Field>
+
+              <Field label="Teto de Gasto" required error={errors.amount}>
+                <div className="relative">
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+                  <Input type="number" step="0.01" className="pl-6 h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground tabular-nums" value={form.amount} onChange={e => set("amount", e.target.value)} />
+                </div>
+              </Field>
+            </div>
+
+            <div className="space-y-6">
+              <Field label="Categoria Vinculada">
+                <SearchableSelect 
+                  options={(categories as unknown as Category[]).filter((c) => c.type === 'expense').map((c) => ({ value: c.id, label: c.name, color: c.color }))}
+                  value={form.categoryId}
+                  onChange={val => set("categoryId", val)}
+                  placeholder="Todas as Categorias"
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
+                />
+              </Field>
+
+              <Field label="Recorrência do Limite">
+                <Select value={form.period} onChange={e => set("period", e.target.value)} 
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground uppercase font-bold tracking-widest">
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensal</option>
+                  <option value="yearly">Anual</option>
+                </Select>
+              </Field>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <Field label="Vigência (Início)">
+              <Input type="date" value={form.startDate} onChange={e => set("startDate", e.target.value)} 
+                className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+            </Field>
+            <Field label="Vigência (Fim - Opcional)">
+              <Input type="date" value={form.endDate} onChange={e => set("endDate", e.target.value)} 
+                className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+            </Field>
+          </div>
+
+          <FormDivider label="Protocolo de Alerta" />
+
+          <div className="p-6 rounded-lg bg-secondary/30 border border-border shadow-precision space-y-6">
+            <label className="flex cursor-pointer items-center gap-4 group">
+              <input 
+                type="checkbox" 
+                checked={form.alertsEnabled} onChange={e => set("alertsEnabled", e.target.checked)} 
+                className="w-4 h-4 rounded border-zinc-700 text-foreground focus:ring-zinc-500" 
+              />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground group-hover:text-primary transition-colors">Habilitar Notificações Proativas</span>
+            </label>
+
+            {form.alertsEnabled && (
+              <div className="pl-8 space-y-4 animate-in slide-in-from-left-2 duration-300">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Limite de Gatilho: {form.alertThreshold}%</label>
+                </div>
+                <input 
+                  type="range" min="50" max="100" step="5" 
+                  className="w-full h-1 bg-secondary rounded-full appearance-none cursor-pointer accent-foreground" 
+                  value={form.alertThreshold} onChange={e => set("alertThreshold", e.target.value)} 
+                />
+                <div className="flex justify-between text-[8px] font-bold text-muted-foreground uppercase tracking-tighter">
+                  <span>Mínimo (50%)</span>
+                  <span>Crítico (100%)</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-4 pt-6 border-t border-border/50">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+            <Button onClick={save} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision">
+              {editingId ? "Salvar Alterações" : "Efetivar Orçamento"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Orçamento" size="sm">
+        <div className="space-y-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-error-subtle flex items-center justify-center text-error border border-error-subtle">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Remover Governança?</h3>
+              <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">As transações não serão afetadas, mas o monitoramento deste teto de gastos será interrompido.</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button variant="ghost" onClick={() => setDeleteId(null)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Voltar</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6">Excluir</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -43,12 +43,6 @@ type Goal = {
   notes?: string;
 };
 
-type AccountItem = {
-  id: string;
-  name: string;
-  balance: number | string;
-};
-
 const emptyForm = (): FormData => ({
   name: "",
   goalType: "target",
@@ -63,9 +57,9 @@ const emptyForm = (): FormData => ({
 });
 
 const priorityConfig = {
-  high: { label: "Alta", color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" },
-  medium: { label: "Média", color: "text-amber-500", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-  low: { label: "Baixa", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+  high: { label: "Alta", color: "text-error", bg: "bg-error-subtle", border: "border-error-subtle" },
+  medium: { label: "Média", color: "text-warning", bg: "bg-warning-subtle", border: "border-warning-subtle" },
+  low: { label: "Baixa", color: "text-success", bg: "bg-success-subtle", border: "border-success-subtle" },
 } as const;
 
 export default function GoalsPage() {
@@ -141,8 +135,8 @@ export default function GoalsPage() {
       monthlyContribution: form.monthlyContribution ? Number(form.monthlyContribution) : null,
     };
     try {
-      if (editingId) await updateGoal.mutateAsync({ id: editingId, ...payload });
-      else await createGoal.mutateAsync(payload);
+      if (editingId) await updateGoal.mutateAsync({ id: editingId, ...payload } as any);
+      else await createGoal.mutateAsync(payload as any);
       toast(editingId ? "Meta atualizada!" : "Meta criada com sucesso!");
       setModalOpen(false);
     } catch (e) {
@@ -156,26 +150,26 @@ export default function GoalsPage() {
       return;
     }
     try {
+      const gName = goals.find((g) => g.id === depositModal)?.name;
       await depositToGoal.mutateAsync({
         goalId: depositModal,
         accountId: depositForm.accountId,
         amount: Number(depositForm.amount),
         date: depositForm.date,
-        description: `Depósito: ${(goals as unknown as Goal[]).find((g) => g.id === depositModal)?.name}`
+        description: `Depósito: ${gName}`
       });
       toast("Depósito realizado!");
       setDepositModal(null);
-      setDepositForm({ amount: "", accountId: "", date: new Date().toISOString().split("T")[0] });
+      setDepositForm({ amount: "", accountId: "", date: new Date().toISOString().split('T')[0] });
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erro no depósito", "error");
     }
   };
 
   const stats = useMemo(() => {
-    const typedGoals = goals as unknown as Goal[];
-    const active = typedGoals.filter((g) => g.status === "active");
+    const active = goals.filter((g) => g.status === "active");
     const totalTarget = active.reduce((acc, g) => acc + Number(g.targetAmount || 0), 0);
-    const totalCurrent = typedGoals.reduce((acc, g) => acc + Number(g.currentAmount || 0), 0);
+    const totalCurrent = goals.reduce((acc, g) => acc + Number(g.currentAmount || 0), 0);
     return {
       total: goals.length,
       active: active.length,
@@ -213,7 +207,7 @@ export default function GoalsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+              <CheckCircle2 className="h-3 w-3 text-success" />
               Total Guardado
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -252,12 +246,12 @@ export default function GoalsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {(goals as unknown as Goal[]).map((g) => {
+            {goals.map((g: any) => {
               const current = Number(g.currentAmount);
-              const target = Number(g.targetAmount);
+              const target = Number(g.targetAmount || 0);
               const monthly = Number(g.monthlyContribution || 0);
               const progress = target > 0 ? (current / target) * 100 : 0;
-              const priority = priorityConfig[g.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+              const priority = (priorityConfig as any)[g.priority] || priorityConfig.medium;
               
               const remaining = target - current;
               const monthsLeft = monthly > 0 && remaining > 0 ? Math.ceil(remaining / monthly) : null;
@@ -284,7 +278,7 @@ export default function GoalsPage() {
                             {priority.label}
                           </span>
                           {g.status === "completed" && (
-                            <span className="flex items-center gap-1 text-[8px] font-bold text-emerald-500 uppercase tracking-widest">
+                            <span className="flex items-center gap-1 text-[8px] font-bold text-success uppercase tracking-widest">
                               <CheckCircle2 className="h-2.5 w-2.5" /> Concluída
                             </span>
                           )}
@@ -305,7 +299,7 @@ export default function GoalsPage() {
                         variant="ghost"
                         size="icon"
                         onClick={(e) => { e.stopPropagation(); setDeleteId(g.id); }} 
-                        className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        className="h-8 w-8 text-muted-foreground hover:text-error hover:bg-error-subtle"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -317,9 +311,9 @@ export default function GoalsPage() {
                       <span className="text-lg font-bold text-foreground tabular-nums tracking-tight">{fmt(current)}</span>
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">alvo: {fmt(target)}</span>
                     </div>
-                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
+                    <div className="h-1 w-full rounded-full bg-secondary overflow-hidden border border-border/10">
                       <div 
-                        className={cn("h-full rounded-full transition-all duration-1000", progress >= 100 ? "bg-emerald-500" : "bg-foreground")} 
+                        className={cn("h-full rounded-full transition-all duration-1000", progress >= 100 ? "bg-success" : "bg-foreground")} 
                         style={{ width: `${Math.min(progress, 100)}%` }} 
                       />
                     </div>
@@ -345,7 +339,7 @@ export default function GoalsPage() {
 
                   {g.status === "active" && progress < 100 && (
                     <Button 
-                      onClick={(e) => { e.stopPropagation(); setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: (accounts[0] as AccountItem | undefined)?.id || "" })); }}
+                      onClick={(e) => { e.stopPropagation(); setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: accounts[0]?.id || "" })); }}
                       className="w-full h-10 text-[10px] font-bold uppercase tracking-widest shadow-precision mt-2"
                     >
                       <PlusCircle className="h-3.5 w-3.5 mr-2" />
@@ -454,7 +448,7 @@ export default function GoalsPage() {
             <Field label="Conta de Origem">
               <Select value={depositForm.accountId} onChange={e => setDepositForm(prev => ({ ...prev, accountId: e.target.value }))} 
                 className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
-                {(accounts as unknown as AccountItem[]).map((acc) => (
+                {accounts.map((acc) => (
                   <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
                 ))}
               </Select>
@@ -476,7 +470,7 @@ export default function GoalsPage() {
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Meta" size="sm">
         <div className="space-y-6">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+            <div className="h-16 w-16 rounded-full bg-error-subtle flex items-center justify-center text-error border border-error-subtle">
               <Trash2 className="h-6 w-6" />
             </div>
             <div>

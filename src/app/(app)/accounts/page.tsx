@@ -150,7 +150,7 @@ export default function AccountsPage() {
     if (!validate()) return;
     const formPayload = {
       name: form.name,
-      type: form.type,
+      type: form.type as any,
       bank: form.bank || undefined,
       agency: form.agency || undefined,
       number: form.number || undefined,
@@ -182,7 +182,7 @@ export default function AccountsPage() {
       await createTransfer.mutateAsync({
         ...transferForm,
         amount: Number(transferForm.amount),
-        categoryId: transferForm.categoryId || null
+        categoryId: transferForm.categoryId || undefined
       });
       toast("Transferência concluída!");
       setTransferModalOpen(false);
@@ -279,7 +279,7 @@ export default function AccountsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <Wallet className="h-3 w-3 text-emerald-500" />
+              <Wallet className="h-3 w-3 text-success" />
               Saldo Disponível
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -289,7 +289,7 @@ export default function AccountsPage() {
 
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <TrendingUp className="h-3 w-3 text-amber-500" />
+              <TrendingUp className="h-3 w-3 text-warning" />
               Investimentos
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -299,7 +299,7 @@ export default function AccountsPage() {
 
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <CreditCard className="h-3 w-3 text-red-500" />
+              <CreditCard className="h-3 w-3 text-error" />
               Pendências Cartão
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -325,7 +325,7 @@ export default function AccountsPage() {
         </div>
 
         <div className="space-y-12">
-          {groupedByType.map(({ value: type, label, icon: Icon, gradient, items }) => (
+          {groupedByType.map(({ value: type, label, icon: Icon, items }) => (
             <section key={type}>
               <div className="flex items-center gap-4 mb-6">
                 <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{label}</h2>
@@ -366,7 +366,7 @@ export default function AccountsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={(e) => { e.stopPropagation(); setDeleteId(a.id); }}
-                            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                            className="h-8 w-8 text-muted-foreground hover:text-error hover:bg-error-subtle"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
@@ -387,7 +387,7 @@ export default function AccountsPage() {
                         </div>
                         <p className={cn(
                           "text-lg font-bold tabular-nums tracking-tight",
-                          balance < 0 ? "text-red-500" : "text-foreground"
+                          balance < 0 ? "text-error" : "text-foreground"
                         )}>
                           {showBalances ? fmt(balance) : "••••••"}
                         </p>

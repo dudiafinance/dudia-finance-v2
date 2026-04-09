@@ -40,54 +40,54 @@ export function SearchableSelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
         className={cn(
-          "inline-flex items-center justify-between h-11 px-3 w-full rounded-xl border bg-white/50 backdrop-blur-sm dark:bg-slate-800/50 text-sm font-semibold transition-all focus:outline-none focus:ring-4 focus:ring-blue-500/10 border-slate-200 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm text-left",
-          !value && "text-slate-400 font-normal",
+          "inline-flex items-center justify-between h-10 px-3 w-full rounded-md border bg-secondary/30 text-sm font-bold uppercase tracking-wider transition-all focus:outline-none focus:border-foreground border-border/50 hover:bg-secondary/50 shadow-precision text-left",
+          !value && "text-muted-foreground font-medium",
           className
         )}
       >
-        <div className="flex items-center gap-2 truncate">
+        <div className="flex items-center gap-3 truncate">
           {selectedOption?.color && (
             <div 
-              className="h-2 w-2 rounded-full shrink-0" 
+              className="h-2 w-2 rounded-full shrink-0 border border-white/10 shadow-sm" 
               style={{ backgroundColor: selectedOption.color }} 
             />
           )}
-          <span className="truncate">
+          <span className="truncate text-[11px]">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
         <div className="flex items-center gap-1 shrink-0 ml-2">
           {value ? (
             <div
-              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
+              className="p-1 hover:bg-secondary rounded-md transition-colors text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onChange("");
               }}
             >
-              <X className="h-3 w-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" />
+              <X className="h-3.5 w-3.5" />
             </div>
           ) : (
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className="h-4 w-4 opacity-30" />
           )}
         </div>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <div className="flex flex-col h-full max-h-[300px]">
-          <div className="flex items-center border-b border-slate-100 dark:border-slate-800 px-3 h-10">
-            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0 border-border/50 shadow-precision" align="start">
+        <div className="flex flex-col h-full max-h-[300px] bg-background">
+          <div className="flex items-center border-b border-border/50 px-3 h-10">
+            <Search className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <input
               placeholder={searchPlaceholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full bg-transparent py-3 text-[11px] font-bold uppercase tracking-widest outline-none placeholder:text-muted-foreground/50"
             />
           </div>
           <ScrollArea className="flex-1">
             <div className="p-1">
               {filteredOptions.length === 0 && (
-                <div className="py-6 text-center text-sm text-slate-500">
+                <div className="py-8 text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                   {emptyText}
                 </div>
               )}
@@ -96,8 +96,8 @@ export function SearchableSelect({
                   key={option.value}
                   type="button"
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800",
-                    value === option.value && "bg-slate-100 dark:bg-slate-800 font-medium"
+                    "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors hover:bg-secondary",
+                    value === option.value && "bg-secondary text-foreground"
                   )}
                   onClick={() => {
                     onChange(option.value);
@@ -105,17 +105,17 @@ export function SearchableSelect({
                     setSearch("");
                   }}
                 >
-                  <div className="flex items-center gap-2 flex-1 truncate">
+                  <div className="flex items-center gap-3 flex-1 truncate">
                     {option.color && (
                       <div 
-                        className="h-2.5 w-2.5 rounded-full shrink-0" 
+                        className="h-2 w-2 rounded-full shrink-0 border border-white/5 shadow-sm" 
                         style={{ backgroundColor: option.color }} 
                       />
                     )}
                     <span className="truncate">{option.label}</span>
                   </div>
                   {value === option.value && (
-                    <Check className="h-4 w-4 text-blue-500 shrink-0" />
+                    <Check className="h-3.5 w-3.5 text-foreground shrink-0" />
                   )}
                 </button>
               ))}

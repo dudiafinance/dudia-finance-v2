@@ -350,7 +350,7 @@ export default function TransactionsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              <TrendingUp className="h-3 w-3 text-success" />
               Receitas
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -360,7 +360,7 @@ export default function TransactionsPage() {
 
           <div className="bg-background p-5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
-              <TrendingDown className="h-3 w-3 text-red-500" />
+              <TrendingDown className="h-3 w-3 text-error" />
               Despesas
             </p>
             <p className="text-xl font-bold tabular-nums text-foreground">
@@ -375,7 +375,7 @@ export default function TransactionsPage() {
             </p>
             <p className={cn(
               "text-xl font-bold tabular-nums",
-              netBalance >= 0 ? "text-foreground" : "text-red-500"
+              netBalance >= 0 ? "text-foreground" : "text-error"
             )}>
               {showBalances ? fmt(netBalance) : "••••••"}
             </p>
