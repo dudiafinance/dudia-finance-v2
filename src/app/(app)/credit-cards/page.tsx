@@ -25,6 +25,7 @@ import {
   useInvoiceStatus,
   useUpdateInvoiceStatus
 } from "@/hooks/use-api";
+import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
@@ -100,6 +101,7 @@ function getSuggestedInvoice(card: CreditCard | null | undefined, dateStr: strin
 }
 
 export default function CreditCardsPage() {
+  const { toast } = useToast();
   const { data: session } = useSession();
   const userCurrency = session?.user?.currency ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
@@ -517,6 +519,7 @@ export default function CreditCardsPage() {
 // --- Sub-Modais ---
 
 function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose: () => void, editingCard?: CreditCard | null }) {
+  const { toast } = useToast();
   const [form, setForm] = useState({
     name: "", bank: "", lastDigits: "", limit: "", dueDay: "10", closingDay: "3",
     gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
@@ -526,7 +529,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
   const updateCard = useUpdateCreditCard();
 
   React.useEffect(() => {
-    if (editingCard) {
+    if (editingCard && open) {
       const normalizedGradient = editingCard.gradient?.includes('bg-gradient') 
         ? editingCard.gradient 
         : editingCard.gradient?.startsWith('from-') 
@@ -543,7 +546,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
         color: editingCard.color || GRADIENT_PRESETS[0].color, 
         network: editingCard.network || "mastercard"
       });
-    } else {
+    } else if (open) {
       setForm({
         name: "", bank: "", lastDigits: "", limit: "", dueDay: "10", closingDay: "3",
         gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
@@ -553,8 +556,27 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 
   const handleSubmit = () => {
     const payload = { ...form, limit: Number(form.limit), dueDay: Number(form.dueDay), closingDay: Number(form.closingDay) };
-    if (editingCard) updateCard.mutate({ id: editingCard.id, ...payload }, { onSuccess: onClose });
-    else createCard.mutate(payload, { onSuccess: onClose });
+    if (editingCard) {
+      updateCard.mutate({ id: editingCard.id, ...payload }, { 
+        onSuccess: () => {
+          toast("Cartão atualizado!");
+          onClose();
+        },
+        onError: (err) => {
+          toast(err instanceof Error ? err.message : "Erro ao atualizar", "error");
+        }
+      });
+    } else {
+      createCard.mutate(payload, { 
+        onSuccess: () => {
+          toast("Cartão criado!");
+          onClose();
+        },
+        onError: (err) => {
+          toast(err instanceof Error ? err.message : "Erro ao criar", "error");
+        }
+      });
+    }
   };
 
   return (
