@@ -4,8 +4,7 @@ import { useState } from "react";
 import {
   TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   DollarSign, CreditCard, ChevronLeft, ChevronRight, Eye, EyeOff,
-  Target, Zap, Crown, BarChart3, Clock, ArrowRight,
-  Receipt, Landmark, MoreHorizontal, PieChart
+  Target, Zap, BarChart3, Clock, ArrowRight, PieChart
 } from "lucide-react";
 import { useDashboard } from "@/hooks/use-api";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -30,8 +29,6 @@ export default function DashboardPage() {
 
   const { data, isLoading } = useDashboard(month, year);
 
-  const isCurrentMonth = month === now.getMonth() + 1 && year === now.getFullYear();
-
   const navigateMonth = (dir: -1 | 1) => {
     let m = month + dir;
     let y = year;
@@ -49,8 +46,8 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Consolidando dados financeiros...</p>
+        <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Sincronizando...</p>
       </div>
     );
   }
@@ -58,6 +55,7 @@ export default function DashboardPage() {
   type ActivityItem = { id: string; source: string; type: string; description: string; date: string; amount: number };
   type GoalItem = { id: string; name: string; currentAmount: number | string; targetAmount: number | string };
   type ExpenseItem = { categoryId: string; categoryName: string; categoryColor: string; total: number };
+  
   const dashData = data as Record<string, unknown> | undefined;
   const totalBalance = (dashData?.totalBalance as number) ?? 0;
   const totalIncome = (dashData?.totalIncome as number) ?? 0;
@@ -275,53 +273,36 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
 
         {/* Goals Section */}
         {goals.length > 0 && (
-          <section className="mt-10 space-y-4">
+          <section className="mt-12 space-y-4">
             <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-blue-500" />
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Metas em Foco</h2>
+              <Target className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Metas em Foco</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {goals.slice(0, 3).map((g) => {
                 const pct = Math.min((Number(g.currentAmount) / Number(g.targetAmount)) * 100, 100);
                 return (
-                  <div key={g.id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                  <div key={g.id} className="bg-background rounded-lg border border-border/50 p-5 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <div>
-                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm mb-0.5">{g.name}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{fmt(Number(g.currentAmount))} de {fmt(Number(g.targetAmount))}</p>
+                        <h4 className="font-bold text-foreground text-sm tracking-tight mb-0.5">{g.name}</h4>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase">{fmt(Number(g.currentAmount))} / {fmt(Number(g.targetAmount))}</p>
                       </div>
-                      <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+                      <div className="text-xs font-bold tabular-nums text-foreground">
                         {pct.toFixed(0)}%
                       </div>
                     </div>
                     
-                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden mb-3">
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
-                        className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full"
+                        className="h-full bg-foreground rounded-full"
                       />
-                    </div>
-
-                    <div className="flex justify-between pt-1">
-                      <div className="flex items-center gap-1.5 text-blue-500">
-                        <Zap className="h-3.5 w-3.5" />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider">Em andamento</span>
-                      </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-[10px] font-bold uppercase tracking-widest text-slate-400 hover:text-blue-500"
-                      >
-                        Detalhes
-                      </Button>
                     </div>
                   </div>
                 );

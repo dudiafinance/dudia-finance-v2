@@ -4,6 +4,17 @@ import { db } from "@/lib/db";
 import { transactions, cardTransactions, budgets, goals, accounts, recurringTransactions } from "@/lib/db/schema";
 import { eq, and, sum, isNull } from "drizzle-orm";
 
+function monthName(year: number, month: number): string {
+  const d = new Date(year, month - 1, 1);
+  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}
+
+function weeksInMonth(year: number, month: number): number {
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return Math.ceil((firstDay + daysInMonth) / 7);
+}
+
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

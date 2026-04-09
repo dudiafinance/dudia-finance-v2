@@ -128,7 +128,8 @@
   }
   
   .glass-surface {
-    @apply bg-background/60 backdrop-blur-md border-precision border-white/5;
+    @apply bg-background/60 backdrop-blur-md border-white/5;
+    border-width: 0.5px;
   }
 
   .text-secondary {
