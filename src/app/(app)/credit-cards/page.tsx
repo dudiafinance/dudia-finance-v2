@@ -554,10 +554,21 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 
   React.useEffect(() => {
     if (editingCard) {
+      const normalizedGradient = editingCard.gradient?.includes('bg-gradient') 
+        ? editingCard.gradient 
+        : editingCard.gradient?.startsWith('from-') 
+          ? `bg-gradient-to-br ${editingCard.gradient}` 
+          : GRADIENT_PRESETS[0].value;
       setForm({
-        name: editingCard.name, bank: editingCard.bank, lastDigits: editingCard.lastDigits,
-        limit: String(editingCard.limit), dueDay: String(editingCard.dueDay), closingDay: String(editingCard.closingDay),
-        gradient: editingCard.gradient, color: editingCard.color, network: editingCard.network
+        name: editingCard.name, 
+        bank: editingCard.bank, 
+        lastDigits: editingCard.lastDigits || "", 
+        limit: String(editingCard.limit), 
+        dueDay: String(editingCard.dueDay), 
+        closingDay: String(editingCard.closingDay),
+        gradient: normalizedGradient, 
+        color: editingCard.color || GRADIENT_PRESETS[0].color, 
+        network: editingCard.network || "mastercard"
       });
     } else {
       setForm({
@@ -621,20 +632,28 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
           </Field>
           <Field label="Estilo">
             <div className="flex gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-              {GRADIENT_PRESETS.map(preset => (
-                <Button 
-                  key={preset.value}
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setForm(p => ({...p, gradient: preset.value, color: preset.color}))}
-                  className={cn(
-                    "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all",
-                    preset.value,
-                    form.gradient === preset.value ? "ring-2 ring-blue-500 scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
-                  )}
-                />
-              ))}
+              {GRADIENT_PRESETS.map(preset => {
+                const normalizedGradient = form.gradient?.includes('bg-gradient') 
+                  ? form.gradient 
+                  : form.gradient?.startsWith('from-') 
+                    ? `bg-gradient-to-br ${form.gradient}` 
+                    : form.gradient;
+                const isSelected = normalizedGradient === preset.value || form.gradient === preset.value;
+                return (
+                  <Button 
+                    key={preset.value}
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setForm(p => ({...p, gradient: preset.value, color: preset.color}))}
+                    className={cn(
+                      "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all",
+                      preset.value,
+                      isSelected ? "ring-2 ring-blue-500 scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
+                    )}
+                  />
+                );
+              })}
             </div>
           </Field>
         </FormRow>
