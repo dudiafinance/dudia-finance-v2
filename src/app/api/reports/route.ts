@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, categories as categoriesTable } from "@/lib/db/schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, isNull } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -49,7 +49,8 @@ export async function GET(req: NextRequest) {
         and(
           eq(transactions.userId, userId),
           gte(transactions.date, startStr),
-          lte(transactions.date, endStr)
+          lte(transactions.date, endStr),
+          isNull(transactions.deletedAt)
         )
       )
       .groupBy(transactions.type, transactions.categoryId);
@@ -65,7 +66,8 @@ export async function GET(req: NextRequest) {
         and(
           eq(cardTransactions.userId, userId),
           gte(cardTransactions.date, startStr),
-          lte(cardTransactions.date, endStr) // Note: using actual date, not invoice.
+          lte(cardTransactions.date, endStr), // Note: using actual date, not invoice.
+          isNull(cardTransactions.deletedAt)
         )
       )
       .groupBy(cardTransactions.categoryId);
@@ -119,7 +121,13 @@ export async function GET(req: NextRequest) {
         total: sql<string>`sum(${transactions.amount})`
       })
       .from(transactions)
-      .where(and(eq(transactions.userId, userId), gte(transactions.date, histStartStr)))
+      .where(
+        and(
+          eq(transactions.userId, userId), 
+          gte(transactions.date, histStartStr),
+          isNull(transactions.deletedAt)
+        )
+      )
       .groupBy(sql`to_char(${transactions.date}, 'YYYY-MM')`, transactions.type),
 
       db.select({
@@ -127,7 +135,13 @@ export async function GET(req: NextRequest) {
         total: sql<string>`sum(${cardTransactions.amount})`
       })
       .from(cardTransactions)
-      .where(and(eq(cardTransactions.userId, userId), gte(cardTransactions.date, histStartStr)))
+      .where(
+        and(
+          eq(cardTransactions.userId, userId), 
+          gte(cardTransactions.date, histStartStr),
+          isNull(cardTransactions.deletedAt)
+        )
+      )
       .groupBy(sql`to_char(${cardTransactions.date}, 'YYYY-MM')`)
     ]);
 

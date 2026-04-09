@@ -5,24 +5,37 @@ import { cn } from "@/lib/utils";
 import { motion, HTMLMotionProps } from "framer-motion";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30",
+          "bg-primary text-primary-foreground shadow-precision hover:bg-primary/90",
         destructive:
-          "bg-red-600 text-white shadow-sm hover:bg-red-700 hover:shadow-md",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
-          "border border-slate-200 bg-white/50 backdrop-blur-sm shadow-sm hover:bg-slate-50 hover:text-slate-900 dark:bg-slate-800/50 dark:border-slate-700 dark:text-white dark:hover:bg-slate-700",
+          "border border-input bg-background shadow-precision hover:bg-accent hover:text-accent-foreground",
         secondary:
-          "bg-slate-100 text-slate-900 shadow-sm hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700",
-        ghost: "hover:bg-slate-100/80 hover:text-slate-900 dark:hover:bg-slate-800/80 dark:text-white dark:hover:text-white",
-        link: "text-blue-600 underline-offset-4 hover:underline",
-        glass: "bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 shadow-xl",
-        gradient: "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700",
-        soft: "bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:hover:bg-blue-900/30",
+          "bg-secondary text-secondary-foreground shadow-precision hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+        glass: "bg-background/20 backdrop-blur-md border border-white/10 text-foreground hover:bg-background/30 shadow-precision",
+        gradient: "bg-zinc-950 text-zinc-50 border border-zinc-800 shadow-precision hover:bg-zinc-900 dark:bg-zinc-50 dark:text-zinc-950 dark:hover:bg-zinc-200",
+        soft: "bg-accent/50 text-accent-foreground hover:bg-accent",
       },
+      size: {
+        default: "h-9 px-4 py-2",
+        sm: "h-8 rounded-md px-3 text-xs",
+        lg: "h-11 rounded-md px-8 text-base",
+        icon: "h-9 w-9",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
       size: {
         default: "h-11 px-6 py-2",
         sm: "h-9 rounded-md px-4 text-xs",

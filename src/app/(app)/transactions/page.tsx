@@ -474,21 +474,21 @@ export default function TransactionsPage() {
         )}
 
         {/* Transactions List */}
-        <div className="space-y-8">
+        <div className="space-y-10">
           {grouped.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center text-slate-400">
-              <FileText className="h-16 w-16 mb-4 opacity-30" />
-              <p className="text-lg font-semibold uppercase tracking-wider opacity-50">Nenhum registro encontrado</p>
+            <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
+              <FileText className="h-12 w-12 mb-4" />
+              <p className="text-[10px] font-bold uppercase tracking-widest">Nenhum registro</p>
             </div>
           ) : (
             grouped.map(([groupName, items]) => (
               <section key={groupName}>
                 <div className="flex items-center gap-4 mb-4">
-                  <h2 className="text-base font-semibold text-slate-900 dark:text-white">{groupName}</h2>
-                  <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{groupName}</h2>
+                  <div className="h-px flex-1 bg-border/40" />
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="border border-border/50 rounded-lg overflow-hidden divide-y divide-border/50">
                   {items.map((t) => {
                     const cat = typedCategories.find((c) => c.id === t.categoryId);
                     const acc = typedAccounts.find((a) => a.id === t.accountId);
@@ -500,35 +500,32 @@ export default function TransactionsPage() {
                     return (
                       <motion.div
                         key={t.id}
-                        whileHover={{ x: 4 }}
                         onClick={() => openEdit(t)}
-                        className="group flex items-center gap-4 p-4 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                        className="group flex items-center gap-4 p-4 bg-background hover:bg-secondary/30 transition-all cursor-pointer"
                       >
                         <div className={cn(
-                          "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                          isIncome ? "bg-emerald-100 dark:bg-emerald-900/30" : t.type === "transfer" ? "bg-blue-100 dark:bg-blue-900/30" : "bg-red-100 dark:bg-red-900/30"
+                          "h-8 w-8 rounded flex items-center justify-center shrink-0 border border-border/50",
+                          isIncome ? "text-emerald-500" : t.type === "transfer" ? "text-foreground" : "text-foreground"
                         )}>
-                          {isIncome ? <ArrowUpRight className="h-5 w-5 text-emerald-600" /> 
-                            : t.type === "transfer" ? <ArrowRightLeft className="h-5 w-5 text-blue-600" />
-                            : <ArrowDownRight className="h-5 w-5 text-red-600" />}
+                          {isIncome ? <ArrowUpRight className="h-4 w-4" /> 
+                            : t.type === "transfer" ? <ArrowRightLeft className="h-4 w-4" />
+                            : <ArrowDownRight className="h-4 w-4" />}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="font-semibold text-slate-900 dark:text-white truncate">{t.description}</h3>
+                            <h3 className="text-sm font-bold text-foreground truncate tracking-tight">{t.description}</h3>
                             {t.subtype === "recurring" && (
-                              <span className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full">
-                                <Repeat2 className="h-3 w-3" />
-                              </span>
+                              <span className="text-[9px] font-bold uppercase text-muted-foreground border border-border px-1 rounded">Parcelado</span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
+                          <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">
                             <span className="flex items-center gap-1">
-                              <Wallet className="h-3 w-3" /> {subtitle}
+                               {subtitle}
                             </span>
                             {cat && (
                               <>
-                                <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                <span>•</span>
                                 <span style={{ color: cat.color }}>{cat.name}</span>
                               </>
                             )}
@@ -537,18 +534,17 @@ export default function TransactionsPage() {
 
                         <div className="text-right">
                           <p className={cn(
-                            "text-lg font-bold tabular-nums",
-                            isIncome ? "text-emerald-600" : "text-red-600"
+                            "text-sm font-bold tabular-nums tracking-tight",
+                            isIncome ? "text-emerald-500" : "text-foreground"
                           )}>
                             {isIncome ? "+" : "-"}{fmt(amount)}
                           </p>
-                          <p className={cn(
-                            "text-xs font-medium flex items-center justify-end gap-1",
+                          <div className={cn(
+                            "text-[9px] font-bold uppercase tracking-widest mt-1 flex items-center justify-end gap-1",
                             t.isPaid ? "text-emerald-500" : isOverdue ? "text-red-500" : "text-amber-500"
                           )}>
-                            {t.isPaid ? <CheckCircle2 className="h-3 w-3" /> : isOverdue ? <Plus className="h-3 w-3 rotate-45" /> : <Clock className="h-3 w-3" />}
-                            <span>{t.isPaid ? "Liquidado" : isOverdue ? "Vencido" : "Previsto"}</span>
-                          </p>
+                            {t.isPaid ? "Liquidado" : isOverdue ? "Vencido" : "Previsto"}
+                          </div>
                         </div>
                       </motion.div>
                     );
@@ -580,152 +576,157 @@ export default function TransactionsPage() {
 
       {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}
-        title={editingId ? "Editar Transação" : "Nova Transação"}
-        description="Defina os parâmetros da transação" size="lg">
-        <div className="space-y-5 pt-2">
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
-            {[
-              { key: "expense", label: "Despesa", color: "text-red-500" },
-              { key: "income", label: "Receita", color: "text-emerald-500" },
-              { key: "transfer", label: "Transfer", color: "text-blue-500" },
-            ].map(({ key, label, color }) => (
-              <Button 
-                key={key} 
-                variant="ghost"
-                onClick={() => { set("type", key); set("categoryId", ""); }}
-                className={cn("flex-1 transition-all",
-                  form.type === key 
-                    ? (key === "expense" ? "bg-red-500 text-white" : key === "income" ? "bg-emerald-500 text-white" : "bg-blue-500 text-white")
-                    : cn("text-slate-500", `hover:${color}`)
-                )}>
-                {label}
-              </Button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Valor" required error={errors.amount}>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-slate-400">R$</span>
-                <Input type="number" step="0.01" value={form.amount} onChange={(e) => set("amount", e.target.value)}
-                  error={!!errors.amount} className="pl-10 h-11 text-lg font-semibold rounded-md" />
-              </div>
-            </Field>
-            <Field label="Data" required error={errors.date}>
-              <Input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} 
-                error={!!errors.date} className="h-11 rounded-md" />
-            </Field>
-          </div>
-
-          <Field label="Descrição" required error={errors.description}>
-            <Input placeholder="Ex: Supermercado, Aluguel..." value={form.description}
-              onChange={(e) => set("description", e.target.value)} error={!!errors.description} 
-              className="h-11 rounded-md font-medium" />
-          </Field>
-
-          <FormRow>
-            <Field label="Categoria">
-              <SearchableSelect 
-                options={relevantCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
-                value={form.categoryId}
-                onChange={val => set("categoryId", val)}
-                placeholder="Selecione a categoria..."
-                className="h-11 rounded-md"
+        title={editingId ? "Editar Lançamento" : "Novo Lançamento"}
+        description={editingId ? "Ajuste os detalhes deste registro" : "Informe os dados para o novo registro"} size="lg">
+        <div className="space-y-8 pt-4">
+          
+          {/* Hero Amount Section */}
+          <div className="flex flex-col items-center justify-center py-6 bg-secondary/30 rounded-xl border border-border/50">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Valor do Lançamento</span>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-light text-muted-foreground">R$</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                value={form.amount} 
+                onChange={(e) => set("amount", e.target.value)}
+                placeholder="0,00"
+                autoFocus
+                className="bg-transparent text-5xl font-bold tracking-tighter text-foreground focus:outline-none w-full max-w-[250px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-            </Field>
-            <Field label="Conta">
-              <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)} className="h-11 rounded-md">
-                {typedAccounts.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </Select>
-            </Field>
-          </FormRow>
-
-          <FormDivider label="Recorrência" />
-
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { key: "single", label: "Único", icon: FileText },
-              { key: "fixed", label: "Fixo", icon: RefreshCw },
-              { key: "recurring", label: "Parcelado", icon: Repeat2 },
-            ].map(({ key, label, icon: Icon }) => (
-              <Button 
-                key={key} 
-                variant={form.subtype === key ? "soft" : "outline"}
-                onClick={() => set("subtype", key)}
-                className={cn("gap-2 h-14 border-slate-200 dark:border-slate-700",
-                  form.subtype === key && "border-blue-200"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-              </Button>
-            ))}
+            </div>
+            {errors.amount && <p className="text-[10px] font-bold text-red-500 uppercase mt-2">{errors.amount}</p>}
           </div>
 
-          {form.subtype === "recurring" && (
-            <div className="p-4 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1">Número de Parcelas</p>
-                <Input type="number" min="2" max="360" value={form.totalOccurrences}
-                  onChange={(e) => set("totalOccurrences", e.target.value)} 
-                  className="h-10 rounded-md font-semibold" />
-              </div>
-              <div className="flex-1 text-right">
-                <p className="text-xs font-semibold text-slate-500 mb-1">Fim Previsto</p>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{endMonthName || "—"}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            <div className="space-y-6">
+              <Field label="Tipo de Fluxo" required>
+                <div className="flex gap-1 p-1 bg-secondary rounded-md border border-border">
+                  {[
+                    { key: "expense", label: "Saída" },
+                    { key: "income", label: "Entrada" },
+                    { key: "transfer", label: "Transf." },
+                  ].map(({ key, label }) => (
+                    <button 
+                      key={key} 
+                      type="button"
+                      onClick={() => { set("type", key as any); set("categoryId", ""); }}
+                      className={cn("flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded transition-all",
+                        form.type === key 
+                          ? "bg-background text-foreground shadow-sm border border-border"
+                          : "text-muted-foreground hover:text-foreground")}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
+              <Field label="Descrição Principal" required error={errors.description}>
+                <Input placeholder="Ex: Assinatura Software" value={form.description}
+                  onChange={(e) => set("description", e.target.value)} error={!!errors.description} 
+                  className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground transition-all" />
+              </Field>
+
+              <Field label="Categoria de Gasto">
+                <SearchableSelect 
+                  options={relevantCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
+                  value={form.categoryId}
+                  onChange={val => set("categoryId", val)}
+                  placeholder="Selecione..."
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
+                />
+              </Field>
+            </div>
+
+            <div className="space-y-6">
+              <Field label="Data da Operação" required error={errors.date}>
+                <Input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} 
+                  error={!!errors.date} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+              </Field>
+
+              <Field label="Conta de Origem/Destino">
+                <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)} 
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                  {typedAccounts.map((a) => (
+                    <option key={a.id} value={a.id}>{a.name}</option>
+                  ))}
+                </Select>
+              </Field>
+
+              <div className="pt-2">
+                <div className="flex items-center justify-between p-3 rounded-md bg-secondary/50 border border-border">
+                  <div className="flex items-center gap-3">
+                    <input type="checkbox" checked={form.isPaid} onChange={(e) => set("isPaid", e.target.checked)}
+                      className="w-4 h-4 rounded border-zinc-300 dark:border-zinc-700 text-foreground focus:ring-zinc-500" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">Confirmar Liquidação</span>
+                  </div>
+                  {form.isPaid ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Clock className="h-4 w-4 text-amber-500" />}
+                </div>
               </div>
             </div>
-          )}
-
-          <FormRow>
-            <Field label={form.type === "income" ? "Prev. Recebimento" : "Vencimento"}>
-              <Input type="date" value={form.type === "income" ? form.receiveDate : form.dueDate} 
-                onChange={(e) => set(form.type === "income" ? "receiveDate" : "dueDate", e.target.value)} 
-                className="h-11 rounded-md" />
-            </Field>
-            <Field label="Local (GPS)">
-              <Input placeholder="Opcional" value={form.location} onChange={(e) => set("location", e.target.value)} 
-                className="h-11 rounded-md" />
-            </Field>
-          </FormRow>
-
-          <div className="flex items-center gap-4 p-4 rounded-md bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100">
-            <label className="flex cursor-pointer items-center gap-3">
-              <input type="checkbox" checked={form.isPaid} onChange={(e) => set("isPaid", e.target.checked)}
-                className="w-5 h-5 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500" />
-              <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Confirmar Liquidação</p>
-                <p className="text-xs text-slate-500">
-                  {form.type === "income" ? "Marcar como recebido" : "Marcar como pago"}
-                </p>
-              </div>
-            </label>
           </div>
 
-          <Field label="Tags">
-            <TagInput value={form.tags} onChange={(tags) => set("tags", tags)}
-              suggestions={allTagSuggestions} className="rounded-md"
-              placeholder="Fixo, Variável..." />
-          </Field>
+          <FormDivider label="Informações Complementares" />
 
-          <Field label="Observações">
-            <Textarea placeholder="Detalhes extras..." value={form.notes}
-              onChange={(e) => set("notes", e.target.value)} className="rounded-md" />
-          </Field>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <Field label="Tipo de Recorrência">
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: "single", label: "Único" },
+                    { key: "fixed", label: "Fixo" },
+                    { key: "recurring", label: "Parcelas" },
+                  ].map(({ key, label }) => (
+                    <button 
+                      key={key} 
+                      type="button"
+                      onClick={() => set("subtype", key as any)}
+                      className={cn("py-2 text-[10px] font-bold uppercase border rounded-md transition-all",
+                        form.subtype === key ? "bg-foreground text-background border-foreground" : "text-muted-foreground border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              {form.subtype === "recurring" && (
+                <div className="flex items-center gap-4 animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex-1">
+                    <Field label="Qtd. Parcelas">
+                      <Input type="number" min="2" max="360" value={form.totalOccurrences}
+                        onChange={(e) => set("totalOccurrences", e.target.value)} 
+                        className="h-9 text-xs border-zinc-200 dark:border-zinc-800" />
+                    </Field>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase mb-1">Término</p>
+                    <p className="text-xs font-bold text-foreground">{endMonthName || "—"}</p>
+                  </div>
+                </div>
+              )}
+            </div>
 
-          <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
+            <div className="space-y-4">
+              <Field label="Tags de Identificação">
+                <TagInput value={form.tags} onChange={(tags) => set("tags", tags)}
+                  suggestions={allTagSuggestions} className="text-xs"
+                  placeholder="Pressione Enter..." />
+              </Field>
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-6 border-t border-border/50">
             {editingId && (
-              <Button type="button" variant="ghost" size="icon" onClick={() => setDeleteId(editingId)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
-                <Trash2 className="h-5 w-5" />
+              <Button type="button" variant="outline" size="icon" onClick={() => setDeleteId(editingId)} className="text-red-500 hover:bg-red-500/10 border-red-500/20">
+                <Trash2 className="h-4 w-4" />
               </Button>
             )}
-            <Button variant="outline" onClick={() => setModalOpen(false)} className="flex-1 font-bold border-slate-200">
+            <Button variant="ghost" onClick={() => setModalOpen(false)} className="flex-1 text-muted-foreground font-bold uppercase text-[11px] tracking-widest">
               Cancelar
             </Button>
-            <Button onClick={save} className="flex-[2] font-bold shadow-lg">
-              {editingId ? "Salvar Alterações" : "Efetivar Transação"}
+            <Button onClick={save} className="flex-[2] font-bold uppercase text-[11px] tracking-widest py-6">
+              {editingId ? "Salvar Alterações" : "Efetivar Lançamento"}
             </Button>
           </div>
         </div>

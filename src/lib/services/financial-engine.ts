@@ -9,7 +9,9 @@ import {
   goals,
   goalContributions
 } from "@/lib/db/schema";
-import { eq, sql, and } from "drizzle-orm";
+import { eq, sql, and, isNull } from "drizzle-orm";
+
+import { FinancialError } from "@/lib/errors";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -48,14 +50,28 @@ export class FinancialEngine {
         total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL(15,2))), 0)`
       })
       .from(transactions)
-      .where(and(eq(transactions.accountId, accountId), eq(transactions.isPaid, true), eq(transactions.type, 'income')));
+      .where(
+        and(
+          eq(transactions.accountId, accountId), 
+          eq(transactions.isPaid, true), 
+          eq(transactions.type, 'income'),
+          isNull(transactions.deletedAt)
+        )
+      );
 
     const expenses = await tx
       .select({
         total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL(15,2))), 0)`
       })
       .from(transactions)
-      .where(and(eq(transactions.accountId, accountId), eq(transactions.isPaid, true), eq(transactions.type, 'expense')));
+      .where(
+        and(
+          eq(transactions.accountId, accountId), 
+          eq(transactions.isPaid, true), 
+          eq(transactions.type, 'expense'),
+          isNull(transactions.deletedAt)
+        )
+      );
 
     const totalIncome = Number(incomes[0]?.total ?? 0);
     const totalExpense = Number(expenses[0]?.total ?? 0);
@@ -93,7 +109,7 @@ export class FinancialEngine {
     return await db.transaction(async (tx) => {
       // 1. Obter a transação antiga
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
-      if (!oldTx) throw new Error("Transação não encontrada");
+      if (!oldTx) throw FinancialError.notFound("Transação");
 
       // 2. Aplicar as atualizações
       const [newTx] = await tx.update(transactions)
@@ -122,7 +138,7 @@ export class FinancialEngine {
   static async deleteTransaction(id: string, userId: string) {
     return await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
-      if (!oldTx) throw new Error("Transação não encontrada");
+      if (!oldTx) throw FinancialError.notFound("Transação");
 
       // Se for parte de uma transferência, apagar a transação vinculada também
       if (oldTx.linkedTransactionId && oldTx.subtype === 'transfer') {
@@ -139,8 +155,10 @@ export class FinancialEngine {
         // Auditoria
         await this.logAudit(tx, userId, "transfer", oldTx.linkedTransactionId, "delete", { transactions: linkedTxs }, null);
       } else {
-        // 1. Deletar a transação
-        await tx.delete(transactions).where(eq(transactions.id, id));
+        // 1. Deletar a transação (Soft Delete)
+        await tx.update(transactions)
+          .set({ deletedAt: new Date() })
+          .where(eq(transactions.id, id));
 
         // 2. Recalcular o saldo da conta (Self-Healing)
         await this.recalculateAccountBalance(tx, oldTx.accountId);
@@ -177,16 +195,22 @@ export class FinancialEngine {
       const [fromAccount] = await tx
         .select()
         .from(accounts)
-        .where(and(eq(accounts.id, data.fromAccountId), eq(accounts.userId, data.userId)))
+        .where(
+          and(
+            eq(accounts.id, data.fromAccountId), 
+            eq(accounts.userId, data.userId),
+            isNull(accounts.deletedAt)
+          )
+        )
         .limit(1);
 
-      if (!fromAccount) throw new Error("Conta de origem não encontrada");
+      if (!fromAccount) throw FinancialError.notFound("Conta de origem");
 
       const balance = Number(fromAccount.balance);
       const amount = Number(data.amount);
 
       if (balance < amount) {
-        throw new Error(`Saldo insuficiente. Disponível: ${balance.toFixed(2)}, Necessário: ${amount.toFixed(2)}`);
+        throw FinancialError.insufficientFunds(balance, amount);
       }
 
       const linkedId = crypto.randomUUID();
@@ -250,6 +274,7 @@ export class FinancialEngine {
       .where(
         and(
           eq(cardTransactions.cardId, cardId),
+          isNull(cardTransactions.deletedAt),
           sql`( ${creditCardInvoices.status} IS NULL OR ${creditCardInvoices.status} != 'PAGA' )`
         )
       );
@@ -261,6 +286,28 @@ export class FinancialEngine {
       .set({ usedAmount, updatedAt: new Date() })
       .where(eq(creditCards.id, cardId));
   }
+
+  /**
+   * Força o recálculo de todas as contas e cartões de um usuário.
+   * Útil para manutenção e correção de drifts.
+   */
+  static async forceUserSync(userId: string) {
+    return await db.transaction(async (tx) => {
+      const userAccounts = await tx.select().from(accounts).where(eq(accounts.userId, userId));
+      const userCards = await tx.select().from(creditCards).where(eq(creditCards.userId, userId));
+
+      for (const acc of userAccounts) {
+        await this.recalculateAccountBalance(tx, acc.id);
+      }
+
+      for (const card of userCards) {
+        await this.recalculateCardLimit(tx, card.id);
+      }
+
+      return { accounts: userAccounts.length, cards: userCards.length };
+    });
+  }
+}
 
   /**
    * Adiciona transação de cartão e recalcula o limite

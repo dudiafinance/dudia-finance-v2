@@ -74,78 +74,67 @@ export default function DashboardPage() {
   const savingsRate = totalIncome > 0 ? Math.max(0, (savings / totalIncome) * 100) : 0;
 
   return (
-    <div className="w-full animate-in fade-in duration-500">
+    <div className="w-full animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="bg-slate-900 border-b border-slate-700 px-6 pt-8 pb-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-1 bg-blue-500 rounded-full" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Dashboard</h1>
-            </div>
+      <div className="px-6 py-8 border-b border-border/50">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-secondary p-0.5 rounded-md border border-border">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateMonth(-1)}
-                className="text-slate-400 hover:text-white"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
               >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <Button
-                variant={isCurrentMonth ? "default" : "secondary"}
+              <button
                 onClick={goToCurrentMonth}
-                className="px-6"
+                className="px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
                 {MONTH_NAMES[month - 1]} {year}
-              </Button>
+              </button>
 
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => navigateMonth(1)}
-                className="text-slate-400 hover:text-white"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
               >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
           <Button
-            variant="secondary"
+            variant="outline"
+            size="sm"
             onClick={() => setShowBalances(!showBalances)}
-            className="gap-3 self-start md:self-auto bg-slate-800/50 border-slate-700 text-white hover:bg-slate-800"
+            className="h-8 gap-2 text-xs font-bold"
           >
-            <div className="h-8 w-8 flex items-center justify-center rounded bg-slate-700">
-              {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </div>
-            <span>{showBalances ? "Ocultar" : "Mostrar"} Patrimônio</span>
+            {showBalances ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            <span>{showBalances ? "Ocultar" : "Mostrar"} Valores</span>
           </Button>
         </div>
 
         {/* Patrimônio Section */}
-        <div className="mt-8">
-          <div className="flex flex-col md:flex-row md:items-end gap-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 text-blue-400 mb-1">
-                <Crown className="h-4 w-4" />
-                <span className="text-xs font-semibold uppercase tracking-wider">Patrimônio Consolidado</span>
-              </div>
-              <p className="text-5xl md:text-6xl font-bold text-white tracking-tight tabular-nums">
+        <div className="mt-10">
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Patrimônio Consolidado</span>
+            <div className="flex items-baseline gap-3">
+              <p className="text-4xl md:text-5xl font-bold tracking-tighter tabular-nums text-foreground">
                 {showBalances ? fmt(totalBalance) : "••••••••"}
               </p>
-            </div>
-            <div className="flex items-center gap-3">
               <div className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-semibold",
-                monthlyVariation >= 0 ? "bg-emerald-900/50 text-emerald-400 border border-emerald-800" : "bg-red-900/50 text-red-400 border border-red-800"
+                "flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border",
+                monthlyVariation >= 0 ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" : "bg-red-500/10 text-red-500 border-red-500/20"
               )}>
-                {monthlyVariation >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                {monthlyVariation >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                 <span>{Math.abs(monthlyVariation).toFixed(1)}%</span>
               </div>
-              <span className="text-slate-400 text-sm">variação mensal</span>
             </div>
           </div>
         </div>
@@ -153,175 +142,129 @@ export default function DashboardPage() {
 
       {/* Content Section */}
       <div className="px-6 py-8">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                <ArrowUpRight className="h-6 w-6" />
+        {/* Stats Grid - High Density */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mb-8">
+          <div className="bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Receitas do Mês</p>
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-bold tabular-nums text-foreground">{showBalances ? fmt(totalIncome) : "••••••"}</p>
+              <div className="h-8 w-8 rounded bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <ArrowUpRight className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Receitas</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{showBalances ? fmt(totalIncome) : "••••••"}</p>
-              </div>
-            </div>
-            <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full" style={{ width: '100%' }} />
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400">
-                <ArrowDownRight className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Despesas</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{showBalances ? fmt(totalAllExpenses) : "••••••"}</p>
+          <div className="bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Despesas Acumuladas</p>
+            <div className="flex items-center justify-between">
+              <p className="text-2xl font-bold tabular-nums text-foreground">{showBalances ? fmt(totalAllExpenses) : "••••••"}</p>
+              <div className="h-8 w-8 rounded bg-red-500/10 flex items-center justify-center text-red-500">
+                <ArrowDownRight className="h-4 w-4" />
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">Fixas: {fmt(totalExpense)}</span>
-              <span className="px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-[10px] font-semibold uppercase tracking-wider text-violet-600 dark:text-violet-400">Cartão: {fmt(totalCardInvoice)}</span>
+            <div className="mt-3 flex gap-2">
+              <span className="text-[9px] font-bold uppercase text-muted-foreground">Fixas: {fmt(totalExpense)}</span>
+              <span className="text-[9px] font-bold uppercase text-muted-foreground border-l border-border pl-2">Cartão: {fmt(totalCardInvoice)}</span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="h-12 w-12 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-                <DollarSign className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Economia Líquida</p>
-                <p className={cn("text-2xl font-bold", savings >= 0 ? "text-emerald-600" : "text-red-600")}>
-                  {showBalances ? fmt(savings) : "••••••"}
-                </p>
-              </div>
+          <div className="bg-background p-6">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Economia Líquida</p>
+            <div className="flex items-center justify-between">
+              <p className={cn("text-2xl font-bold tabular-nums", savings >= 0 ? "text-foreground" : "text-red-500")}>
+                {showBalances ? fmt(savings) : "••••••"}
+              </p>
+              <span className="text-xs font-bold text-muted-foreground">{savingsRate.toFixed(1)}%</span>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-                <span>Taxa de Poupança</span>
-                <span className="text-slate-700 dark:text-slate-200">{Math.max(0, savingsRate).toFixed(1)}%</span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
-                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full" 
-                />
-              </div>
+            <div className="mt-4 h-1 w-full bg-secondary rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, Math.max(0, savingsRate))}%` }}
+                className="h-full bg-foreground rounded-full" 
+              />
             </div>
           </div>
         </div>
 
         {/* Analysis Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Top Expenses */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-blue-500" />
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Análise de Gastos</h2>
-              </div>
+          <div className="lg:col-span-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <PieChart className="h-4 w-4 text-muted-foreground" />
+              <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Distribuição de Gastos</h2>
             </div>
 
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm space-y-5">
+            <div className="bg-background rounded-lg border border-border/50 p-5 space-y-5">
               {topExpenses.length === 0 ? (
-                <div className="py-10 text-center">
-                  <BarChart3 className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Sem despesas</p>
+                <div className="py-10 text-center opacity-30">
+                  <BarChart3 className="h-8 w-8 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold uppercase">Sem dados</p>
                 </div>
               ) : (
                 topExpenses.map((e) => (
-                  <div key={e.categoryId} className="space-y-2">
+                  <div key={e.categoryId} className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: e.categoryColor }} />
-                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wider">{e.categoryName}</span>
-                      </div>
-                      <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">{fmt(e.total)}</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{e.categoryName}</span>
+                      <span className="text-xs font-bold tabular-nums text-foreground">{fmt(e.total)}</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${(e.total / maxExpense) * 100}%` }}
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: e.categoryColor }}
+                        className="h-full bg-foreground/60 rounded-full"
                       />
                     </div>
                   </div>
                 ))
               )}
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="w-full gap-2 text-xs uppercase tracking-wider text-slate-500 font-bold"
-              >
-                <MoreHorizontal className="h-4 w-4" /> Ver mais
-              </Button>
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-8 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-blue-500" />
-                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Lançamentos Recentes</h2>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-xs font-bold uppercase tracking-widest text-foreground">Atividade Recente</h2>
               </div>
-              <a href="/transactions" className="h-9 px-4 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
-                Ver Extrato
-                <ArrowRight className="h-4 w-4" />
+              <a href="/transactions" className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                Ver Tudo
+                <ArrowRight className="h-3 w-3" />
               </a>
             </div>
 
-            <div className="space-y-3">
+            <div className="border border-border/50 rounded-lg overflow-hidden divide-y divide-border/50">
               {recentActivity.length === 0 ? (
-                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-10 text-center shadow-sm">
-                  <Receipt className="h-10 w-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Histórico vazio</p>
+                <div className="p-10 text-center opacity-30">
+                  <p className="text-[10px] font-bold uppercase">Nenhum lançamento</p>
                 </div>
               ) : (
                 recentActivity.map((t) => (
                   <motion.div
                     key={t.source + t.id}
-                    whileHover={{ x: 4 }}
-                    className="group flex items-center gap-4 p-4 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 border border-slate-200 dark:border-slate-700 transition-all shadow-sm"
+                    className="flex items-center gap-4 p-4 bg-background hover:bg-secondary/30 transition-colors"
                   >
                     <div className={cn(
-                      "absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 rounded-r-full",
-                      t.type === "income" ? "bg-emerald-500" : "bg-red-500"
-                    )} />
-
-                    <div className={cn(
-                      "h-11 w-11 rounded-lg flex items-center justify-center shrink-0",
-                      t.type === "income" ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-red-100 dark:bg-red-900/30"
+                      "h-8 w-8 rounded flex items-center justify-center shrink-0 border border-border/50",
+                      t.type === "income" ? "text-emerald-500" : "text-foreground"
                     )}>
-                      {t.source === "card" ? <CreditCard className="h-5 w-5 text-violet-600" />
-                        : t.type === "income" ? <ArrowUpRight className="h-5 w-5 text-emerald-600" />
-                        : <ArrowDownRight className="h-5 w-5 text-red-600" />}
+                      {t.source === "card" ? <CreditCard className="h-4 w-4" />
+                        : t.type === "income" ? <ArrowUpRight className="h-4 w-4" />
+                        : <ArrowDownRight className="h-4 w-4" />}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="font-semibold text-slate-900 dark:text-white truncate">{t.description}</h3>
-                        <span className={cn(
-                          "flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider",
-                          t.source === "card" ? "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400" : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                        )}>
-                          {t.source === "card" ? <CreditCard className="h-3 w-3" /> : <Landmark className="h-3 w-3" />}
-                          {t.source === "card" ? "Crédito" : "Corrente"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })}
+                      <h3 className="text-sm font-bold text-foreground truncate tracking-tight">{t.description}</h3>
+                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-tighter">
+                        {new Date(t.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} • {t.source === "card" ? "Crédito" : "Corrente"}
                       </p>
                     </div>
 
                     <div className="text-right">
                       <p className={cn(
-                        "text-lg font-bold tabular-nums tracking-tight",
-                        t.type === "income" ? "text-emerald-600" : "text-red-600"
+                        "text-sm font-bold tabular-nums tracking-tight",
+                        t.type === "income" ? "text-emerald-500" : "text-foreground"
                       )}>
                         {t.type === "income" ? "+" : "-"}{fmt(t.amount)}
                       </p>
@@ -332,6 +275,9 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
 
         {/* Goals Section */}
         {goals.length > 0 && (

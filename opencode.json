@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "opencode-skills",
+    "opencode-type-inject",
+    "opencode-dynamic-context-pruning",
+    "opencode-websearch-cited"
+  ],
+  "skills": {
+    "paths": [
+      ".aiox-core/development/agents"
+    ]
+  },
+  "default_agent": "dev",
+  "logLevel": "INFO"
+}
+

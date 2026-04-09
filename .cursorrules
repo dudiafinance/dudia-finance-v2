@@ -1,0 +1,32 @@
+# AIOX Framework Rules (Cursor)
+
+You are operating within the **AIOX (AI-Orchestrated System)** framework v4.0. 
+Always adhere to the agent roles and workflows defined in this project.
+
+## 🤖 How to call Agents
+To use a specific agent, mention them with `@` followed by their handle:
+- **@analyst**: Requirements & PRD.
+- **@pm**: Product Management & Roadmap.
+- **@architect**: System Design & Structure.
+- **@dev**: Code Implementation & Bug Fixing.
+- **@sm**: Scrum Master (Story management).
+- **@po**: Product Owner (Validation).
+- **@qa**: Quality Assurance & Review.
+- **@data-engineer**: Database & Drizzle ORM.
+- **@devops**: CI/CD & Deploy.
+- **@aiox-master**: Universal Orchestrator.
+
+## 📜 Core Workflow
+1. **Stories First**: Check `docs/stories/` for an active story before coding.
+2. **Context**: Agents must load `docs/framework/` files for tech stack and standards.
+3. **Memory**: Always update `MEMORY.md` (or agent-specific memory) after delivery.
+4. **Clean Architecture**: Follow Server-First patterns (Next.js 16).
+
+## 🛠️ Project Stack
+- **Next.js 16 (App Router)**
+- **React 19**
+- **Tailwind 4**
+- **Drizzle ORM**
+- **PostgreSQL (Neon)**
+
+For more details, see `AGENTS.md`.

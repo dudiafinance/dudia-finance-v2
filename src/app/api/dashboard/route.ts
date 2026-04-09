@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, accounts, goals, cardTransactions, categories } from "@/lib/db/schema";
-import { eq, and, gte, lte, desc, sum, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sum, sql, isNull } from "drizzle-orm";
 import { withCache } from "@/lib/redis";
 
 export async function GET(req: NextRequest) {
@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
         // 0. Total Balance (All accounts, current)
         db.select({ balance: sum(accounts.balance) })
           .from(accounts)
-          .where(and(eq(accounts.userId, userId), eq(accounts.includeInTotal, true))),
+          .where(
+            and(
+              eq(accounts.userId, userId), 
+              eq(accounts.includeInTotal, true),
+              isNull(accounts.deletedAt)
+            )
+          ),
 
         // 1. Current Month Totals
         db.select({
@@ -41,12 +47,26 @@ export async function GET(req: NextRequest) {
           expense: sql<string>`SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount} ELSE 0 END)`
         })
           .from(transactions)
-          .where(and(eq(transactions.userId, userId), gte(transactions.date, startOfMonth), lte(transactions.date, endOfMonth))),
+          .where(
+            and(
+              eq(transactions.userId, userId), 
+              gte(transactions.date, startOfMonth), 
+              lte(transactions.date, endOfMonth),
+              isNull(transactions.deletedAt)
+            )
+          ),
 
         // 2. Current Month Card
         db.select({ total: sum(cardTransactions.amount) })
           .from(cardTransactions)
-          .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, selectedMonth), eq(cardTransactions.invoiceYear, selectedYear))),
+          .where(
+            and(
+              eq(cardTransactions.userId, userId), 
+              eq(cardTransactions.invoiceMonth, selectedMonth), 
+              eq(cardTransactions.invoiceYear, selectedYear),
+              isNull(cardTransactions.deletedAt)
+            )
+          ),
 
         // 3. Previous Month Totals (For Variation)
         db.select({
@@ -54,18 +74,40 @@ export async function GET(req: NextRequest) {
           expense: sql<string>`SUM(CASE WHEN ${transactions.type} = 'expense' THEN ${transactions.amount} ELSE 0 END)`
         })
           .from(transactions)
-          .where(and(eq(transactions.userId, userId), gte(transactions.date, startOfPrevMonth), lte(transactions.date, endOfPrevMonth))),
+          .where(
+            and(
+              eq(transactions.userId, userId), 
+              gte(transactions.date, startOfPrevMonth), 
+              lte(transactions.date, endOfPrevMonth),
+              isNull(transactions.deletedAt)
+            )
+          ),
 
         // 4. Previous Month Card
         db.select({ total: sum(cardTransactions.amount) })
           .from(cardTransactions)
-          .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, prevMonth), eq(cardTransactions.invoiceYear, prevYear))),
+          .where(
+            and(
+              eq(cardTransactions.userId, userId), 
+              eq(cardTransactions.invoiceMonth, prevMonth), 
+              eq(cardTransactions.invoiceYear, prevYear),
+              isNull(cardTransactions.deletedAt)
+            )
+          ),
 
         // 5. Recent Activity (Limited directly in SQL)
-        db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.date), desc(transactions.createdAt)).limit(10),
+        db.select()
+          .from(transactions)
+          .where(and(eq(transactions.userId, userId), isNull(transactions.deletedAt)))
+          .orderBy(desc(transactions.date), desc(transactions.createdAt))
+          .limit(10),
 
         // 6. Recent Card Activity
-        db.select().from(cardTransactions).where(eq(cardTransactions.userId, userId)).orderBy(desc(cardTransactions.date), desc(cardTransactions.createdAt)).limit(10),
+        db.select()
+          .from(cardTransactions)
+          .where(and(eq(cardTransactions.userId, userId), isNull(cardTransactions.deletedAt)))
+          .orderBy(desc(cardTransactions.date), desc(cardTransactions.createdAt))
+          .limit(10),
 
         // 7. Top Expenses by Category (Transactions)
         db.select({
@@ -73,7 +115,15 @@ export async function GET(req: NextRequest) {
           total: sum(transactions.amount),
         })
           .from(transactions)
-          .where(and(eq(transactions.userId, userId), eq(transactions.type, 'expense'), gte(transactions.date, startOfMonth), lte(transactions.date, endOfMonth)))
+          .where(
+            and(
+              eq(transactions.userId, userId), 
+              eq(transactions.type, 'expense'), 
+              gte(transactions.date, startOfMonth), 
+              lte(transactions.date, endOfMonth),
+              isNull(transactions.deletedAt)
+            )
+          )
           .groupBy(transactions.categoryId),
 
         // 8. Top Expenses by Category (Card)
@@ -82,14 +132,27 @@ export async function GET(req: NextRequest) {
           total: sum(cardTransactions.amount),
         })
           .from(cardTransactions)
-          .where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, selectedMonth), eq(cardTransactions.invoiceYear, selectedYear)))
+          .where(
+            and(
+              eq(cardTransactions.userId, userId), 
+              eq(cardTransactions.invoiceMonth, selectedMonth), 
+              eq(cardTransactions.invoiceYear, selectedYear),
+              isNull(cardTransactions.deletedAt)
+            )
+          )
           .groupBy(cardTransactions.categoryId),
 
         // 9. Categories Info
         db.select().from(categories).where(eq(categories.userId, userId)),
 
         // 10. Goals
-        db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, 'active'))),
+        db.select().from(goals).where(
+          and(
+            eq(goals.userId, userId), 
+            eq(goals.status, 'active'),
+            isNull(goals.deletedAt)
+          )
+        ),
       ]);
 
       const totalBalance = Number(queries[0][0]?.balance || 0);

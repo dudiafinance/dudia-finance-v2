@@ -2,18 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, budgets, goals, accounts, recurringTransactions } from "@/lib/db/schema";
-import { eq, and, sum } from "drizzle-orm";
-
-function monthName(year: number, month: number): string {
-  const d = new Date(year, month - 1, 1);
-  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
-}
-
-function weeksInMonth(year: number, month: number): number {
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const daysInMonth = new Date(year, month, 0).getDate();
-  return Math.ceil((firstDay + daysInMonth) / 7);
-}
+import { eq, and, sum, isNull } from "drizzle-orm";
 
 export async function GET() {
   const userId = await getUserId();
@@ -27,15 +16,16 @@ export async function GET() {
 
     // Escalabilidade: Buscamos todas as records, mas o ideal em DB gigantes seria filtrar DTE >= (HOJE - 30)
     const [allTransactions, allCardTx, allBudgets, allGoals, allRecurring, accountBalances] = await Promise.all([
-      db.select().from(transactions).where(eq(transactions.userId, userId)),
-      db.select().from(cardTransactions).where(eq(cardTransactions.userId, userId)),
+      db.select().from(transactions).where(and(eq(transactions.userId, userId), isNull(transactions.deletedAt))),
+      db.select().from(cardTransactions).where(and(eq(cardTransactions.userId, userId), isNull(cardTransactions.deletedAt))),
       db.select().from(budgets).where(and(eq(budgets.userId, userId), eq(budgets.isActive, true))),
-      db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, "active"))),
+      db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, "active"), isNull(goals.deletedAt))),
       db.select().from(recurringTransactions).where(and(eq(recurringTransactions.userId, userId), eq(recurringTransactions.isActive, true))),
       db.select({ balance: sum(accounts.balance) }).from(accounts).where(and(
         eq(accounts.userId, userId), 
         eq(accounts.includeInTotal, true),
-        eq(accounts.isActive, true) // Filtro adicionado: apenas contas ativas
+        eq(accounts.isActive, true), // Filtro adicionado: apenas contas ativas
+        isNull(accounts.deletedAt)
       )),
     ]);
 
