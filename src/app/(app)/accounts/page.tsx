@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Plus, Search, Edit, Trash2, Wallet, CreditCard, 
-  Building, PiggyBank, TrendingUp, Eye, EyeOff, 
-  ArrowRightLeft, ArrowUpRight, ArrowDownRight,
-  ChevronRight, ArrowRight
+import {
+  Plus, Search, Edit, Trash2, Wallet, CreditCard,
+  PiggyBank, TrendingUp, Eye, EyeOff,
+  ArrowRightLeft
 } from "lucide-react";
 import { 
   useAccounts, 
@@ -22,8 +21,27 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+
+type Account = {
+  id: string;
+  name: string;
+  type: string;
+  bank?: string;
+  agency?: string;
+  number?: string;
+  balance: number | string;
+  color: string;
+  currency: string;
+  includeInTotal: boolean;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  color?: string;
+};
 
 const ACCOUNT_TYPES = [
   { value: "checking", label: "Conta Corrente", icon: Wallet, gradient: "from-blue-600 to-indigo-600" },
@@ -92,7 +110,7 @@ export default function AccountsPage() {
     categoryId: ""
   });
 
-  const set = (key: keyof FormData, value: any) => {
+  const set = (key: keyof FormData, value: string | boolean) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
@@ -104,7 +122,7 @@ export default function AccountsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (a: any) => {
+  const openEdit = (a: Account) => {
     setEditingId(a.id);
     setForm({
       name: a.name,
@@ -150,8 +168,8 @@ export default function AccountsPage() {
         toast("Conta criada!");
       }
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro ao salvar", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar", "error");
     }
   };
 
@@ -168,8 +186,8 @@ export default function AccountsPage() {
       });
       toast("Transferência concluída!");
       setTransferModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro na transferência", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro na transferência", "error");
     }
   };
 
@@ -184,26 +202,29 @@ export default function AccountsPage() {
     setDeleteId(null);
   };
 
-  const filtered = accounts.filter((a: any) =>
+  const typedAccounts = accounts as unknown as Account[];
+  const typedCategories = categories as unknown as Category[];
+
+  const filtered = typedAccounts.filter((a) =>
     a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (a.bank ?? "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalBalance = accounts
-    .filter((a: any) => a.includeInTotal && a.type !== "credit_card")
-    .reduce((s: number, a: any) => s + Number(a.balance), 0);
-  
-  const totalInvestments = accounts
-    .filter((a: any) => a.type === "investment")
-    .reduce((s: number, a: any) => s + Number(a.balance), 0);
+  const totalBalance = typedAccounts
+    .filter((a) => a.includeInTotal && a.type !== "credit_card")
+    .reduce((s, a) => s + Number(a.balance), 0);
 
-  const totalCredit = accounts
-    .filter((a: any) => a.type === "credit_card")
-    .reduce((s: number, a: any) => s + Math.abs(Number(a.balance)), 0);
+  const totalInvestments = typedAccounts
+    .filter((a) => a.type === "investment")
+    .reduce((s, a) => s + Number(a.balance), 0);
+
+  const totalCredit = typedAccounts
+    .filter((a) => a.type === "credit_card")
+    .reduce((s, a) => s + Math.abs(Number(a.balance)), 0);
 
   const groupedByType = ACCOUNT_TYPES.map((t) => ({
     ...t,
-    items: filtered.filter((a: any) => a.type === t.value),
+    items: filtered.filter((a) => a.type === t.value),
   })).filter((g) => g.items.length > 0);
 
   if (isLoading) {
@@ -267,7 +288,7 @@ export default function AccountsPage() {
             <p className="text-2xl font-bold text-white tabular-nums">
               {showBalances ? fmt(totalBalance) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{accounts.filter(a => a.includeInTotal).length} contas inclusas</p>
+            <p className="text-xs text-slate-500 mt-1">{typedAccounts.filter(a => a.includeInTotal).length} contas inclusas</p>
           </div>
 
           <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
@@ -322,7 +343,7 @@ export default function AccountsPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {items.map((a: any) => {
+                {items.map((a) => {
                   const AccIcon = getIcon(a.type);
                   const balance = Number(a.balance);
                   
@@ -496,7 +517,7 @@ export default function AccountsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">De (Origem)</label>
-              {accounts.filter(a => a.type !== 'credit_card').map((a: any) => (
+              {typedAccounts.filter(a => a.type !== 'credit_card').map((a) => (
                 <Button 
                   key={a.id}
                   variant="ghost"
@@ -513,7 +534,7 @@ export default function AccountsPage() {
             
             <div className="space-y-3">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-500">Para (Destino)</label>
-              {accounts.filter(a => a.id !== transferForm.fromAccountId).map((a: any) => (
+              {typedAccounts.filter(a => a.id !== transferForm.fromAccountId).map((a) => (
                 <Button 
                   key={a.id}
                   variant="ghost"
@@ -544,7 +565,7 @@ export default function AccountsPage() {
 
           <Field label="Categoria">
             <SearchableSelect 
-              options={categories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+              options={typedCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
               value={transferForm.categoryId}
               onChange={val => setTransferForm(f => ({ ...f, categoryId: val }))}
               placeholder="Selecione a categoria..."

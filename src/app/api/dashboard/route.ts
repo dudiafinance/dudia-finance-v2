@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, accounts, goals, cardTransactions, categories } from "@/lib/db/schema";
-import { eq, and, gte, lte, desc, sum, sql, count } from "drizzle-orm";
+import { eq, and, gte, lte, desc, sum, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
       id: t.id,
       description: t.description,
       amount: Number(t.amount),
-      type: t.type as any,
+      type: t.type as "income" | "expense" | "transfer",
       date: t.date,
       source: "transaction" as const,
       categoryId: t.categoryId,

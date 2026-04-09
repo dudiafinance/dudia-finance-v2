@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Edit, Trash2, Tag, Loader2, Save } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Tag, Save } from "lucide-react";
 import { useTags, useCreateTag, useUpdateTag, useDeleteTag } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, FormRow } from "@/components/ui/form-field";
+import { Field, Input } from "@/components/ui/form-field";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+
+type TagItem = {
+  id: string;
+  name: string;
+  color?: string;
+};
 
 export default function TagsPage() {
   const { data: tags = [], isLoading } = useTags();
@@ -37,7 +42,7 @@ export default function TagsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (t: any) => {
+  const openEdit = (t: TagItem) => {
     setEditingId(t.id);
     setForm({ name: t.name, color: t.color || "#820AD1" });
     setErrors({});
@@ -62,8 +67,8 @@ export default function TagsPage() {
         toast("Etiqueta criada!");
       }
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro ao salvar etiqueta", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar etiqueta", "error");
     }
   };
 
@@ -78,7 +83,8 @@ export default function TagsPage() {
     setDeleteId(null);
   };
 
-  const filtered = tags.filter((t: any) => t.name?.toLowerCase().includes(searchTerm.toLowerCase()));
+  const typedTags = tags as unknown as TagItem[];
+  const filtered = typedTags.filter((t) => t.name?.toLowerCase().includes(searchTerm.toLowerCase()));
 
   if (isLoading) {
     return (
@@ -130,7 +136,7 @@ export default function TagsPage() {
               <Tag className="h-8 w-8 text-slate-400" />
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Sua lista de tags está vazia</h2>
-            <p className="text-slate-500 max-w-sm mb-6">Crie etiquetas personalizadas ex: "viagem", "reforma", "assinaturas" para agrupar despesas de forma extra-categorizada.</p>
+            <p className="text-slate-500 max-w-sm mb-6">Crie etiquetas personalizadas ex: &quot;viagem&quot;, &quot;reforma&quot;, &quot;assinaturas&quot; para agrupar despesas de forma extra-categorizada.</p>
             <Button onClick={openCreate} size="lg" className="font-bold shadow-xl shadow-purple-500/20 bg-purple-600 hover:bg-purple-700 px-8">
               <Plus className="mr-2 h-5 w-5" /> Criar Primeira Tag
             </Button>
@@ -140,7 +146,7 @@ export default function TagsPage() {
         {/* Tags List */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           <AnimatePresence>
-            {filtered.map((t: any) => (
+            {filtered.map((t) => (
               <motion.div 
                 layout
                 key={t.id}

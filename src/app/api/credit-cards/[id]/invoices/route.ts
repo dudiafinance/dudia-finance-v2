@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { creditCardInvoices } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserId } from "@/lib/auth-utils";
+import { invoiceStatusSchema } from "@/lib/validations";
 
 export async function GET(
   req: NextRequest,
@@ -50,10 +51,18 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const { month, year, status } = await req.json();
+    const body = await req.json();
+    const { month, year, status } = body;
 
-    if (isNaN(month) || isNaN(year) || !status) {
-      return NextResponse.json({ error: "Month, year and status are required" }, { status: 400 });
+    const parsed = invoiceStatusSchema.safeParse({ status });
+    if (!parsed.success) {
+      return NextResponse.json({ 
+        error: "Status inválido. Valores aceitos: ABERTA, FECHADA, PAGA" 
+      }, { status: 400 });
+    }
+
+    if (isNaN(month) || isNaN(year)) {
+      return NextResponse.json({ error: "Month e year são obrigatórios" }, { status: 400 });
     }
 
     // Check if exists

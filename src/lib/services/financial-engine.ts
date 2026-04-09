@@ -1,15 +1,17 @@
 import { db } from "@/lib/db";
-import { 
-  transactions, 
-  accounts, 
-  creditCards, 
-  cardTransactions, 
+import {
+  transactions,
+  accounts,
+  creditCards,
+  cardTransactions,
   creditCardInvoices,
   auditLogs,
   goals,
   goalContributions
 } from "@/lib/db/schema";
 import { eq, sql, and } from "drizzle-orm";
+
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type FinancialAction = "create" | "update" | "delete" | "transfer";
 
@@ -18,13 +20,13 @@ export class FinancialEngine {
    * Registra um log de auditoria para cada operação financeira
    */
   private static async logAudit(
-    tx: any,
+    tx: DbTransaction,
     userId: string,
     entityType: string,
     entityId: string,
     action: FinancialAction,
-    oldValue: any = null,
-    newValue: any = null
+    oldValue: Record<string, unknown> | null = null,
+    newValue: Record<string, unknown> | null = null
   ) {
     await tx.insert(auditLogs).values({
       userId,
@@ -40,7 +42,7 @@ export class FinancialEngine {
    * Recalcula atômicamente o saldo de uma conta a partir de todo o histórico de transações pagas.
    * Self-Healing Mechanism.
    */
-  static async recalculateAccountBalance(tx: any, accountId: string) {
+  static async recalculateAccountBalance(tx: DbTransaction, accountId: string) {
     const incomes = await tx
       .select({
         total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL(15,2))), 0)`
@@ -135,7 +137,7 @@ export class FinancialEngine {
         }
 
         // Auditoria
-        await this.logAudit(tx, userId, "transfer", oldTx.linkedTransactionId, "delete", linkedTxs, null);
+        await this.logAudit(tx, userId, "transfer", oldTx.linkedTransactionId, "delete", { transactions: linkedTxs }, null);
       } else {
         // 1. Deletar a transação
         await tx.delete(transactions).where(eq(transactions.id, id));
@@ -231,7 +233,7 @@ export class FinancialEngine {
   /**
    * Recalcula o limite utilizado do cartão somando todas as transações de faturas NÃO PAGAS.
    */
-  static async recalculateCardLimit(tx: any, cardId: string) {
+  static async recalculateCardLimit(tx: DbTransaction, cardId: string) {
     const result = await tx
       .select({
         total: sql<string>`COALESCE(SUM(CAST(${cardTransactions.amount} AS DECIMAL(15,2))), 0)`,
@@ -263,8 +265,8 @@ export class FinancialEngine {
   /**
    * Adiciona transação de cartão e recalcula o limite
    */
-  static async addCardTransaction(data: typeof cardTransactions.$inferInsert, externalTx?: any) {
-    const execute = async (tx: any) => {
+  static async addCardTransaction(data: typeof cardTransactions.$inferInsert, externalTx?: DbTransaction) {
+    const execute = async (tx: DbTransaction) => {
       const [newTx] = await tx.insert(cardTransactions).values(data).returning();
       await this.recalculateCardLimit(tx, newTx.cardId);
       await this.logAudit(tx, newTx.userId, "card_transaction", newTx.id, "create", null, newTx);
@@ -293,7 +295,7 @@ export class FinancialEngine {
   /**
    * Atualiza transação de cartão com suporte a edição em massa e deslocamento de faturas
    */
-  static async updateCardTransaction(id: string, userId: string, data: any, updateGroup: boolean = false) {
+  static async updateCardTransaction(id: string, userId: string, data: Record<string, unknown>, updateGroup: boolean = false) {
     return await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Lançamento não encontrado");
@@ -301,7 +303,7 @@ export class FinancialEngine {
       // 1. Lógica de Atualização em Massa (Group) + Cascade Shift
       if (updateGroup && oldTx.groupId) {
         const monthDelta = (data.invoiceMonth && data.invoiceYear) 
-          ? (data.invoiceYear * 12 + data.invoiceMonth) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth)
+          ? (Number(data.invoiceYear) * 12 + Number(data.invoiceMonth)) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth)
           : 0;
 
         const allGroup = await tx.select().from(cardTransactions)
@@ -321,9 +323,9 @@ export class FinancialEngine {
 
             await tx.update(cardTransactions)
               .set({
-                description: data.description ?? item.description,
-                categoryId: data.categoryId ?? item.categoryId,
-                amount: data.amount ?? item.amount,
+                description: String(data.description ?? item.description),
+                categoryId: data.categoryId ? String(data.categoryId) : item.categoryId,
+                amount: data.amount ? String(data.amount) : item.amount,
                 invoiceMonth: newM,
                 invoiceYear: newY,
                 updatedAt: new Date(),
@@ -333,8 +335,9 @@ export class FinancialEngine {
         }
       } else {
         // Atualização Única
+        const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
         await tx.update(cardTransactions)
-          .set({ ...data, updatedAt: new Date() })
+          .set(updateData as typeof cardTransactions.$inferInsert)
           .where(eq(cardTransactions.id, id));
       }
 

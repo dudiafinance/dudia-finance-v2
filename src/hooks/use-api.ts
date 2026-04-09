@@ -17,19 +17,19 @@ const ONE_MINUTE = 60 * 1000;
 
 // Accounts
 export function useAccounts() {
-  return useQuery({ queryKey: ["accounts"], queryFn: () => apiFetch<any[]>("/api/accounts"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["accounts"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/accounts"), staleTime: FIVE_MINUTES });
 }
 export function useCreateAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/accounts", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/accounts", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }
 export function useUpdateAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/accounts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/accounts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }
@@ -44,7 +44,7 @@ export function useDeleteAccount() {
 export function useCreateTransfer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/transfers", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/transfers", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
@@ -55,19 +55,19 @@ export function useCreateTransfer() {
 
 // Categories
 export function useCategories() {
-  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<any[]>("/api/categories"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/categories"), staleTime: FIVE_MINUTES });
 }
 export function useCreateCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/categories", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/categories", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
 export function useUpdateCategory() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
@@ -90,19 +90,19 @@ export function useCategoryStats(month?: number, year?: number) {
 
 // Global Tags
 export function useTags() {
-  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<any[]>("/api/tags"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/tags"), staleTime: FIVE_MINUTES });
 }
 export function useCreateTag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch<any>("/api/tags", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch<Record<string, unknown>>("/api/tags", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
 export function useUpdateTag() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch<any>(`/api/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch<Record<string, unknown>>(`/api/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
@@ -128,7 +128,7 @@ export type TransactionFilters = {
 };
 
 export type PaginatedTransactions = {
-  items: any[];
+  items: Record<string, unknown>[];
   metadata: {
     total: number;
     totalIncome: number;
@@ -150,23 +150,23 @@ export function useTransactions(filters: TransactionFilters = {}) {
   const qs = params.toString();
   const url = qs ? `/api/transactions?${qs}` : "/api/transactions";
 
-  return useQuery({ 
-    queryKey: ["transactions", filters], 
-    queryFn: () => apiFetch<PaginatedTransactions>(url), 
-    staleTime: ONE_MINUTE 
+  return useQuery({
+    queryKey: ["transactions", filters],
+    queryFn: () => apiFetch<PaginatedTransactions>(url),
+    staleTime: ONE_MINUTE
   });
 }
 export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/transactions", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/transactions", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
   });
 }
 export function useUpdateTransaction() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
   });
 }
@@ -180,15 +180,15 @@ export function useDeleteTransaction() {
 
 // Budgets
 export function useBudgets() {
-  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<any[]>("/api/budgets"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/budgets"), staleTime: FIVE_MINUTES });
 }
 export function useBudgetStats() {
-  return useQuery({ queryKey: ["budget-stats"], queryFn: () => apiFetch<any[]>("/api/budgets/stats") });
+  return useQuery({ queryKey: ["budget-stats"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/budgets/stats") });
 }
 export function useCreateBudget() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/budgets", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/budgets", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["budgets"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
@@ -198,7 +198,7 @@ export function useCreateBudget() {
 export function useUpdateBudget() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["budgets"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
@@ -218,19 +218,19 @@ export function useDeleteBudget() {
 
 // Goals
 export function useGoals() {
-  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<any[]>("/api/goals"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/goals"), staleTime: FIVE_MINUTES });
 }
 export function useCreateGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/goals", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/goals", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
   });
 }
 export function useUpdateGoal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/goals/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/goals/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
   });
 }
@@ -245,7 +245,7 @@ export function useDeleteGoal() {
 export function useGoalDeposit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/goals/deposit", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/goals/deposit", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
@@ -265,25 +265,25 @@ export function useDashboard(month?: number, year?: number) {
 
   return useQuery({
     queryKey: ["dashboard", month ?? null, year ?? null],
-    queryFn: () => apiFetch<any>(url),
+    queryFn: () => apiFetch<Record<string, unknown>>(url),
     staleTime: ONE_MINUTE,
   });
 }
 
 // Reports
 export function useReports(period: "week" | "month" | "year") {
-  return useQuery({ 
-    queryKey: ["reports", period], 
-    queryFn: () => apiFetch<any>(`/api/reports?period=${period}`), 
-    staleTime: ONE_MINUTE 
+  return useQuery({
+    queryKey: ["reports", period],
+    queryFn: () => apiFetch<Record<string, unknown>>(`/api/reports?period=${period}`),
+    staleTime: ONE_MINUTE
   });
 }
 
 // Notifications
 export function useNotifications() {
-  return useQuery({ 
-    queryKey: ["notifications"], 
-    queryFn: () => apiFetch<any[]>("/api/notifications"), 
+  return useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => apiFetch<import("@/types").Notification[]>("/api/notifications"),
     staleTime: ONE_MINUTE,
     refetchInterval: ONE_MINUTE, // Atualiza notificações a cada minuto
   });
@@ -291,7 +291,7 @@ export function useNotifications() {
 export function useUpdateNotifications() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: { id?: string; markAllAsRead?: boolean }) => 
+    mutationFn: (data: { id?: string; markAllAsRead?: boolean }) =>
       apiFetch("/api/notifications", { method: "PATCH", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
@@ -299,17 +299,17 @@ export function useUpdateNotifications() {
 
 // Credit Cards
 export function useCreditCards() {
-  return useQuery({ 
-    queryKey: ["credit-cards"], 
-    queryFn: () => apiFetch<any[]>("/api/credit-cards"), 
-    staleTime: FIVE_MINUTES 
+  return useQuery({
+    queryKey: ["credit-cards"],
+    queryFn: () => apiFetch<Record<string, unknown>[]>("/api/credit-cards"),
+    staleTime: FIVE_MINUTES
   });
 }
 
 export function useCreateCreditCard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/credit-cards", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/credit-cards", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
   });
 }
@@ -317,7 +317,7 @@ export function useCreateCreditCard() {
 export function useUpdateCreditCard() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/credit-cards/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/credit-cards/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
   });
 }
@@ -338,7 +338,7 @@ export function useCardTransactions(cardId: string, month?: number, year?: numbe
 
   return useQuery({
     queryKey: ["card-transactions", cardId, month ?? null, year ?? null],
-    queryFn: () => apiFetch<any[]>(url),
+    queryFn: () => apiFetch<Record<string, unknown>[]>(url),
     staleTime: ONE_MINUTE,
   });
 }
@@ -346,7 +346,7 @@ export function useCardTransactions(cardId: string, month?: number, year?: numbe
 export function useCreateCardTransaction(cardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch(`/api/credit-cards/${cardId}/transactions`, { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch(`/api/credit-cards/${cardId}/transactions`, { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
@@ -358,7 +358,7 @@ export function useCreateCardTransaction(cardId: string) {
 export function useUpdateCardTransaction(cardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: any) => apiFetch(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...data }: Record<string, unknown>) => apiFetch(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
@@ -382,7 +382,7 @@ export function useDeleteCardTransaction(cardId: string) {
 export function usePayCardInvoice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch("/api/credit-cards/pay-invoice", { method: "POST", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/credit-cards/pay-invoice", { method: "POST", body: JSON.stringify(data) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
@@ -397,7 +397,7 @@ export function usePayCardInvoice() {
 export function useInvoiceStatus(cardId: string, month: number, year: number) {
   return useQuery({
     queryKey: ["invoice-status", cardId, month, year],
-    queryFn: () => apiFetch<any>(`/api/credit-cards/${cardId}/invoices?month=${month}&year=${year}`),
+    queryFn: () => apiFetch<Record<string, unknown>>(`/api/credit-cards/${cardId}/invoices?month=${month}&year=${year}`),
     enabled: !!cardId && !!month && !!year,
   });
 }
@@ -405,7 +405,7 @@ export function useInvoiceStatus(cardId: string, month: number, year: number) {
 export function useUpdateInvoiceStatus(cardId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => apiFetch(`/api/credit-cards/${cardId}/invoices`, { method: "PATCH", body: JSON.stringify(data) }),
+    mutationFn: (data: Record<string, unknown>) => apiFetch(`/api/credit-cards/${cardId}/invoices`, { method: "PATCH", body: JSON.stringify(data) }),
     onSuccess: (_, variables) => {
       qc.invalidateQueries({ queryKey: ["invoice-status", cardId, variables.month, variables.year] });
     },

@@ -3,9 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Search, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft,
-  Edit, Trash2, Calendar, CheckCircle2, Clock, Filter, X, ChevronDown,
+  Trash2, CheckCircle2, Clock, Filter, X,
   RefreshCw, Repeat2, TrendingUp, TrendingDown, Wallet, Eye, EyeOff,
-  ChevronRight, MapPin, Tag, FileText, ArrowRight
+  FileText, ArrowRight
 } from "lucide-react";
 import { 
   useTransactions, 
@@ -23,10 +23,32 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 
-const toDateInput = (d?: any) =>
+type Transaction = {
+  id: string;
+  type: string;
+  description: string;
+  amount: number | string;
+  categoryId?: string | null;
+  accountId: string;
+  date: string;
+  dueDate?: string | null;
+  receiveDate?: string | null;
+  isPaid: boolean;
+  subtype?: string;
+  totalOccurrences?: number | null;
+  notes?: string | null;
+  tags?: string[];
+  location?: string | null;
+};
+
+type CategoryItem = { id: string; name: string; type: string; color?: string; tags?: string[] };
+type AccountItem = { id: string; name: string; balance?: number | string };
+type TagItem = { id: string; name: string };
+
+const toDateInput = (d?: string | null) =>
   d ? new Date(d).toISOString().split("T")[0] : "";
 
 type Subtype = "single" | "fixed" | "recurring";
@@ -102,7 +124,7 @@ export default function TransactionsPage() {
   const [filterType, setFilterType] = useState("all");
   const [filterPaid, setFilterPaid] = useState("all");
   const [page, setPage] = useState(1);
-  const [accumulatedItems, setAccumulatedItems] = useState<any[]>([]);
+  const [accumulatedItems, setAccumulatedItems] = useState<Transaction[]>([]);
 
   // Hook com filtros
   const { data: txData, isLoading: txLoading, isFetching: txFetching } = useTransactions({
@@ -124,20 +146,18 @@ export default function TransactionsPage() {
   };
 
   // Efeito para acumular itens quando os dados chegam
-  const items = txData?.items ?? [];
+  const items = (txData?.items ?? []) as unknown as Transaction[];
   const metadata = txData?.metadata;
+  const itemsKey = useMemo(() => JSON.stringify(items.map(i => i.id)), [items]);
 
   useEffect(() => {
-    if (page === 1) {
-      setAccumulatedItems(items);
-    } else {
-      setAccumulatedItems(prev => {
-        const ids = new Set(prev.map(i => i.id));
-        const newItems = items.filter(i => !ids.has(i.id));
-        return [...prev, ...newItems];
-      });
-    }
-  }, [items, page]);
+    setAccumulatedItems(prev => {
+      if (page === 1) return items;
+      const ids = new Set(prev.map(i => i.id));
+      const newItems = items.filter(i => !ids.has(i.id));
+      return [...prev, ...newItems];
+    });// eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey, page]);
 
   const handleLoadMore = () => {
     if (metadata?.hasMore) {
@@ -145,12 +165,16 @@ export default function TransactionsPage() {
     }
   };
   
-  const allTagSuggestions = useMemo(() => 
+  const typedGlobalTags = globalTags as unknown as TagItem[];
+  const typedCategories = categories as unknown as CategoryItem[];
+  const typedAccounts = accountsData as unknown as AccountItem[];
+
+  const allTagSuggestions = useMemo(() =>
     Array.from(new Set([
-      ...globalTags.map((t: any) => t.name), 
-      ...categories.flatMap((c: any) => c.tags ?? [])
+      ...typedGlobalTags.map((t) => t.name),
+      ...typedCategories.flatMap((c) => c.tags ?? [])
     ])) as string[],
-    [globalTags, categories]
+    [typedGlobalTags, typedCategories]
   );
   
   const createTransaction = useCreateTransaction();
@@ -165,22 +189,22 @@ export default function TransactionsPage() {
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const set = (key: keyof FormData, value: any) => {
+  const set = (key: keyof FormData, value: string | boolean | string[]) => {
     setForm((f) => ({ ... f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ ...emptyForm(), accountId: accountsData[0]?.id ?? "" });
+    setForm({ ...emptyForm(), accountId: typedAccounts[0]?.id ?? "" });
     setErrors({});
     setModalOpen(true);
   };
 
-  const openEdit = (t: any) => {
+  const openEdit = (t: Transaction) => {
     setEditingId(t.id);
     setForm({
-      type: t.type as any,
+      type: t.type as "income" | "expense" | "transfer",
       description: t.description,
       amount: String(Number(t.amount)),
       categoryId: t.categoryId ?? "",
@@ -215,7 +239,7 @@ export default function TransactionsPage() {
 
   const save = async () => {
     if (!validate()) return;
-    const formPayload: any = {
+    const formPayload: Record<string, unknown> = {
       type: form.type,
       description: form.description,
       amount: Number(form.amount),
@@ -242,8 +266,8 @@ export default function TransactionsPage() {
         toast("Transação criada!");
       }
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro ao salvar", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar", "error");
     }
   };
 
@@ -259,7 +283,7 @@ export default function TransactionsPage() {
   };
 
   const grouped = useMemo(() => {
-    const groups: Record<string, any[]> = {};
+    const groups: Record<string, Transaction[]> = {};
     accumulatedItems.forEach((tx) => {
       const g = getRelativeGroupDate(tx.date);
       if (!groups[g]) groups[g] = [];
@@ -276,12 +300,11 @@ export default function TransactionsPage() {
   const totalExpense = metadata?.totalExpense ?? 0;
   const netBalance = totalIncome - totalExpense;
 
-  const incomeCategories = categories.filter((c: any) => c.type === "income");
-  const expenseCategories = categories.filter((c: any) => c.type === "expense");
+  const incomeCategories = typedCategories.filter((c) => c.type === "income");
+  const expenseCategories = typedCategories.filter((c) => c.type === "expense");
   const relevantCategories =
     form.type === "income" ? incomeCategories : form.type === "expense" ? expenseCategories : [];
 
-  const startMonthName = form.date ? getMonthName(new Date(form.date + "T12:00:00")) : "";
   const endMonthName = computeEndMonth(form.date, Number(form.totalOccurrences));
 
   if (txLoading) {
@@ -466,9 +489,9 @@ export default function TransactionsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                  {items.map((t: any) => {
-                    const cat = categories.find((c: any) => c.id === t.categoryId);
-                    const acc = accountsData.find((a: any) => a.id === t.accountId);
+                  {items.map((t) => {
+                    const cat = typedCategories.find((c) => c.id === t.categoryId);
+                    const acc = typedAccounts.find((a) => a.id === t.accountId);
                     const isOverdue = !t.isPaid && t.dueDate && new Date(t.dueDate) < new Date();
                     const amount = Number(t.amount);
                     const isIncome = t.type === "income";
@@ -603,7 +626,7 @@ export default function TransactionsPage() {
           <FormRow>
             <Field label="Categoria">
               <SearchableSelect 
-                options={relevantCategories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                options={relevantCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
                 value={form.categoryId}
                 onChange={val => set("categoryId", val)}
                 placeholder="Selecione a categoria..."
@@ -612,7 +635,7 @@ export default function TransactionsPage() {
             </Field>
             <Field label="Conta">
               <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)} className="h-11 rounded-md">
-                {accountsData.map((a: any) => (
+                {typedAccounts.map((a) => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </Select>

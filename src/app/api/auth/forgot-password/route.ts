@@ -5,10 +5,20 @@ import { eq } from "drizzle-orm";
 import { sendPasswordResetEmail } from "@/lib/services/email";
 import { randomBytes } from "crypto";
 import { z } from "zod";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 const schema = z.object({ email: z.string().email() });
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(`forgot-password:${ip}`, 3, 15 * 60 * 1000); // 3 per 15 min
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Tente novamente em alguns minutos." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);

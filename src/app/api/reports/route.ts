@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     // Process Bank
     bankAgg.forEach(t => {
       const amt = Number(t.total || 0);
-      const cat = catMap[t.categoryId as any];
+      const cat = catMap[t.categoryId as string];
       const catName = cat?.name ?? "Outros";
       const catColor = cat?.color ?? "#64748B";
 
@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     // Process Card (all are expenses)
     cardAgg.forEach(t => {
       const amt = Number(t.total || 0);
-      const cat = catMap[t.categoryId as any];
+      const cat = catMap[t.categoryId as string];
       const catName = cat?.name ?? "Cartão (Sem Categoria)";
       const catColor = cat?.color ?? "#94a3b8";
 

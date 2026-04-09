@@ -58,7 +58,10 @@ export const accounts = pgTable('accounts', {
   includeInTotal: boolean('include_in_total').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'), // Soft-delete
+}, (table) => [
+  index('accounts_user_id_idx').on(table.userId),
+]);
 
 // Categorias
 export const categories = pgTable('categories', {
@@ -68,6 +71,7 @@ export const categories = pgTable('categories', {
   type: varchar('type', { length: 10 }).notNull(), // 'income', 'expense'
   icon: varchar('icon', { length: 50 }),
   color: varchar('color', { length: 7 }).default('#000000'),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   parentId: uuid('parent_id').references((): any => categories.id),
   budgetAmount: decimal('budget_amount', { precision: 15, scale: 2 }),
   budgetPeriod: varchar('budget_period', { length: 10 }), // 'weekly', 'monthly', 'yearly'
@@ -118,6 +122,7 @@ export const transactions = pgTable('transactions', {
   goalId: uuid('goal_id').references(() => goals.id), // Para depósitos de metas
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'), // Soft-delete
 }, (table) => [
   index('transactions_user_id_idx').on(table.userId),
   index('transactions_date_idx').on(table.date),
@@ -147,6 +152,7 @@ export const budgets = pgTable('budgets', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 }, (table) => [
   index('budgets_user_id_idx').on(table.userId),
+  index('budgets_user_active_idx').on(table.userId, table.isActive),
 ]);
 
 // Metas Financeiras
@@ -167,6 +173,7 @@ export const goals = pgTable('goals', {
   goalType: varchar('goal_type', { length: 20 }).default('target'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'), // Soft-delete
 }, (table) => [
   index('goals_user_id_idx').on(table.userId),
 ]);
@@ -186,6 +193,7 @@ export const goalContributions = pgTable('goal_contributions', {
 }, (table) => [
   index('goal_contributions_user_id_idx').on(table.userId),
   index('goal_contributions_goal_id_idx').on(table.goalId),
+  index('goal_contributions_goal_month_idx').on(table.goalId, table.month, table.year),
 ]);
 
 // Transações Recorrentes
@@ -204,7 +212,10 @@ export const recurringTransactions = pgTable('recurring_transactions', {
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+}, (table) => [
+  index('recurring_user_id_idx').on(table.userId),
+  index('recurring_next_due_idx').on(table.nextDueDate),
+]);
 
 // Sessões (NextAuth)
 export const sessions = pgTable('sessions', {
@@ -212,7 +223,10 @@ export const sessions = pgTable('sessions', {
   userId: uuid('user_id').references(() => users.id).notNull(),
   sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
   expires: timestamp('expires').notNull(),
-});
+}, (table) => [
+  index('sessions_user_id_idx').on(table.userId),
+  index('sessions_expires_idx').on(table.expires),
+]);
 
 // Contas de Autenticação (NextAuth)
 export const authAccounts = pgTable('auth_accounts', {
@@ -302,7 +316,10 @@ export const creditCards = pgTable('credit_cards', {
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
+  deletedAt: timestamp('deleted_at'), // Soft-delete
+}, (table) => [
+  index('credit_cards_user_id_idx').on(table.userId),
+]);
 
 // Faturas de Cartão (Persistência de Status Manual)
 export const creditCardInvoices = pgTable('credit_card_invoices', {
@@ -340,6 +357,7 @@ export const cardTransactions = pgTable('card_transactions', {
   notes: text('notes'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'), // Soft-delete
 }, (table) => [
   index('card_transactions_invoice_idx').on(table.invoiceMonth, table.invoiceYear),
   index('card_transactions_user_card_invoice_idx').on(table.userId, table.cardId, table.invoiceMonth, table.invoiceYear),
@@ -408,5 +426,16 @@ export const cardTransactionsRelations = relations(cardTransactions, ({ one }) =
 export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   user: one(users, { fields: [auditLogs.userId], references: [users.id] }),
 }));
+
+// Idempotency Keys (for preventing duplicate requests)
+export const idempotencyKeys = pgTable('idempotency_keys', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  key: varchar('key', { length: 255 }).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  response: jsonb('response').$type<Record<string, unknown>>().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => [
+  index('idempotency_keys_user_key_idx').on(table.userId, table.key),
+]);
 
 

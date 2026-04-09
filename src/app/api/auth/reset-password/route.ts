@@ -4,6 +4,7 @@ import { users, verificationTokens } from "@/lib/db/schema";
 import { eq, and, gt } from "drizzle-orm";
 import { hashPassword } from "@/lib/auth/password";
 import { z } from "zod";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 const schema = z.object({
   token: z.string().min(1),
@@ -16,6 +17,15 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(`reset-password:${ip}`, 5, 15 * 60 * 1000); // 5 per 15 min
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Tente novamente em alguns minutos." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = schema.safeParse(body);

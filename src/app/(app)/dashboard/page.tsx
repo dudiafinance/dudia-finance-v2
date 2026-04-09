@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  Wallet, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
+  TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight,
   DollarSign, CreditCard, ChevronLeft, ChevronRight, Eye, EyeOff,
   Target, Zap, Crown, BarChart3, Clock, ArrowRight,
   Receipt, Landmark, MoreHorizontal, PieChart
 } from "lucide-react";
 import { useDashboard } from "@/hooks/use-api";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 
@@ -55,15 +55,19 @@ export default function DashboardPage() {
     );
   }
 
-  const totalBalance = data?.totalBalance ?? 0;
-  const totalIncome = data?.totalIncome ?? 0;
-  const totalExpense = data?.totalExpense ?? 0;
-  const totalCardInvoice = data?.totalCardInvoice ?? 0;
-  const monthlyVariation = data?.monthlyVariation ?? 0;
-  const recentActivity: any[] = data?.recentActivity ?? [];
-  const goals: any[] = data?.goals ?? [];
-  const topExpenses: any[] = data?.topExpenses ?? [];
-  const maxExpense = topExpenses.length > 0 ? Math.max(...topExpenses.map((e: any) => e.total)) : 1;
+  type ActivityItem = { id: string; source: string; type: string; description: string; date: string; amount: number };
+  type GoalItem = { id: string; name: string; currentAmount: number | string; targetAmount: number | string };
+  type ExpenseItem = { categoryId: string; categoryName: string; categoryColor: string; total: number };
+  const dashData = data as Record<string, unknown> | undefined;
+  const totalBalance = (dashData?.totalBalance as number) ?? 0;
+  const totalIncome = (dashData?.totalIncome as number) ?? 0;
+  const totalExpense = (dashData?.totalExpense as number) ?? 0;
+  const totalCardInvoice = (dashData?.totalCardInvoice as number) ?? 0;
+  const monthlyVariation = (dashData?.monthlyVariation as number) ?? 0;
+  const recentActivity: ActivityItem[] = (dashData?.recentActivity as ActivityItem[]) ?? [];
+  const goals: GoalItem[] = (dashData?.goals as GoalItem[]) ?? [];
+  const topExpenses: ExpenseItem[] = (dashData?.topExpenses as ExpenseItem[]) ?? [];
+  const maxExpense = topExpenses.length > 0 ? Math.max(...topExpenses.map((e) => e.total)) : 1;
 
   const totalAllExpenses = totalExpense + totalCardInvoice;
   const savings = totalIncome - totalAllExpenses;
@@ -228,7 +232,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Sem despesas</p>
                 </div>
               ) : (
-                topExpenses.map((e: any) => (
+                topExpenses.map((e) => (
                   <div key={e.categoryId} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -278,7 +282,7 @@ export default function DashboardPage() {
                   <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Histórico vazio</p>
                 </div>
               ) : (
-                recentActivity.map((t: any) => (
+                recentActivity.map((t) => (
                   <motion.div
                     key={t.source + t.id}
                     whileHover={{ x: 4 }}
@@ -338,7 +342,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {goals.slice(0, 3).map((g: any) => {
+              {goals.slice(0, 3).map((g) => {
                 const pct = Math.min((Number(g.currentAmount) / Number(g.targetAmount)) * 100, 100);
                 return (
                   <div key={g.id} className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 shadow-sm">

@@ -12,9 +12,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { updateGroup, ...data } = await req.json();
     const result = await FinancialEngine.updateCardTransaction(txId, userId, data, updateGroup);
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error updating card transaction:", error);
-    return NextResponse.json({ error: error.message || "Erro ao atualizar" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao atualizar" }, { status: 500 });
   }
 }
 
@@ -27,8 +27,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     await FinancialEngine.deleteCardTransaction(txId, userId);
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error deleting card transaction:", error);
-    return NextResponse.json({ error: error.message || "Erro ao excluir" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao excluir" }, { status: 500 });
   }
 }

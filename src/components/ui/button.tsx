@@ -50,7 +50,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         <Slot
           className={cn(buttonVariants({ variant, size, className }))}
           ref={ref}
-          {...(props as any)}
+          {...props}
         />
       );
     }
@@ -60,8 +60,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         whileHover={{ translateY: -1 }}
         whileTap={{ scale: 0.98 }}
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref as any}
-        {...(props as any)}
+        ref={ref}
+        {...(props as HTMLMotionProps<"button">)}
       />
     );
   }

@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { creditCards, cardTransactions } from "@/lib/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { cardTransactions } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
 
 import { FinancialEngine } from "@/lib/services/financial-engine";
 
@@ -9,7 +9,9 @@ import { FinancialEngine } from "@/lib/services/financial-engine";
  * Sums all unpaid card transactions using the global engine.
  */
 export async function recalculateUsedAmount(cardId: string): Promise<void> {
-  await FinancialEngine.recalculateCardLimit(db, cardId);
+  await db.transaction(async (tx) => {
+    await FinancialEngine.recalculateCardLimit(tx, cardId);
+  });
 }
 
 /**

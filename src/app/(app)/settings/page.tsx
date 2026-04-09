@@ -1,13 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera, ExternalLink, Check, Eye, EyeOff } from "lucide-react";
+import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera, Check, Eye, EyeOff } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form-field";
 import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function SettingsPage() {
   const { data: session, update } = useSession();
@@ -100,7 +101,7 @@ export default function SettingsPage() {
       } else {
         alert("Falha ao atualizar foto");
       }
-    } catch (e) {
+    } catch (_e) {
       alert("Erro ao fazer upload da foto");
     } finally {
       setIsUploadingAvatar(false);
@@ -123,7 +124,7 @@ export default function SettingsPage() {
         const data = await res.json();
         alert(data.error || "Erro ao salvar perfil");
       }
-    } catch (err) {
+    } catch (_err) {
       alert("Erro de conexão");
     } finally {
       setIsSavingProfile(false);
@@ -155,7 +156,7 @@ export default function SettingsPage() {
         const data = await res.json();
         alert(data.error || "Erro ao alterar senha");
       }
-    } catch (err) {
+    } catch (_err) {
       alert("Erro de conexão");
     } finally {
       setIsSavingSecurity(false);
@@ -177,7 +178,7 @@ export default function SettingsPage() {
       } else {
         alert("Erro ao salvar configurações");
       }
-    } catch (err) {
+    } catch (_err) {
       alert("Erro de conexão");
     } finally {
       setIsSavingSettings(false);
@@ -248,10 +249,13 @@ export default function SettingsPage() {
                         {isUploadingAvatar ? (
                           <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
                         ) : profileData.avatar ? (
-                          <img 
+                          <Image 
                             src={profileData.avatar} 
                             alt={profileData.name} 
+                            width={96}
+                            height={96}
                             className="h-full w-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           profileData.name.charAt(0).toUpperCase()
@@ -523,8 +527,8 @@ export default function SettingsPage() {
                     </h3>
                     <ol className="list-decimal list-inside text-sm text-blue-700/80 dark:text-blue-200/70 space-y-2">
                       <li>Acesse <a href="https://openrouter.ai" target="_blank" rel="noreferrer" className="font-semibold underline hover:text-blue-900 dark:hover:text-white">openrouter.ai</a> e crie ou acesse sua conta.</li>
-                      <li>Navegue até a seção <strong>"Keys"</strong>.</li>
-                      <li>Clique em <strong>"Create Key"</strong>, dê um nome (ex: Dud.ia Finance) e copie o código gerado.</li>
+                      <li>Navegue até a seção <strong>&quot;Keys&quot;</strong>.</li>
+                      <li>Clique em <strong>&quot;Create Key&quot;</strong>, dê um nome (ex: Dud.ia Finance) e copie o código gerado.</li>
                       <li>Cole o código no campo abaixo e salve.</li>
                     </ol>
                   </div>

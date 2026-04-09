@@ -22,7 +22,7 @@ export async function PUT(req: Request) {
     } = data;
 
     // Filter undefined values so we only update what was sent
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (currency !== undefined) updateData.currency = currency;
     if (locale !== undefined) updateData.locale = locale;
     if (timezone !== undefined) updateData.timezone = timezone;

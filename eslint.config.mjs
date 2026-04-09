@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Skill sample files are not production code
+    "claude-skills/**",
+    // Scripts are utility files with relaxed rules
+    "scripts/**",
   ]),
 ]);
 

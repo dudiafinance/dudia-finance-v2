@@ -9,14 +9,6 @@ function monthName(year: number, month: number): string {
   return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 }
 
-function monthStart(year: number, month: number): string {
-  return new Date(year, month - 1, 1).toISOString().split("T")[0];
-}
-
-function monthEnd(year: number, month: number): string {
-  return new Date(year, month, 0).toISOString().split("T")[0];
-}
-
 function weeksInMonth(year: number, month: number): number {
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -104,7 +96,7 @@ export async function GET() {
         .filter((r) => r.type === type)
         .reduce((sum, r) => {
           let count = 0;
-          let nextDate = new Date(r.nextDueDate);
+          const nextDate = new Date(r.nextDueDate);
           // Limit to max 3 years projection to avoid infinite loops if bad data
           const endDate = r.endDate ? new Date(r.endDate) : new Date(currentYear + 3, 0, 1); 
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { cardTransactions, creditCards } from "@/lib/db/schema";
+import { cardTransactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { cardTransactionSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
@@ -10,32 +10,37 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id: cardId } = await params;
-  const { searchParams } = new URL(req.url);
-  const month = searchParams.get("month");
-  const year = searchParams.get("year");
+  try {
+    const { id: cardId } = await params;
+    const { searchParams } = new URL(req.url);
+    const month = searchParams.get("month");
+    const year = searchParams.get("year");
 
-  let conditions = and(
-    eq(cardTransactions.cardId, cardId),
-    eq(cardTransactions.userId, userId)
-  ) as any;
-
-  if (month && year) {
-    conditions = and(
+    let conditions = and(
       eq(cardTransactions.cardId, cardId),
-      eq(cardTransactions.userId, userId),
-      eq(cardTransactions.invoiceMonth, Number(month)),
-      eq(cardTransactions.invoiceYear, Number(year))
+      eq(cardTransactions.userId, userId)
     );
+
+    if (month && year) {
+      conditions = and(
+        eq(cardTransactions.cardId, cardId),
+        eq(cardTransactions.userId, userId),
+        eq(cardTransactions.invoiceMonth, Number(month)),
+        eq(cardTransactions.invoiceYear, Number(year))
+      );
+    }
+
+    const rows = await db
+      .select()
+      .from(cardTransactions)
+      .where(conditions)
+      .orderBy(cardTransactions.date);
+
+    return NextResponse.json(rows);
+  } catch (error) {
+    console.error("Error fetching card transactions:", error);
+    return NextResponse.json({ error: "Erro ao buscar transações do cartão" }, { status: 500 });
   }
-
-  const rows = await db
-    .select()
-    .from(cardTransactions)
-    .where(conditions)
-    .orderBy(cardTransactions.date);
-
-  return NextResponse.json(rows);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -84,12 +89,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           isPending,
           tags: tags ?? null,
           notes: notes ?? null,
-        }, tx as any);
+        }, tx);
         txResults.push(row);
       } else if (launchType === "installment") {
         const n = totalInstallments ?? 1;
         const start = startInstallment;
-        const totalRemaining = n - start + 1;
         
         const amountInCents = Math.round(amount * 100);
         const baseCents = Math.floor(amountInCents / n);
@@ -119,7 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             tags: tags ?? null,
             isPending,
             notes: notes ?? null,
-          }, tx as any);
+          }, tx);
           txResults.push(row);
 
           m++;
@@ -147,7 +151,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             isPending,
             isFixed: true,
             notes: notes ?? null,
-          }, tx as any);
+          }, tx);
           txResults.push(row);
 
           m++;
@@ -158,8 +162,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
 
     return NextResponse.json(results, { status: 201 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error saving card transactions:", error);
-    return NextResponse.json({ error: error.message || "Erro ao salvar transações" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao salvar transações" }, { status: 500 });
   }
 }

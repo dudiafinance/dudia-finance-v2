@@ -3,8 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { TrendingUp, TrendingDown, Info, CalendarDays, LineChart as ChartIcon } from "lucide-react";
 import { 
-  LineChart, 
-  Line, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -15,7 +13,7 @@ import {
   ReferenceLine
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 
 interface ForecastMonth {
@@ -80,10 +78,8 @@ export default function ForecastPage() {
     );
   }
 
-  const totalIncome = data.reduce((s, m) => s + m.income, 0);
-  const totalExpenses = data.reduce((s, m) => s + m.expenses + m.cardInvoice, 0);
-  const bestMonth = data.reduce((best, m) => m.netBalance > best.netBalance ? m : best, data[0] ?? { netBalance: 0, monthName: "-" } as any);
-  const worstMonth = data.reduce((worst, m) => m.netBalance < worst.netBalance ? m : worst, data[0] ?? { netBalance: 0, monthName: "-" } as any);
+  const bestMonth = data.reduce((best, m) => m.netBalance > best.netBalance ? m : best, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
+  const worstMonth = data.reduce((worst, m) => m.netBalance < worst.netBalance ? m : worst, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
 
   return (
     <div className="min-h-screen pb-20">

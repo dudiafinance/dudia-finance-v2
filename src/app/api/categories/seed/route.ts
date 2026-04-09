@@ -202,7 +202,7 @@ const DEFAULT_CATEGORIES = [
   { name: "Reembolso Médico", type: "income" as const, icon: "heart", color: "#6366F1" },
 ];
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

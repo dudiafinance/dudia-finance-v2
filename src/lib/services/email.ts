@@ -13,13 +13,17 @@ if (!BrevoSMTPHost || !BrevoSMTPUser || !BrevoSMTPPass) {
 const transporter = nodemailer.createTransport({
   host: BrevoSMTPHost,
   port: BrevoSMTPPort,
-  secure: false,
+  secure: BrevoSMTPPort === 465, // TLS on port 465
+  requireTLS: true, // Force TLS upgrade on port 587
   auth: {
     user: BrevoSMTPUser,
     pass: BrevoSMTPPass,
   },
   logger: process.env.NODE_ENV === "development",
   debug: false,
+  tls: {
+    rejectUnauthorized: true,
+  },
 });
 
 const APP_NAME = "DUD.IA Finance";
@@ -31,7 +35,7 @@ export async function sendPasswordResetEmail(
 ): Promise<void> {
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
-  console.log(`Sending password reset email to ${to}`);
+  console.log(`[EMAIL] Sending password reset to ***@${to.split('@')[1] || 'domain'}`);
 
   await transporter.sendMail({
     to,
@@ -63,7 +67,7 @@ export async function sendWelcomeEmail(
   to: string,
   name: string
 ): Promise<void> {
-  console.log(`Sending welcome email to ${to} from ${FromEmail}`);
+  console.log(`[EMAIL] Sending welcome email to ***@${to.split('@')[1] || 'domain'}`);
 
   await transporter.sendMail({
     to,
@@ -88,5 +92,5 @@ export async function sendWelcomeEmail(
     `,
   });
 
-  console.log(`Welcome email sent successfully to ${to}`);
+  console.log(`[EMAIL] Welcome email sent successfully`);
 }

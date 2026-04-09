@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { 
-  Plus, Edit, Trash2, AlertTriangle, CheckCircle2, 
-  TrendingUp, Bell, BellOff, Calendar, ArrowUpRight,
-  Filter, Info, ShieldCheck, Zap
+import {
+  Plus, Edit, Trash2, AlertTriangle, CheckCircle2,
+  Bell, Filter, Zap
 } from "lucide-react";
-import { 
-  useBudgets, useCategories, useBudgetStats, 
-  useCreateBudget, useUpdateBudget, useDeleteBudget 
+import {
+  useCategories, useBudgetStats,
+  useCreateBudget, useUpdateBudget, useDeleteBudget
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -16,8 +15,28 @@ import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+
+type Budget = {
+  id: string;
+  name: string;
+  categoryId?: string;
+  amount: number | string;
+  period: string;
+  startDate: string;
+  endDate?: string;
+  alertsEnabled: boolean;
+  alertThreshold: number | string;
+  spent?: number | string;
+};
+
+type Category = {
+  id: string;
+  name: string;
+  type?: string;
+  color?: string;
+};
 
 type FormData = {
   name: string;
@@ -59,7 +78,7 @@ export default function BudgetsPage() {
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const set = (key: keyof FormData, value: any) => {
+  const set = (key: keyof FormData, value: string | boolean) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
@@ -71,7 +90,7 @@ export default function BudgetsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (b: any) => {
+  const openEdit = (b: Budget) => {
     setEditingId(b.id);
     setForm({
       name: b.name,
@@ -112,8 +131,8 @@ export default function BudgetsPage() {
       else await createBudget.mutateAsync(formPayload);
       toast(editingId ? "Orçamento atualizado!" : "Orçamento criado!");
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro ao salvar", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar", "error");
     }
   };
 
@@ -129,9 +148,10 @@ export default function BudgetsPage() {
   };
 
   const stats = useMemo(() => {
-    const totalBudgeted = budgetStats.reduce((s: number, b: any) => s + Number(b.amount), 0);
-    const totalSpent = budgetStats.reduce((s: number, b: any) => s + Number(b.spent), 0);
-    const overBudgetCount = budgetStats.filter((b: any) => Number(b.spent) > Number(b.amount)).length;
+    const typedStats = budgetStats as unknown as Budget[];
+    const totalBudgeted = typedStats.reduce((s, b) => s + Number(b.amount), 0);
+    const totalSpent = typedStats.reduce((s, b) => s + Number(b.spent), 0);
+    const overBudgetCount = typedStats.filter((b) => Number(b.spent) > Number(b.amount)).length;
     return {
       totalBudgeted,
       totalSpent,
@@ -225,13 +245,13 @@ export default function BudgetsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {budgetStats.map((b: any) => {
+            {(budgetStats as unknown as Budget[]).map((b) => {
               const amount = Number(b.amount);
               const spent = Number(b.spent);
               const pct = Math.min((spent / amount) * 100, 100);
               const isOver = spent > amount;
               const isWarning = !isOver && pct >= Number(b.alertThreshold);
-              const cat = categories.find((c: any) => c.id === b.categoryId);
+              const cat = (categories as unknown as Category[]).find((c) => c.id === b.categoryId);
               const remaining = Math.max(amount - spent, 0);
 
               return (
@@ -335,7 +355,7 @@ export default function BudgetsPage() {
           <FormRow>
             <Field label="Categoria">
               <SearchableSelect 
-                options={categories.filter((c: any) => c.type === 'expense').map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                options={(categories as unknown as Category[]).filter((c) => c.type === 'expense').map((c) => ({ value: c.id, label: c.name, color: c.color }))}
                 value={form.categoryId}
                 onChange={val => set("categoryId", val)}
                 placeholder="Todas as Categorias"

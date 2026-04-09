@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useState } from "react";
 
-const MobileNavContext = createContext({ open: false, setOpen: (_: boolean) => {} });
+const MobileNavContext = createContext({ open: false, setOpen: (_value: boolean) => {} });
 
 export function MobileNavProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);

@@ -5,7 +5,7 @@ import { BarChart3, TrendingUp, TrendingDown, Download } from "lucide-react";
 import { useReports } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 
 export default function ReportsPage() {
@@ -16,17 +16,20 @@ export default function ReportsPage() {
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");
   const { data, isLoading } = useReports(period);
 
-  const stats = data?.summary ?? { income: 0, expense: 0, net: 0 };
-  const incomeByCat = data?.categories?.income ?? [];
-  const expenseByCat = data?.categories?.expense ?? [];
-  const history = data?.history ?? [];
+  type CatEntry = { name: string; value: number; color?: string };
+  type HistoryEntry = { income: number; expense: number; label?: string };
+  const reportData = data as Record<string, unknown> | undefined;
+  const stats = (reportData?.summary as { income: number; expense: number; net: number }) ?? { income: 0, expense: 0, net: 0 };
+  const incomeByCat: CatEntry[] = (reportData?.categories as { income?: CatEntry[] } | undefined)?.income ?? [];
+  const expenseByCat: CatEntry[] = (reportData?.categories as { expense?: CatEntry[] } | undefined)?.expense ?? [];
+  const history: HistoryEntry[] = (reportData?.history as HistoryEntry[]) ?? [];
 
   const handleExport = () => {
     if (!data) return;
     
     let csv = "Tipo,Categoria,Valor\n";
-    incomeByCat.forEach((c: any) => csv += `Receita,${c.name},${c.value}\n`);
-    expenseByCat.forEach((c: any) => csv += `Despesa,${c.name},${c.value}\n`);
+    incomeByCat.forEach((c) => csv += `Receita,${c.name},${c.value}\n`);
+    expenseByCat.forEach((c) => csv += `Despesa,${c.name},${c.value}\n`);
     
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -45,7 +48,7 @@ export default function ReportsPage() {
     );
   }
 
-  const maxVal = Math.max(...history.map((h: any) => Math.max(h.income, h.expense)), 1);
+  const maxVal = Math.max(...history.map((h) => Math.max(h.income, h.expense)), 1);
 
   return (
     <div className="min-h-screen pb-20">
@@ -129,7 +132,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {incomeByCat.map(({ name, value }: any) => (
+                {incomeByCat.map(({ name, value }) => (
                   <div key={name} className="group">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{name}</span>
@@ -165,7 +168,7 @@ export default function ReportsPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                {expenseByCat.map(({ name, value, color }: any) => (
+                {expenseByCat.map(({ name, value, color }) => (
                   <div key={name} className="group">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{name}</span>
@@ -212,7 +215,7 @@ export default function ReportsPage() {
           </div>
           
           <div className="relative h-64 flex items-end justify-between gap-4 px-4 overflow-x-auto">
-            {history.map((item: any, index: number) => (
+            {history.map((item, index) => (
               <div key={index} className="flex flex-col items-center flex-1 min-w-[60px] group">
                 <div className="flex items-end justify-center gap-1.5 h-48 relative w-full">
                   <motion.div
@@ -228,7 +231,7 @@ export default function ReportsPage() {
                     title={`Despesas: ${fmt(item.expense)}`}
                   />
                 </div>
-                <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">{item.month}</span>
+                <span className="mt-4 text-[11px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</span>
               </div>
             ))}
           </div>

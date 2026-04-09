@@ -50,11 +50,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  try {
+    const { id } = await params;
 
-  await db
-    .delete(goals)
-    .where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    await db
+      .delete(goals)
+      .where(and(eq(goals.id, id), eq(goals.userId, userId)));
 
-  return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting goal:", error);
+    return NextResponse.json({ error: "Erro ao excluir meta" }, { status: 500 });
+  }
 }

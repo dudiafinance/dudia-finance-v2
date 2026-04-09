@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from "react";
 import { 
   Plus, ChevronRight, ChevronLeft, CreditCard as CardIcon,
-  Calendar, Clock, TrendingDown, Trash2, Pencil,
-  CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft, Tag
+  Clock, TrendingDown, Trash2, Pencil,
+  CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -19,7 +19,6 @@ import {
   useDeleteCardTransaction,
   useCreateCreditCard,
   useUpdateCreditCard,
-  useDeleteCreditCard,
   usePayCardInvoice,
   useCategories,
   useAccounts,
@@ -35,6 +34,50 @@ const MONTH_NAMES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
+type CreditCard = {
+  id: string;
+  name: string;
+  bank: string;
+  lastDigits: string;
+  limit: number | string;
+  usedAmount?: number | string;
+  dueDay: number | string;
+  closingDay: number | string;
+  gradient: string;
+  color: string;
+  network: string;
+};
+
+type CardTransaction = {
+  id: string;
+  description: string;
+  amount: number | string;
+  categoryId?: string | null;
+  invoiceMonth: number;
+  invoiceYear: number;
+  groupId?: string | null;
+  type?: string;
+  date: string;
+  isPaid?: boolean;
+  installmentNumber?: number;
+  totalInstallments?: number;
+  notes?: string | null;
+};
+
+type AccountItem = {
+  id: string;
+  name: string;
+  type: string;
+  balance: number | string;
+};
+
+type CategoryItem = {
+  id: string;
+  name: string;
+  type?: string;
+  color?: string;
+};
+
 const GRADIENT_PRESETS = [
   { label: "Nubank", value: "from-[#820AD1] to-[#4B0082]", color: "#820AD1" },
   { label: "Inter", value: "from-[#FF7A00] to-[#E65100]", color: "#FF7A00" },
@@ -44,7 +87,7 @@ const GRADIENT_PRESETS = [
   { label: "Rose", value: "from-[#DB2777] to-[#831843]", color: "#DB2777" },
 ];
 
-function getSuggestedInvoice(card: any, dateStr: string) {
+function getSuggestedInvoice(card: CreditCard | null | undefined, dateStr: string) {
   const d = new Date(dateStr + 'T12:00:00'); 
   let m = d.getMonth() + 1;
   let y = d.getFullYear();
@@ -70,10 +113,11 @@ export default function CreditCardsPage() {
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
-  const [editingCard, setEditingCard] = useState<any>(null);
-  const [editingTx, setEditingTx] = useState<any>(null);
+  const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
+  const [editingTx, setEditingTx] = useState<CardTransaction | null>(null);
 
-  const { data: cards = [], isLoading: isLoadingCards } = useCreditCards();
+  const { data: rawCards = [], isLoading: isLoadingCards } = useCreditCards();
+  const cards = rawCards as unknown as CreditCard[];
   const selectedCard = cards.find(c => c.id === selectedCardId) || cards[0];
   
   React.useEffect(() => {
@@ -82,17 +126,20 @@ export default function CreditCardsPage() {
     }
   }, [cards, selectedCardId]);
 
-  const { data: transactions = [], isLoading: isLoadingTx } = useCardTransactions(
+  const { data: rawTransactions = [], isLoading: isLoadingTx } = useCardTransactions(
     selectedCard?.id, 
     currentMonth, 
     currentYear
   );
 
-  const { data: categories = [] } = useCategories();
-  const { data: accounts = [] } = useAccounts();
+  const transactions = rawTransactions as unknown as CardTransaction[];
+  const { data: rawCategories = [] } = useCategories();
+  const categories = rawCategories as unknown as CategoryItem[];
+  const { data: rawAccounts = [] } = useAccounts();
+  const accounts = rawAccounts as unknown as AccountItem[];
   const { data: invoiceStatusData } = useInvoiceStatus(selectedCard?.id, currentMonth, currentYear);
   const updateInvoiceStatus = useUpdateInvoiceStatus(selectedCard?.id);
-  const currentInvoiceStatus = invoiceStatusData?.status || "ABERTA";
+  const currentInvoiceStatus = (invoiceStatusData as { status?: string } | undefined)?.status || "ABERTA";
 
   const invoiceTotal = transactions.reduce((acc, tx) => acc + Number(tx.amount), 0);
 
@@ -494,7 +541,7 @@ export default function CreditCardsPage() {
 
 // --- Sub-Modais ---
 
-function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose: () => void, editingCard?: any }) {
+function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose: () => void, editingCard?: CreditCard | null }) {
   const [form, setForm] = useState({
     name: "", bank: "", lastDigits: "", limit: "", dueDay: "10", closingDay: "3",
     gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
@@ -602,7 +649,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
   );
 }
 
-function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear }: any) {
+function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear }: { open: boolean, onClose: () => void, selectedCard?: CreditCard | null, currentMonth: number, currentYear: number }) {
   const [form, setForm] = useState({
     description: "", amount: "", type: "purchase", date: new Date().toISOString().split('T')[0],
     categoryId: "", launchType: "single", totalInstallments: "2", startInstallment: "1", isPending: false,
@@ -621,10 +668,10 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   };
 
   React.useEffect(() => {
-    if (open) {
+    if (open && selectedCard) {
       const suggested = getSuggestedInvoice(selectedCard, form.date);
       setForm(p => ({ ...p, invoiceMonth: suggested.month, invoiceYear: suggested.year }));
-    }
+    }// eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, selectedCard]);
 
   const calculatedTotal = useMemo(() => {
@@ -645,7 +692,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
     }, { onSuccess: onClose });
   };
 
-  const expenseCategories = categories.filter((c: any) => c.type === 'expense');
+  const expenseCategories = (categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense');
 
   return (
      <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
@@ -685,7 +732,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
           <FormRow>
             <Field label="Categoria">
               <SearchableSelect 
-                options={expenseCategories.map((c: any) => ({ value: c.id, label: c.name, color: c.color }))}
+                options={expenseCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
                 value={form.categoryId}
                 onChange={val => setForm(p => ({...p, categoryId: val}))}
                 placeholder="Selecione a categoria..."
@@ -751,7 +798,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
             </Field>
 
             <Field label="Tipo de Lançamento">
-              <Select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value as any}))} className="h-12 rounded-xl font-semibold">
+              <Select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value}))} className="h-12 rounded-xl font-semibold">
                 <option value="single">À Vista</option>
                 <option value="installment" disabled={form.type === 'refund'}>Parcelado</option>
                 <option value="fixed" disabled={form.type === 'refund'}>Fixo/Mensal</option>
@@ -840,7 +887,23 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   );
 }
 
-function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting }: any) {
+type LaunchForm = {
+  description: string;
+  amount: string;
+  type: string;
+  date: string;
+  categoryId: string;
+  launchType: string;
+  totalInstallments: string;
+  startInstallment: string;
+  isPending: boolean;
+  invoiceMonth: number;
+  invoiceYear: number;
+  amountMode: "total" | "installment";
+  tags: string[];
+};
+
+function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting }: { open: boolean, onClose: () => void, form: LaunchForm, onConfirm: () => void, isSubmitting: boolean }) {
   const installments = useMemo(() => {
     const n = Number(form.totalInstallments) || 1;
     const start = Number(form.startInstallment) || 1;
@@ -908,13 +971,14 @@ function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting 
   );
 }
 
-function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fmt }: any) {
+function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fmt }: { open: boolean, onClose: () => void, card?: CreditCard | null, total: number, accounts: AccountItem[], month: number, year: number, fmt: (v: number) => string }) {
   const [form, setForm] = useState({ accountId: "", amount: String(total), date: new Date().toISOString().split('T')[0] });
   const payInvoice = usePayCardInvoice();
 
   React.useEffect(() => { if(open) setForm(p => ({...p, amount: String(total || 0) }))}, [open, total]);
 
   const handlePay = () => {
+    if (!card) return;
     payInvoice.mutate({
       cardId: card.id,
       accountId: form.accountId,
@@ -937,7 +1001,7 @@ function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fm
         <Field label="Conta de Origem" required>
           <Select value={form.accountId} onChange={e => setForm(p => ({...p, accountId: e.target.value}))} className="h-11 rounded-md">
             <option value="">Selecione a conta...</option>
-            {accounts.filter((a: any) => a.type !== 'credit_card').map((acc: any) => (
+            {accounts.filter((a) => a.type !== 'credit_card').map((acc) => (
               <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
             ))}
           </Select>
@@ -959,8 +1023,9 @@ function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fm
   );
 }
 
-function EditTxModal({ open, onClose, tx, card }: any) {
-  const [form, setForm] = useState<any>({ description: "", amount: "", categoryId: "", invoiceMonth: 1, invoiceYear: 2024 });
+type EditTxForm = { description: string; amount: string; categoryId: string; invoiceMonth: number; invoiceYear: number; };
+function EditTxModal({ open, onClose, tx, card }: { open: boolean, onClose: () => void, tx?: CardTransaction | null, card?: CreditCard | null }) {
+  const [form, setForm] = useState<EditTxForm>({ description: "", amount: "", categoryId: "", invoiceMonth: 1, invoiceYear: 2024 });
   const [updateGroup, setUpdateGroup] = useState(false);
   const updateTx = useUpdateCardTransaction(card?.id || "");
   const deleteTx = useDeleteCardTransaction(card?.id || "");
@@ -980,19 +1045,21 @@ function EditTxModal({ open, onClose, tx, card }: any) {
   }, [tx, open]);
 
   const handleUpdate = () => {
+    if (!tx) return;
     const isRefund = Number(tx.amount) < 0;
     const amountVal = Math.abs(Number(form.amount)) * (isRefund ? -1 : 1);
-    
-    updateTx.mutate({ 
-      id: tx.id, 
-      ...form, 
+
+    updateTx.mutate({
+      id: tx.id,
+      ...form,
       amount: amountVal,
       categoryId: form.categoryId || null,
-      updateGroup 
+      updateGroup
     }, { onSuccess: onClose });
   };
 
   const handleDelete = () => {
+    if (!tx) return;
     if (window.confirm("Deseja realmente excluir este lançamento?")) {
       deleteTx.mutate(tx.id, { onSuccess: onClose });
     }
@@ -1004,17 +1071,17 @@ function EditTxModal({ open, onClose, tx, card }: any) {
     <Modal open={open} onClose={onClose} title="Editar Lançamento" size="md">
       <div className="space-y-5 pt-2">
         <Field label="Descrição">
-          <Input value={form.description} onChange={e => setForm((p: any) => ({...p, description: e.target.value}))} className="h-11 rounded-md" />
+          <Input value={form.description} onChange={e => setForm((p) => ({...p, description: e.target.value}))} className="h-11 rounded-md" />
         </Field>
 
         <FormRow>
           <Field label="Valor (R$)">
-            <Input type="number" value={form.amount} onChange={e => setForm((p: any) => ({...p, amount: e.target.value}))} className="h-11 rounded-md" />
+            <Input type="number" value={form.amount} onChange={e => setForm((p) => ({...p, amount: e.target.value}))} className="h-11 rounded-md" />
           </Field>
           <Field label="Categoria">
-            <Select value={form.categoryId} onChange={e => setForm((p: any) => ({...p, categoryId: e.target.value}))} className="h-11 rounded-md">
+            <Select value={form.categoryId} onChange={e => setForm((p) => ({...p, categoryId: e.target.value}))} className="h-11 rounded-md">
               <option value="">Sem Categoria</option>
-              {categories.filter((c: any) => c.type === 'expense').map((c: any) => (
+              {(categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense').map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </Select>
@@ -1023,14 +1090,14 @@ function EditTxModal({ open, onClose, tx, card }: any) {
 
         <FormRow>
           <Field label="Mês">
-            <Select value={form.invoiceMonth} onChange={e => setForm((p: any) => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-11 rounded-md">
+            <Select value={form.invoiceMonth} onChange={e => setForm((p) => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-11 rounded-md">
               {MONTH_NAMES.map((name, i) => (
                 <option key={name} value={i + 1}>{name}</option>
               ))}
             </Select>
           </Field>
           <Field label="Ano">
-            <Input type="number" value={form.invoiceYear} onChange={e => setForm((p: any) => ({...p, invoiceYear: Number(e.target.value)}))} className="h-11 rounded-md" />
+            <Input type="number" value={form.invoiceYear} onChange={e => setForm((p) => ({...p, invoiceYear: Number(e.target.value)}))} className="h-11 rounded-md" />
           </Field>
         </FormRow>
 

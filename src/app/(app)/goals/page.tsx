@@ -2,9 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { 
-  Plus, Edit, Trash2, Target, Calendar, TrendingUp, 
-  CheckCircle2, Clock, XCircle, PlusCircle, 
-  Wallet, ArrowRight, Info, AlertCircle 
+  Plus, Edit, Trash2, Target,CheckCircle2, PlusCircle, AlertCircle 
 } from "lucide-react";
 import { 
   useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, 
@@ -12,10 +10,10 @@ import {
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, Textarea, FormRow } from "@/components/ui/form-field";
+import { Field, Input, Select, Textarea } from "@/components/ui/form-field";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 
 type FormData = {
@@ -29,6 +27,26 @@ type FormData = {
   priority: string;
   status: string;
   notes: string;
+};
+
+type Goal = {
+  id: string;
+  name: string;
+  goalType?: string;
+  targetAmount?: number | string | null;
+  currentAmount?: number | string;
+  startDate?: string;
+  endDate?: string;
+  monthlyContribution?: number | string | null;
+  priority: string;
+  status: string;
+  notes?: string;
+};
+
+type AccountItem = {
+  id: string;
+  name: string;
+  balance: number | string;
 };
 
 const emptyForm = (): FormData => ({
@@ -71,7 +89,7 @@ export default function GoalsPage() {
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
-  const set = (key: keyof FormData, value: any) => {
+  const set = (key: keyof FormData, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
@@ -83,7 +101,7 @@ export default function GoalsPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (g: any) => {
+  const openEdit = (g: Goal) => {
     setEditingId(g.id);
     setForm({
       name: g.name,
@@ -125,8 +143,8 @@ export default function GoalsPage() {
       else await createGoal.mutateAsync(payload);
       toast(editingId ? "Meta atualizada!" : "Meta criada com sucesso!");
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message || "Erro ao salvar meta", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar meta", "error");
     }
   };
 
@@ -141,20 +159,21 @@ export default function GoalsPage() {
         accountId: depositForm.accountId,
         amount: Number(depositForm.amount),
         date: depositForm.date,
-        description: `Depósito: ${goals.find((g: any) => g.id === depositModal)?.name}`
+        description: `Depósito: ${(goals as unknown as Goal[]).find((g) => g.id === depositModal)?.name}`
       });
       toast("Depósito realizado e saldo atualizado!");
       setDepositModal(null);
       setDepositForm({ amount: "", accountId: "", date: new Date().toISOString().split("T")[0] });
-    } catch (e: any) {
-      toast(e.message || "Erro no depósito", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro no depósito", "error");
     }
   };
 
   const stats = useMemo(() => {
-    const active = goals.filter((g: any) => g.status === "active");
-    const totalTarget = active.reduce((acc: number, g: any) => acc + Number(g.targetAmount || 0), 0);
-    const totalCurrent = goals.reduce((acc: number, g: any) => acc + Number(g.currentAmount || 0), 0);
+    const typedGoals = goals as unknown as Goal[];
+    const active = typedGoals.filter((g) => g.status === "active");
+    const totalTarget = active.reduce((acc, g) => acc + Number(g.targetAmount || 0), 0);
+    const totalCurrent = typedGoals.reduce((acc, g) => acc + Number(g.currentAmount || 0), 0);
     return {
       total: goals.length,
       active: active.length,
@@ -230,7 +249,7 @@ export default function GoalsPage() {
       ) : (
         <div className="px-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {goals.map((g: any) => {
+            {(goals as unknown as Goal[]).map((g) => {
               const current = Number(g.currentAmount);
               const target = Number(g.targetAmount);
               const monthly = Number(g.monthlyContribution || 0);
@@ -325,7 +344,7 @@ export default function GoalsPage() {
 
                   {g.status === "active" && (
                     <Button 
-                      onClick={() => { setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: accounts[0]?.id || "" })); }}
+                      onClick={() => { setDepositModal(g.id); setDepositForm(prev => ({ ...prev, accountId: (accounts[0] as AccountItem | undefined)?.id || "" })); }}
                       className="w-full font-bold shadow-lg shadow-emerald-500/20 bg-emerald-500 hover:bg-emerald-600 mt-6 h-12"
                     >
                       <PlusCircle className="h-5 w-5 mr-2" />
@@ -416,7 +435,7 @@ export default function GoalsPage() {
 
           <Field label="Conta de Origem">
             <Select value={depositForm.accountId} onChange={e => setDepositForm(prev => ({ ...prev, accountId: e.target.value }))} className="rounded-md">
-              {accounts.map((acc: any) => (
+              {(accounts as unknown as AccountItem[]).map((acc) => (
                 <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
               ))}
             </Select>

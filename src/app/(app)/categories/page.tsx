@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { 
-  Plus, Search, Edit, Trash2, Tag, Sparkles, Loader2, 
-  Coffee, Car, Home, Heart, Film, Book, Briefcase, Laptop, 
-  TrendingUp, ShoppingBag, Zap, Phone, MoreHorizontal, 
-  ChevronLeft, ChevronRight, Calculator, PieChart, Layers,
-  CheckCircle2, AlertCircle
+import React, { useState } from "react";
+import {
+  Plus, Search, Edit, Trash2, Sparkles, Loader2,
+  Coffee, Car, Home, Heart, Film, Book, Briefcase, Laptop,
+  TrendingUp, ShoppingBag, Zap, Phone, MoreHorizontal,
+  ChevronLeft, ChevronRight, Layers,
+  AlertCircle
 } from "lucide-react";
 import { 
   useCategories, 
   useCreateCategory, 
   useUpdateCategory, 
   useDeleteCategory, 
-  useTags,
   useCategoryStats 
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
@@ -22,16 +21,29 @@ import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
 import { TagInput } from "@/components/ui/tag-input";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSession } from "next-auth/react";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-const ICON_MAP: Record<string, any> = {
+type CategoryItem = {
+  id: string;
+  name: string;
+  type: "income" | "expense";
+  color: string;
+  icon?: string;
+  budgetAmount?: number | string | null;
+  budgetPeriod?: string;
+  tags?: string[];
+};
+
+import type { LucideProps } from "lucide-react";
+type IconComponent = React.ForwardRefExoticComponent<Omit<LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+
+const ICON_MAP: Record<string, IconComponent> = {
   coffee: Coffee,
   car: Car,
   home: Home,
@@ -84,10 +96,6 @@ const emptyForm = (): FormData => ({
 });
 
 export default function CategoriesPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
-  const fmt = (v: number) => formatCurrency(v, userCurrency);
-
   const { toast } = useToast();
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth() + 1);
@@ -98,7 +106,6 @@ export default function CategoriesPage() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
-  const { data: globalTags = [] } = useTags();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -119,7 +126,7 @@ export default function CategoriesPage() {
     else setCurrentMonth(v => v - 1);
   };
 
-  const set = (key: keyof FormData, value: any) => {
+  const set = (key: keyof FormData, value: string | string[]) => {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   };
@@ -131,7 +138,7 @@ export default function CategoriesPage() {
     setModalOpen(true);
   };
 
-  const openEdit = (c: any) => {
+  const openEdit = (c: CategoryItem) => {
     setEditingId(c.id);
     setForm({
       name: c.name,
@@ -173,8 +180,8 @@ export default function CategoriesPage() {
         toast("Categoria criada!");
       }
       setModalOpen(false);
-    } catch (e: any) {
-      toast(e.message ?? "Erro ao salvar", "error");
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Erro ao salvar", "error");
     }
   };
 
@@ -207,15 +214,14 @@ export default function CategoriesPage() {
     }
   };
 
-  const filtered = categories.filter((c: any) => {
+  const typedCategories = categories as unknown as CategoryItem[];
+
+  const filtered = typedCategories.filter((c) => {
     const matchSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.tags ?? []).some((t: string) => t.includes(searchTerm.toLowerCase()));
     const matchType = filterType === "all" || c.type === filterType;
     return matchSearch && matchType;
   });
-
-  const incomeCount = categories.filter((c: any) => c.type === "income").length;
-  const expenseCount = categories.filter((c: any) => c.type === "expense").length;
 
   if (isLoading) {
     return (
@@ -328,7 +334,7 @@ export default function CategoriesPage() {
                   <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Receitas</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filtered.filter((c: any) => c.type === "income").map((c: any) => (
+                  {filtered.filter((c) => c.type === "income").map((c) => (
                     <CategoryCard key={c.id} category={c} spent={stats[c.id] || 0} onEdit={openEdit} onDelete={setDeleteId} />
                   ))}
                 </div>
@@ -342,7 +348,7 @@ export default function CategoriesPage() {
                   <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Despesas</h2>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filtered.filter((c: any) => c.type === "expense").map((c: any) => (
+                  {filtered.filter((c) => c.type === "expense").map((c) => (
                     <CategoryCard key={c.id} category={c} spent={stats[c.id] || 0} onEdit={openEdit} onDelete={setDeleteId} />
                   ))}
                 </div>
@@ -436,7 +442,7 @@ export default function CategoriesPage() {
   );
 }
 
-function CategoryCard({ category, spent, onEdit, onDelete }: { category: any, spent: number, onEdit: (c: any) => void, onDelete: (id: string) => void }) {
+function CategoryCard({ category, spent, onEdit, onDelete }: { category: CategoryItem, spent: number, onEdit: (c: CategoryItem) => void, onDelete: (id: string) => void }) {
   const Icon = ICON_MAP[category.icon ?? "more-horizontal"] || MoreHorizontal;
   const budget = category.budgetAmount ? Number(category.budgetAmount) : 0;
   
@@ -484,9 +490,9 @@ function CategoryCard({ category, spent, onEdit, onDelete }: { category: any, sp
 
       <div className="mb-4">
         <h3 className="font-semibold text-slate-900 dark:text-white leading-tight truncate">{category.name}</h3>
-        {category.tags?.length > 0 && (
+        {(category.tags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1 mt-1.5">
-            {category.tags.slice(0, 2).map((t: string) => (
+            {(category.tags ?? []).slice(0, 2).map((t: string) => (
               <span key={t} className="text-[10px] font-medium text-slate-400 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded">#{t}</span>
             ))}
           </div>

@@ -1,10 +1,10 @@
 "use client";
 
-import { Bell, Search, User, Menu } from "lucide-react";
+import Image from "next/image";
+import { Search, User, Menu } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useMobileNav } from "./mobile-nav-context";
 import { NotificationBell } from "./notification-bell";
-import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 export function Header() {
@@ -55,7 +55,14 @@ export function Header() {
           </div>
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white text-sm font-bold select-none overflow-hidden shadow-lg shadow-blue-500/20 ring-2 ring-white dark:ring-slate-900 group-hover:ring-blue-500/20 transition-all">
             {session?.user?.image ? (
-              <img src={session.user.image} alt={name} className="h-full w-full object-cover" />
+              <Image 
+                src={session.user.image} 
+                alt={name} 
+                width={40} 
+                height={40} 
+                className="h-full w-full object-cover"
+                unoptimized
+              />
             ) : (
               initials || <User className="h-5 w-5" />
             )}

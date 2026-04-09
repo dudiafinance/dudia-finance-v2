@@ -5,7 +5,7 @@ import { budgets, transactions, cardTransactions, categories } from "@/lib/db/sc
 import { eq, and, gte, sql } from "drizzle-orm";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -87,9 +87,9 @@ export async function GET(req: NextRequest) {
       // Sum from aggregations
       let totalSpent = 0;
 
-      const sumAggs = (aggList: any[]) => {
+      const sumAggs = (aggList: { categoryId?: string | null; date?: string | null; total?: string | number | null }[]) => {
         for (const row of aggList) {
-          if (row.categoryId && validCategoryIds.has(row.categoryId)) {
+          if (row.categoryId && validCategoryIds.has(row.categoryId) && row.date) {
             if (row.date >= startDateStr && row.date <= endDateStr) {
               totalSpent += Number(row.total || 0);
             }
@@ -109,7 +109,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(results);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Budget Stats Error:", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }

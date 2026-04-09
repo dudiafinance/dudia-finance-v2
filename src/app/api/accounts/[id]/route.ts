@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const data = parsed.data;
-  const updateData: any = { ...data, updatedAt: new Date() };
+  const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
   if (data.balance !== undefined) updateData.balance = String(data.balance);
 
   const [row] = await db

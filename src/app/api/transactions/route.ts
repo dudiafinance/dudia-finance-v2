@@ -6,6 +6,7 @@ import { eq, desc, and, gte, lte, ilike, or, count, SQL, sql } from "drizzle-orm
 import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { sanitizeText, sanitizeOptionalText } from "@/lib/sanitize";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -107,39 +108,47 @@ export async function POST(req: NextRequest) {
 
     const d = parsed.data;
 
-    // Caso: Transação Recorrente (Gerar visão futura)
+    const safeDescription = sanitizeText(d.description);
+    const safeNotes = sanitizeOptionalText(d.notes);
+    const safeLocation = sanitizeOptionalText(d.location);
+
+    // Caso: Transação Recorrente (Lazy: gera apenas as primeiras 12 ocorrências)
     if (d.subtype === 'recurring') {
-      const n = d.totalOccurrences ?? 12; // Padrão 12 meses conforme solicitado
+      const MAX_RECURRING = 60;
+      const n = Math.min(d.totalOccurrences ?? 12, MAX_RECURRING);
       const groupId = randomUUID();
       const startDate = d.date; // YYYY-MM-DD
       const results = [];
 
-      for (let i = 0; i < n; i++) {
-        const baseDate = new Date(startDate + 'T12:00:00');
-        baseDate.setMonth(baseDate.getMonth() + i);
-        const dateStr = baseDate.toISOString().split('T')[0];
+      // Batch: create all occurrences in parallel (capped at MAX_RECURRING)
+      const rows = await Promise.all(
+        Array.from({ length: n }, (_, i) => {
+          const baseDate = new Date(startDate + 'T12:00:00');
+          baseDate.setMonth(baseDate.getMonth() + i);
+          const dateStr = baseDate.toISOString().split('T')[0];
 
-        const newRow = await FinancialEngine.addTransaction({
-          userId,
-          accountId: d.accountId,
-          categoryId: d.categoryId ?? null,
-          amount: String(d.amount),
-          type: d.type,
-          date: dateStr,
-          description: d.description,
-          notes: d.notes ?? null,
-          isPaid: i === 0 ? d.isPaid : false, // Apenas a primeira é marcada como paga (se solicitado)
-          subtype: 'recurring',
-          recurringGroupId: groupId,
-          totalOccurrences: n,
-          currentOccurrence: i + 1,
-          dueDate: d.dueDate ?? null,
-          receiveDate: d.receiveDate ?? null,
-          tags: d.tags,
-          location: d.location ?? null,
-        });
-        results.push(newRow);
-      }
+          return FinancialEngine.addTransaction({
+            userId,
+            accountId: d.accountId,
+            categoryId: d.categoryId ?? null,
+            amount: String(d.amount),
+            type: d.type,
+            date: dateStr,
+            description: safeDescription,
+            notes: safeNotes,
+            isPaid: i === 0 ? d.isPaid : false,
+            subtype: 'recurring',
+            recurringGroupId: groupId,
+            totalOccurrences: n,
+            currentOccurrence: i + 1,
+            dueDate: d.dueDate ?? null,
+            receiveDate: d.receiveDate ?? null,
+            tags: d.tags,
+            location: safeLocation,
+          });
+        })
+      );
+      results.push(...rows);
       return NextResponse.json(results, { status: 201 });
     }
 
@@ -151,20 +160,20 @@ export async function POST(req: NextRequest) {
       amount: String(d.amount),
       type: d.type,
       date: d.date,
-      description: d.description,
-      notes: d.notes ?? null,
+      description: safeDescription,
+      notes: safeNotes,
       isPaid: d.isPaid,
       subtype: d.subtype ?? 'single',
       dueDate: d.dueDate ?? null,
       receiveDate: d.receiveDate ?? null,
       tags: d.tags,
-      location: d.location ?? null,
+      location: safeLocation,
     });
 
     return NextResponse.json(row, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating transaction:", error);
-    return NextResponse.json({ error: error.message || "Erro ao criar transação" }, { status: 500 });
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao criar transação" }, { status: 500 });
   }
 }

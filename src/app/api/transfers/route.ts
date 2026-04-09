@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result, { status: 201 });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error creating transfer:", error);
-    return NextResponse.json({ 
-      error: error.message || "Erro ao processar transferência" 
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : "Erro ao processar transferência"
     }, { status: 500 });
   }
 }

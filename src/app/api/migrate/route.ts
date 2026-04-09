@@ -3,19 +3,26 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
+  // Security: Disable in production without explicit migration secret
+  const isProduction = process.env.NODE_ENV === "production";
   const authHeader = req.headers.get("authorization");
   const expectedAuth = process.env.MIGRATION_SECRET;
 
-  if (!expectedAuth) {
-    return NextResponse.json({ error: "Migration endpoint disabled" }, { status: 403 });
+  // In production, require MIGRATION_SECRET to be set AND valid
+  if (isProduction) {
+    if (!expectedAuth || expectedAuth.length < 32) {
+      console.error("[SECURITY] Migration endpoint blocked: MIGRATION_SECRET not configured or too weak");
+      return NextResponse.json({ error: "Migration endpoint disabled" }, { status: 403 });
+    }
   }
 
-  if (authHeader !== `Bearer ${expectedAuth}`) {
+  if (authHeader !==`Bearer ${expectedAuth}`) {
+    console.warn(`[SECURITY] Unauthorized migration attempt from ${req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown"}`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    console.log("🔄 Iniciando migração automática de metas...");
+    console.log("[MIGRATE] Starting automatic migration...");
 
     // 1. Make targetAmount nullable
     console.log("📝 Tornando target_amount nullable...");
@@ -110,7 +117,7 @@ export async function POST(req: NextRequest) {
       ]
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("❌ Erro na migração:", error);
     return NextResponse.json({
       success: false,

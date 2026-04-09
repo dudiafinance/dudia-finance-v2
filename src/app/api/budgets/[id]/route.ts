@@ -18,7 +18,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 
   const d = parsed.data;
-  const updateData: any = { updatedAt: new Date() };
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (d.name) updateData.name = d.name;
   if (d.categoryId !== undefined) updateData.categoryId = d.categoryId;
   if (d.amount !== undefined) updateData.amount = String(d.amount);

@@ -7,29 +7,34 @@ import { eq } from "drizzle-orm";
 
 export async function POST() {
   const session = await auth();
-  const userId = (session?.user as any)?.id;
+  const userId = (session?.user as { id?: string })?.id;
   
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const cards = await db
-    .select()
-    .from(creditCards)
-    .where(eq(creditCards.userId, userId));
+  try {
+    const cards = await db
+      .select()
+      .from(creditCards)
+      .where(eq(creditCards.userId, userId));
 
-  for (const card of cards) {
-    await recalculateUsedAmount(card.id);
+    for (const card of cards) {
+      await recalculateUsedAmount(card.id);
+    }
+
+    const updatedCards = await db
+      .select()
+      .from(creditCards)
+      .where(eq(creditCards.userId, userId));
+
+    return NextResponse.json({ 
+      success: true, 
+      cardsUpdated: cards.length,
+      cards: updatedCards.map(c => ({ id: c.id, name: c.name, usedAmount: c.usedAmount }))
+    });
+  } catch (error) {
+    console.error("Error recalculating cards:", error);
+    return NextResponse.json({ error: "Erro ao recalcular cartões" }, { status: 500 });
   }
-
-  const updatedCards = await db
-    .select()
-    .from(creditCards)
-    .where(eq(creditCards.userId, userId));
-
-  return NextResponse.json({ 
-    success: true, 
-    cardsUpdated: cards.length,
-    cards: updatedCards.map(c => ({ id: c.id, name: c.name, usedAmount: c.usedAmount }))
-  });
 }

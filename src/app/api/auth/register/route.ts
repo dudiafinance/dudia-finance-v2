@@ -5,8 +5,18 @@ import { eq } from "drizzle-orm";
 import { hashPassword } from "@/lib/auth/password";
 import { sendWelcomeEmail } from "@/lib/services/email";
 import { registerSchema } from "@/lib/validations";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(`register:${ip}`, 5, 15 * 60 * 1000); // 5 per 15 min
+  if (!rl.success) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Tente novamente em alguns minutos." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const parsed = registerSchema.safeParse(body);

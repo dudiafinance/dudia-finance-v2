@@ -136,3 +136,28 @@ export const transferSchema = z.object({
   message: "As contas de origem e destino devem ser diferentes",
   path: ["toAccountId"],
 });
+
+export const goalDepositSchema = z.object({
+  goalId: z.string().uuid("Meta inválida"),
+  accountId: z.string().uuid("Conta inválida"),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  date: z.string().min(1, "Data obrigatória").optional().default(() => new Date().toISOString().slice(0, 10)),
+  description: z.string().max(255).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+});
+
+export const payInvoiceSchema = z.object({
+  userId: z.string().uuid(),
+  cardId: z.string().uuid("Cartão inválido"),
+  accountId: z.string().uuid("Conta inválida"),
+  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  description: z.string().max(255).optional(),
+  date: z.string().min(1, "Data obrigatória"),
+  month: z.number().int().min(1).max(12).optional(),
+  year: z.number().int().min(2020).max(2100).optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+});
+
+export const invoiceStatusSchema = z.object({
+  status: z.enum(["ABERTA", "FECHADA", "PAGA"]),
+});
