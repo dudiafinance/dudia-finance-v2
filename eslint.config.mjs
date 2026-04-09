@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Skill sample files are not production code
     "claude-skills/**",
+    // AIOX Core files are third-party logic and should be ignored
+    ".aiox-core/**",
     // Scripts are utility files with relaxed rules
     "scripts/**",
   ]),
