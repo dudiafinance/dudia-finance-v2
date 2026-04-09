@@ -9,6 +9,7 @@ import { Field, Input } from "@/components/ui/form-field";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 type TagItem = {
   id: string;
@@ -221,9 +222,6 @@ export default function TagsPage() {
           </div>
         </div>
       </Modal>
-    </div>
-  );
-}
     </div>
   );
 }

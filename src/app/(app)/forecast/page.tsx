@@ -64,6 +64,42 @@ export default function ForecastPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="w-full min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mb-4 border border-red-500/20">
+          <Info className="h-8 w-8" />
+        </div>
+        <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Erro de Projeção</h2>
+        <p className="text-xs text-muted-foreground mt-2 max-w-xs">Não foi possível processar o motor de previsão. Verifique sua conexão ou tente novamente.</p>
+      </div>
+    );
+  }
+
+  const bestMonth = data.reduce((best, m) => m.netBalance > best.netBalance ? m : best, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
+  const worstMonth = data.reduce((worst, m) => m.netBalance < worst.netBalance ? m : worst, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
+
+  const statCards = [
+    { label: "Saldo Inicial", value: fmt(data[0]?.startingBalance ?? 0) },
+    { 
+      label: "Projeção (12m)", 
+      value: fmt(data[12]?.cumulativeBalance ?? 0), 
+      color: (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-emerald-500" : "text-red-500" 
+    },
+    { 
+      label: "Melhor Mensal", 
+      value: fmt(bestMonth?.netBalance ?? 0), 
+      color: "text-emerald-500", 
+      sub: bestMonth?.monthName 
+    },
+    { 
+      label: "Gargalo Crítico", 
+      value: fmt(worstMonth?.netBalance ?? 0), 
+      color: "text-red-500", 
+      sub: worstMonth?.monthName 
+    },
+  ];
+
   return (
     <div className="w-full animate-in fade-in duration-500">
       {/* Header */}
@@ -110,67 +146,42 @@ export default function ForecastPage() {
               <AreaChart data={data}>
                 <defs>
                   <linearGradient id="colorBalance" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--foreground)" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="var(--foreground)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                 <XAxis 
                   dataKey="monthName" 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  tickFormatter={(v) => v.split(' ')[0].substring(0, 3)}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontWeight: "bold" }}
+                  tickFormatter={(v) => v.split(' ')[0].substring(0, 3).toUpperCase()}
                 />
                 <YAxis 
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)", fontWeight: "bold" }}
                   tickFormatter={(v) => `R$ ${v / 1000}k`}
                 />
                 <Tooltip 
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload as ForecastMonth;
-                      return (
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3 shadow-lg">
-                          <p className="mb-2 text-xs font-bold text-slate-900 dark:text-white capitalize">{d.monthName}</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between gap-8 text-[11px]">
-                              <span className="text-slate-500">{d.isCurrent ? "Saldo Atual:" : "Saldo Inicial:"}</span>
-                              <span className="font-medium text-slate-900 dark:text-slate-200">{fmt(d.startingBalance)}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-8 text-[11px]">
-                              <span className="text-slate-500">{d.isCurrent ? "Próx. Entradas/Saídas:" : "Resultado:"}</span>
-                              <span className={cn("font-medium", d.netBalance >= 0 ? "text-emerald-600" : "text-red-600")}>
-                                {d.netBalance >= 0 ? "+" : ""}{fmt(d.netBalance)}
-                              </span>
-                            </div>
-                            <div className="border-t border-slate-100 dark:border-slate-700 pt-1 flex items-center justify-between gap-8 text-[11px]">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">Saldo Final:</span>
-                              <span className="font-bold text-blue-600">{fmt(d.cumulativeBalance)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
+                  contentStyle={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
+                  itemStyle={{ textTransform: 'uppercase' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="cumulativeBalance" 
-                  stroke="#3b82f6" 
+                  stroke="var(--foreground)" 
                   strokeWidth={2}
                   fillOpacity={1} 
                   fill="url(#colorBalance)" 
                   animationDuration={1500}
                 />
-                <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="3 3" />
+                <ReferenceLine y={0} stroke="var(--destructive)" strokeDasharray="3 3" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </motion.div>
+        </div>
 
         {/* Monthly cards */}
         <div className="space-y-6">
@@ -250,8 +261,6 @@ export default function ForecastPage() {
             })}
           </div>
         </div>
-      </div>
-    </div>
       </div>
     </div>
   );

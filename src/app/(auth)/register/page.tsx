@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, Check } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const router = useRouter();

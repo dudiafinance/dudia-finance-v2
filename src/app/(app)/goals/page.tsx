@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { 
-  Plus, Edit, Trash2, Target,CheckCircle2, PlusCircle, AlertCircle 
+  Plus, Edit, Trash2, Target, CheckCircle2, PlusCircle, Info
 } from "lucide-react";
 import { 
   useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal, 
@@ -88,6 +88,8 @@ export default function GoalsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  
+  const showBalances = true;
 
   const set = (key: keyof FormData, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -161,7 +163,7 @@ export default function GoalsPage() {
         date: depositForm.date,
         description: `Depósito: ${(goals as unknown as Goal[]).find((g) => g.id === depositModal)?.name}`
       });
-      toast("Depósito realizado e saldo atualizado!");
+      toast("Depósito realizado!");
       setDepositModal(null);
       setDepositForm({ amount: "", accountId: "", date: new Date().toISOString().split("T")[0] });
     } catch (e) {
@@ -242,7 +244,6 @@ export default function GoalsPage() {
         </div>
       </div>
 
-      {/* Goals List */}
       <div className="px-6 py-8">
         {goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
@@ -256,9 +257,9 @@ export default function GoalsPage() {
               const target = Number(g.targetAmount);
               const monthly = Number(g.monthlyContribution || 0);
               const progress = target > 0 ? (current / target) * 100 : 0;
-              const remaining = target - current;
               const priority = priorityConfig[g.priority as keyof typeof priorityConfig] || priorityConfig.medium;
               
+              const remaining = target - current;
               const monthsLeft = monthly > 0 && remaining > 0 ? Math.ceil(remaining / monthly) : null;
               const estimatedDate = monthsLeft ? new Date(new Date().setMonth(new Date().getMonth() + monthsLeft)) : null;
 
@@ -312,11 +313,11 @@ export default function GoalsPage() {
                   </div>
 
                   <div className="space-y-4 mb-6 relative z-10">
-                    <div className="flex items-end justify-between">
+                    <div className="flex justify-between items-end">
                       <span className="text-lg font-bold text-foreground tabular-nums tracking-tight">{fmt(current)}</span>
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">alvo: {fmt(target)}</span>
                     </div>
-                    <div className="h-1 w-full rounded-full bg-secondary overflow-hidden border border-border/10">
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
                       <div 
                         className={cn("h-full rounded-full transition-all duration-1000", progress >= 100 ? "bg-emerald-500" : "bg-foreground")} 
                         style={{ width: `${Math.min(progress, 100)}%` }} 
@@ -355,10 +356,9 @@ export default function GoalsPage() {
               );
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Modal */}
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editingId ? "Editar Meta" : "Nova Meta"} size="md">
         <div className="space-y-8 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -436,7 +436,6 @@ export default function GoalsPage() {
         </div>
       </Modal>
 
-      {/* Deposit Modal */}
       <Modal open={!!depositModal} onClose={() => setDepositModal(null)} title="Efetuar Aporte" size="sm">
         <div className="space-y-8 pt-4">
           <div className="bg-secondary/30 rounded-xl p-8 text-center border border-border/50 shadow-precision">
@@ -474,7 +473,6 @@ export default function GoalsPage() {
         </div>
       </Modal>
 
-      {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Meta" size="sm">
         <div className="space-y-6">
           <div className="flex flex-col items-center gap-4 text-center">
@@ -498,9 +496,6 @@ export default function GoalsPage() {
           </div>
         </div>
       </Modal>
-    </div>
-  );
-}
     </div>
   );
 }

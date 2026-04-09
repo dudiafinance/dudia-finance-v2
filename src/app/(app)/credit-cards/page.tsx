@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { 
   Plus, ChevronRight, ChevronLeft, CreditCard as CardIcon,
-  Clock, TrendingDown, Trash2, Pencil,
+  Clock, TrendingDown, Trash2, Pencil, PieChart,
   CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -120,6 +120,8 @@ export default function CreditCardsPage() {
   const cards = rawCards as unknown as CreditCard[];
   const selectedCard = cards.find(c => c.id === selectedCardId) || cards[0];
   
+  const showBalances = true; // Forced true for now based on previous redesign logic
+
   React.useEffect(() => {
     if (!selectedCardId && cards.length > 0) {
       setSelectedCardId(cards[0].id);
@@ -179,7 +181,7 @@ export default function CreditCardsPage() {
 
           <Button
             onClick={() => { setEditingCard(null); setIsCardModalOpen(true); }}
-            className="gap-2 h-8 text-[11px] font-bold uppercase"
+            className="gap-2 h-8 text-[11px] font-bold uppercase shadow-precision"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Novo Cartão</span>
@@ -224,7 +226,6 @@ export default function CreditCardsPage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-6 py-8">
         {/* Cards List */}
         {cards.length === 0 ? (
@@ -308,7 +309,6 @@ export default function CreditCardsPage() {
                         </div>
                       </div>
 
-                      {/* Accent for selected card */}
                       {isSelected && (
                         <div className="absolute top-0 right-0 h-12 w-12 bg-foreground/5 blur-2xl rounded-full -mr-6 -mt-6" />
                       )}
@@ -318,7 +318,6 @@ export default function CreditCardsPage() {
               </div>
             </section>
 
-            {/* Selected Card Dashboard */}
             {selectedCard && (
               <section className="space-y-8">
                 <div className="flex items-center gap-4">
@@ -374,7 +373,6 @@ export default function CreditCardsPage() {
                     </div>
                   </div>
 
-                  {/* Period Stats Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div className="space-y-1.5">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total da Fatura</p>
@@ -397,7 +395,6 @@ export default function CreditCardsPage() {
                   </div>
                 </div>
 
-                {/* Status Switcher Hero */}
                 <div className="flex justify-center py-4">
                   <Button
                     variant={currentInvoiceStatus === "PAGA" ? "secondary" : "default"}
@@ -418,7 +415,6 @@ export default function CreditCardsPage() {
                   </Button>
                 </div>
 
-                {/* Transactions Table/List */}
                 <div className="bg-background rounded-lg border border-border/50 overflow-hidden shadow-precision">
                   <div className="flex items-center justify-between p-5 border-b border-border/50 bg-secondary/20">
                     <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">Lançamentos do Período</h3>
@@ -482,19 +478,13 @@ export default function CreditCardsPage() {
           </div>
         )}
       </div>
-            )}
-          </div>
-        )}
-      </div>
 
-      {/* Card Form Modal */}
       <CardFormModal 
         open={isCardModalOpen} 
         onClose={() => setIsCardModalOpen(false)} 
         editingCard={editingCard} 
       />
 
-      {/* Launch Transaction Modal */}
       <LaunchTxModal 
         open={isLaunchModalOpen} 
         onClose={() => setIsLaunchModalOpen(false)}
@@ -503,7 +493,6 @@ export default function CreditCardsPage() {
         currentYear={currentYear}
       />
 
-      {/* Pay Invoice Modal */}
       <PayInvoiceModal 
         open={isPayModalOpen}
         onClose={() => setIsPayModalOpen(false)}
@@ -515,7 +504,6 @@ export default function CreditCardsPage() {
         fmt={fmt}
       />
 
-      {/* Edit Transaction Modal */}
       <EditTxModal 
         open={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -571,43 +559,46 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 
   return (
     <Modal open={open} onClose={onClose} title={editingCard ? "Editar Cartão" : "Novo Cartão"} size="md">
-      <div className="space-y-5 pt-2">
-        <FormRow>
-          <Field label="Banco">
+      <div className="space-y-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <Field label="Instituição Bancária">
             <Input value={form.bank} onChange={e => setForm(p => ({...p, bank: e.target.value}))} 
-              placeholder="Ex: Nubank, Inter" className="h-11 rounded-md" />
+              placeholder="Ex: Nubank, Inter" className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
           </Field>
-          <Field label="Nome do Cartão">
+          <Field label="Identificador do Cartão">
             <Input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} 
-              placeholder="Ex: Cartão Principal" className="h-11 rounded-md" />
+              placeholder="Ex: Cartão Principal" className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
           </Field>
-        </FormRow>
+        </div>
 
-        <FormRow>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <Field label="Últimos 4 Dígitos">
             <Input maxLength={4} value={form.lastDigits} onChange={e => setForm(p => ({...p, lastDigits: e.target.value}))} 
-              placeholder="1234" className="h-11 rounded-md text-center" />
+              placeholder="1234" className="h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground tabular-nums text-center" />
           </Field>
-          <Field label="Limite (R$)">
-            <Input type="number" value={form.limit} onChange={e => setForm(p => ({...p, limit: e.target.value}))} 
-              placeholder="5000.00" className="h-11 rounded-md" />
+          <Field label="Limite Operacional">
+            <div className="relative">
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+              <Input type="number" value={form.limit} onChange={e => setForm(p => ({...p, limit: e.target.value}))} 
+                placeholder="5000.00" className="pl-6 h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground tabular-nums" />
+            </div>
           </Field>
-        </FormRow>
+        </div>
 
-        <FormRow>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <Field label="Dia de Vencimento">
             <Input type="number" value={form.dueDay} onChange={e => setForm(p => ({...p, dueDay: e.target.value}))} 
-              className="h-11 rounded-md text-center" />
+              className="h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground text-center" />
           </Field>
           <Field label="Dia de Fechamento">
             <Input type="number" value={form.closingDay} onChange={e => setForm(p => ({...p, closingDay: e.target.value}))} 
-              className="h-11 rounded-md text-center" />
+              className="h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground text-center" />
           </Field>
-        </FormRow>
+        </div>
 
-        <FormRow>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <Field label="Bandeira">
-            <Select value={form.network} onChange={e => setForm(p => ({...p, network: e.target.value}))} className="h-11 rounded-md">
+            <Select value={form.network} onChange={e => setForm(p => ({...p, network: e.target.value}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground uppercase font-bold tracking-widest">
               <option value="mastercard">Mastercard</option>
               <option value="visa">Visa</option>
               <option value="elo">Elo</option>
@@ -615,7 +606,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
               <option value="hipercard">Hipercard</option>
             </Select>
           </Field>
-          <Field label="Estilo">
+          <Field label="Estilo Visual">
             <div className="flex gap-2 p-2 bg-secondary/50 rounded-lg border border-border/50 shadow-precision">
               {GRADIENT_PRESETS.map(preset => {
                 const normalizedGradient = form.gradient?.includes('bg-gradient') 
@@ -625,14 +616,12 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
                     : form.gradient;
                 const isSelected = normalizedGradient === preset.value || form.gradient === preset.value;
                 return (
-                  <Button 
+                  <button 
                     key={preset.value}
                     type="button"
-                    variant="ghost"
-                    size="icon"
                     onClick={() => setForm(p => ({...p, gradient: preset.value, color: preset.color}))}
                     className={cn(
-                      "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all border border-white/10 shadow-precision",
+                      "h-8 w-8 p-0 rounded-full overflow-hidden transition-all border border-white/10 shadow-precision",
                       preset.value,
                       isSelected ? "ring-1 ring-foreground scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
                     )}
@@ -641,11 +630,11 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
               })}
             </div>
           </Field>
-        </FormRow>
+        </div>
 
-        <div className="flex gap-4 pt-6 mt-2 border-t border-border/50">
+        <div className="flex gap-4 pt-6 border-t border-border/50">
           <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
+          <Button onClick={handleSubmit} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
             disabled={createCard.isPending || updateCard.isPending}>
             {createCard.isPending || updateCard.isPending ? "Salvando..." : "Salvar Cartão"}
           </Button>
@@ -677,7 +666,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
     if (open && selectedCard) {
       const suggested = getSuggestedInvoice(selectedCard, form.date);
       setForm(p => ({ ...p, invoiceMonth: suggested.month, invoiceYear: suggested.year }));
-    }// eslint-disable-next-line react-hooks/exhaustive-deps
+    }
   }, [open, selectedCard]);
 
   const calculatedTotal = useMemo(() => {
@@ -703,7 +692,6 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
   return (
      <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
       <div className="space-y-8 pt-4">
-        {/* Hero Amount Section */}
         <div className="flex flex-col items-center justify-center py-8 bg-secondary/30 rounded-xl border border-border/50 shadow-precision">
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-3">
             {form.amountMode === 'total' ? "Valor Total" : "Valor da Parcela"}
