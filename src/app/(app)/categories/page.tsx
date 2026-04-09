@@ -225,62 +225,58 @@ export default function CategoriesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="h-10 w-10 border-4 border-slate-200 border-t-blue-600 rounded-full" />
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+        <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Sincronizando arquitetura...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="w-full animate-in fade-in duration-500">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-              <div className="h-10 w-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Layers className="h-5 w-5 text-blue-600" />
-              </div>
-              Categorias
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">Organize suas categorias de receitas e despesas</p>
+      <div className="px-6 py-8 border-b border-border/50">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Classificação de Fluxo</span>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight uppercase">Categorias</h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
-              <button onClick={prevMonth} className="h-9 w-9 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-600 transition-colors">
-                <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-1 bg-secondary rounded-lg border border-border p-1 shadow-precision">
+              <button onClick={prevMonth} className="h-8 w-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronLeft className="h-4 w-4" />
               </button>
-              <div className="min-w-[120px] text-center">
-                <p className="text-xs text-slate-500 uppercase tracking-wider">{MONTH_NAMES[currentMonth-1]}</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{currentYear}</p>
+              <div className="px-4 text-center">
+                <p className="text-[10px] font-bold text-foreground uppercase tracking-widest leading-none">{MONTH_NAMES[currentMonth-1]}</p>
+                <p className="text-[9px] font-bold text-muted-foreground tabular-nums">{currentYear}</p>
               </div>
-              <button onClick={nextMonth} className="h-9 w-9 flex items-center justify-center rounded hover:bg-white dark:hover:bg-slate-600 transition-colors">
-                <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+              <button onClick={nextMonth} className="h-8 w-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronRight className="h-4 w-4" />
               </button>
             </div>
             
-            <Button onClick={openCreate} className="font-bold shadow-lg shadow-blue-500/20 px-6">
-              <Plus className="mr-2 h-5 w-5" /> Nova
+            <Button onClick={openCreate} className="h-9 px-6 text-[11px] font-bold uppercase shadow-precision">
+              <Plus className="mr-2 h-3.5 w-3.5" /> Nova Categoria
             </Button>
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-6">
+      <div className="px-6 py-8">
         {/* Search & Filter */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-          <div className="lg:col-span-2 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-10">
+          <div className="relative group flex-1 w-full max-w-xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground transition-colors group-focus-within:text-foreground" />
             <Input
-              placeholder="Buscar categorias ou tags..."
+              placeholder="Buscar por nome ou tag..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-11 h-12"
+              className="pl-10 h-10 text-[13px] bg-secondary/30 border-border focus:bg-background shadow-precision"
             />
           </div>
 
-          <div className="flex gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl lg:col-span-2 border border-slate-200/50 dark:border-slate-700/50">
+          <div className="flex gap-1 bg-secondary p-1 rounded-lg border border-border shadow-precision">
             {[
               { key: "all", label: "Todas" },
               { key: "income", label: "Receitas" },
@@ -288,13 +284,14 @@ export default function CategoriesPage() {
             ].map(({ key, label }) => (
               <Button 
                 key={key} 
-                variant="ghost"
+                variant={filterType === key ? "secondary" : "ghost"}
+                size="sm"
                 onClick={() => setFilterType(key)}
                 className={cn(
-                  "flex-1 rounded-lg py-2 h-9 text-xs font-bold transition-all shadow-none",
+                  "h-7 px-6 transition-all rounded text-[10px] font-bold uppercase tracking-wider",
                   filterType === key 
-                    ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm" 
-                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-transparent"
+                    ? "bg-background text-foreground shadow-precision border-precision border-border/50" 
+                    : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {label}
@@ -325,15 +322,15 @@ export default function CategoriesPage() {
           <motion.div 
             key={filterType + searchTerm}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="space-y-8"
+            className="space-y-12"
           >
             {(filterType === "all" || filterType === "income") && filtered.some(c => c.type === "income") && (
               <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-1 w-8 bg-emerald-500 rounded-full" />
-                  <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Receitas</h2>
+                <div className="flex items-center gap-4 mb-6">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Fontes de Receita</h2>
+                  <div className="h-px flex-1 bg-border/40" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filtered.filter((c) => c.type === "income").map((c) => (
                     <CategoryCard key={c.id} category={c} spent={stats[c.id] || 0} onEdit={openEdit} onDelete={setDeleteId} />
                   ))}
@@ -343,11 +340,11 @@ export default function CategoriesPage() {
 
             {(filterType === "all" || filterType === "expense") && filtered.some(c => c.type === "expense") && (
               <section>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-1 w-8 bg-red-500 rounded-full" />
-                  <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Despesas</h2>
+                <div className="flex items-center gap-4 mb-6">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Centros de Custo</h2>
+                  <div className="h-px flex-1 bg-border/40" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {filtered.filter((c) => c.type === "expense").map((c) => (
                     <CategoryCard key={c.id} category={c} spent={stats[c.id] || 0} onEdit={openEdit} onDelete={setDeleteId} />
                   ))}
@@ -361,7 +358,7 @@ export default function CategoriesPage() {
         <Modal open={modalOpen} onClose={() => setModalOpen(false)}
           title={editingId ? "Editar Categoria" : "Nova Categoria"}
           size="lg">
-          <div className="space-y-5 pt-2">
+          <div className="space-y-8 pt-4">
             <div className="grid grid-cols-2 gap-3">
               {(["income", "expense"] as const).map((t) => (
                 <Button 
@@ -369,10 +366,10 @@ export default function CategoriesPage() {
                   variant="ghost"
                   onClick={() => set("type", t)}
                   className={cn(
-                    "h-14 rounded-xl font-bold text-sm transition-all border-2 shadow-none",
+                    "h-12 rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all border shadow-precision",
                     form.type === t 
-                      ? (t === "income" ? "border-emerald-500 bg-emerald-50/50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400" : "border-red-500 bg-red-50/50 text-red-700 dark:bg-red-500/10 dark:text-red-400")
-                      : "border-slate-100 bg-slate-50/50 text-slate-400 dark:border-slate-800 dark:bg-slate-900/50"
+                      ? "bg-foreground text-background border-foreground"
+                      : "border-border/50 text-muted-foreground hover:border-border hover:bg-secondary/50"
                   )}
                 >
                   {t === "income" ? "Receita" : "Despesa"}
@@ -380,44 +377,51 @@ export default function CategoriesPage() {
               ))}
             </div>
 
-            <FormRow>
-              <Field label="Nome" required error={errors.name}>
-                <Input placeholder="Alimentação, Moradia..." value={form.name} onChange={e => set("name", e.target.value)} className="rounded-md" />
-              </Field>
-              <Field label="Ícone">
-                <Select value={form.icon} onChange={e => set("icon", e.target.value)} className="rounded-md">
-                  {ICONS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
-                </Select>
-              </Field>
-            </FormRow>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <div className="space-y-6">
+                <Field label="Nome da Categoria" required error={errors.name}>
+                  <Input placeholder="Ex: Alimentação" value={form.name} onChange={e => set("name", e.target.value)} 
+                    className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground transition-all" />
+                </Field>
 
-            <FormRow>
-              <Field label="Orçamento (Opcional)">
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
-                  <Input type="number" step="0.01" className="pl-9 rounded-md" placeholder="0,00" value={form.budgetAmount} onChange={e => set("budgetAmount", e.target.value)} />
-                </div>
-              </Field>
-              <Field label="Frequência">
-                <Select value={form.budgetPeriod} onChange={e => set("budgetPeriod", e.target.value)} className="rounded-md">
-                  <option value="monthly">Mensal</option>
-                  <option value="weekly">Semanal</option>
-                  <option value="yearly">Anual</option>
-                </Select>
-              </Field>
-            </FormRow>
+                <Field label="Ícone Representativo">
+                  <Select value={form.icon} onChange={e => set("icon", e.target.value)} 
+                    className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                    {ICONS.map(i => <option key={i.value} value={i.value}>{i.label}</option>)}
+                  </Select>
+                </Field>
+              </div>
 
-            <Field label="Cor">
+              <div className="space-y-6">
+                <Field label="Teto de Gasto (Budget)">
+                  <div className="relative">
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">R$</span>
+                    <Input type="number" step="0.01" className="pl-6 h-10 text-sm font-bold border-0 border-b border-border rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground tabular-nums" placeholder="0,00" value={form.budgetAmount} onChange={e => set("budgetAmount", e.target.value)} />
+                  </div>
+                </Field>
+
+                <Field label="Período do Teto">
+                  <Select value={form.budgetPeriod} onChange={e => set("budgetPeriod", e.target.value)} 
+                    className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                    <option value="monthly">Mensal</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="yearly">Anual</option>
+                  </Select>
+                </Field>
+              </div>
+            </div>
+
+            <Field label="Identidade Visual (Cor)">
               <ColorPicker value={form.color} onChange={c => set("color", c)} />
             </Field>
 
-            <Field label="Tags">
-              <TagInput value={form.tags} onChange={tags => set("tags", tags)} placeholder="Adicionar tags..." />
+            <Field label="Tags de Filtragem">
+              <TagInput value={form.tags} onChange={tags => set("tags", tags)} placeholder="Pressione Enter..." />
             </Field>
 
-            <div className="flex justify-end gap-4 pt-6 border-t border-slate-100 dark:border-slate-700 mt-2">
-              <Button variant="outline" onClick={() => setModalOpen(false)} className="font-bold">Cancelar</Button>
-              <Button onClick={save} className="font-bold shadow-lg px-8">
+            <div className="flex gap-4 pt-6 border-t border-border/50">
+              <Button variant="ghost" onClick={() => setModalOpen(false)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+              <Button onClick={save} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision">
                 {editingId ? "Salvar Alterações" : "Criar Categoria"}
               </Button>
             </div>
@@ -425,16 +429,20 @@ export default function CategoriesPage() {
         </Modal>
 
         <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Categoria" size="sm">
-          <div className="text-center py-4">
-            <div className="h-14 w-14 bg-red-50 dark:bg-red-900/30 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="h-6 w-6 text-red-600" />
+          <div className="space-y-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Confirmar Exclusão?</h3>
+                <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">As transações vinculadas a esta categoria ficarão órfãs.</p>
+              </div>
             </div>
-            <p className="text-slate-600 dark:text-slate-300 font-semibold mb-1">Confirmar Exclusão?</p>
-            <p className="text-sm text-slate-500">Transações ficarão sem categoria.</p>
-          </div>
-          <div className="mt-6 flex gap-4">
-            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 font-bold">Cancelar</Button>
-            <Button variant="destructive" onClick={confirmDelete} className="flex-1 font-bold shadow-lg shadow-red-500/20">Excluir</Button>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={() => setDeleteId(null)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+              <Button variant="destructive" onClick={confirmDelete} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6">Excluir</Button>
+            </div>
           </div>
         </Modal>
       </div>
@@ -455,87 +463,90 @@ function CategoryCard({ category, spent, onEdit, onDelete }: { category: Categor
   return (
     <motion.div 
       layout
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-      className="group relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 transition-all cursor-pointer"
+      className="group relative bg-background rounded-lg border border-border/50 p-6 transition-all duration-300 shadow-precision cursor-pointer overflow-hidden"
+      onClick={() => onEdit(category)}
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-6 relative z-10">
         <div 
-          className="h-11 w-11 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: `${category.color}20` }}
+          className="h-10 w-10 rounded flex items-center justify-center border border-white/5 shadow-precision group-hover:scale-105 transition-transform"
+          style={{ backgroundColor: category.color }}
         >
-          <Icon className="h-5 w-5" style={{ color: category.color }} />
+          <Icon className="h-5 w-5 text-white" />
         </div>
         
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
           <Button 
-            variant="secondary"
+            variant="ghost"
             size="icon"
             onClick={(e) => { e.stopPropagation(); onEdit(category); }} 
-            className="h-8 w-8 bg-white/80 dark:bg-slate-700/80 text-slate-400 hover:text-blue-600 shadow-sm border-none"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
           >
             <Edit className="h-3.5 w-3.5" />
           </Button>
           <Button 
-            variant="secondary"
+            variant="ghost"
             size="icon"
             onClick={(e) => { e.stopPropagation(); onDelete(category.id); }} 
-            className="h-8 w-8 bg-white/80 dark:bg-slate-700/80 text-slate-400 hover:text-red-500 shadow-sm border-none"
+            className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
 
-      <div className="mb-4">
-        <h3 className="font-semibold text-slate-900 dark:text-white leading-tight truncate">{category.name}</h3>
+      <div className="mb-6 relative z-10">
+        <h3 className="text-sm font-bold text-foreground tracking-tight truncate">{category.name}</h3>
         {(category.tags?.length ?? 0) > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {(category.tags ?? []).slice(0, 2).map((t: string) => (
-              <span key={t} className="text-[10px] font-medium text-slate-400 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded">#{t}</span>
+              <span key={t} className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest border border-border/50 px-2 py-0.5 rounded">#{t}</span>
             ))}
           </div>
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-4 pt-4 border-t border-border/50 relative z-10">
         <div className="flex justify-between items-end">
           <div>
-            <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-0.5">Utilizado</p>
-            <p className={cn("text-sm font-bold", isOver ? "text-red-500" : "text-slate-900 dark:text-white")}>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Execução</p>
+            <p className={cn("text-sm font-bold tabular-nums tracking-tight", isOver ? "text-red-500" : "text-foreground")}>
               {fmt(spent)}
             </p>
           </div>
           {budget > 0 && (
             <div className="text-right">
-              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-0.5">Limite</p>
-              <p className="text-xs font-semibold text-slate-400">{fmt(budget)}</p>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Teto</p>
+              <p className="text-[11px] font-bold text-muted-foreground tabular-nums">{fmt(budget)}</p>
             </div>
           )}
         </div>
 
         {budget > 0 && (
-          <div className="space-y-1.5">
-            <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div className="space-y-2">
+            <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
               <motion.div 
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(progress, 100)}%` }}
                 className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  isOver ? "bg-red-500" : isWarning ? "bg-amber-400" : "bg-emerald-500"
+                  "h-full rounded-full transition-all duration-1000",
+                  isOver ? "bg-red-500" : isWarning ? "bg-amber-500" : "bg-foreground"
                 )}
               />
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-[10px] font-medium text-slate-400">
-                {progress.toFixed(0)}% do orçamento
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
+                {progress.toFixed(1)}% CONSUMIDO
               </p>
               {isOver && <AlertCircle className="h-3 w-3 text-red-500" />}
             </div>
           </div>
         )}
       </div>
+
+      {/* Backdrop Accent */}
+      <div className="absolute top-0 right-0 h-16 w-16 opacity-5 blur-3xl rounded-full -mr-8 -mt-8" style={{ backgroundColor: category.color }} />
     </motion.div>
   );
 }

@@ -71,22 +71,19 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-        <div className="w-full max-w-md text-center">
-          <div className="mb-8">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <Check className="h-8 w-8 text-emerald-600" />
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+        <div className="w-full max-w-sm text-center">
+          <div className="mb-12">
+            <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded bg-secondary border border-border shadow-precision">
+              <Check className="h-8 w-8 text-emerald-500" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Conta criada com sucesso!</h1>
-            <p className="mt-2 text-slate-600">
-              Bem-vindo ao DUD.IA Finance, {name}!
+            <h1 className="text-sm font-bold text-foreground uppercase tracking-[0.2em]">Identidade Criada</h1>
+            <p className="mt-4 text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed">
+              Bem-vindo ao ecossistema Dudia, {name.split(' ')[0]}.
             </p>
-            <p className="mt-4 text-sm text-slate-500">
-              Um e-mail de boas-vindas foi enviado para <strong>{email}</strong>
-            </p>
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Redirecionando para o dashboard...</span>
+            <div className="mt-12 flex items-center justify-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              <Loader2 className="h-4 w-4 animate-spin text-foreground" />
+              <span>Sincronizando Terminal...</span>
             </div>
           </div>
         </div>
@@ -95,79 +92,79 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-emerald-600">DUD.IA</h1>
-          <p className="mt-2 text-slate-600">Financeiro Pessoal</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-sm">
+        <div className="mb-12 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded bg-foreground text-background font-bold text-xl mb-4 shadow-precision">D.</div>
+          <h1 className="text-sm font-bold text-foreground uppercase tracking-[0.3em]">Dudia Finance</h1>
+          <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Provisionamento de Nova Conta</p>
         </div>
 
-        <div className="rounded-xl bg-white p-8 shadow-sm border border-slate-100">
-          <h2 className="text-xl font-semibold text-slate-900">Criar Conta</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Preencha seus dados para começar
-          </p>
+        <div className="rounded-lg bg-background p-8 shadow-precision border border-border/50">
+          <div className="mb-8">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Cadastro</h2>
+            <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+              Registre sua identidade financeira
+            </p>
+          </div>
 
           {error && (
-            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded border border-red-500/20 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Nome</label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome Completo</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                placeholder="Seu nome completo"
+                className="block w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm font-medium outline-none focus:border-foreground transition-all"
+                placeholder="Ex: João da Silva"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Identificador (Email)</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                placeholder="seu@email.com"
+                className="block w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm font-medium outline-none focus:border-foreground transition-all"
+                placeholder="nome@provedor.com"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Senha</label>
-              <div className="relative mt-1">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Senha de Acesso</label>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 pr-10 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="block w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm font-medium outline-none focus:border-foreground transition-all pr-10"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
               </div>
+              
               {password && (
-                <div className="mt-3 space-y-1">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-4">
                   {passwordRequirements.map((req, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs">
-                      <div className={`flex h-4 w-4 items-center justify-center rounded-full ${
-                        req.met ? "bg-emerald-100" : "bg-slate-100"
-                      }`}>
-                        {req.met && <Check className="h-3 w-3 text-emerald-600" />}
-                      </div>
-                      <span className={req.met ? "text-emerald-600" : "text-slate-500"}>
+                    <div key={index} className="flex items-center gap-2">
+                      <div className={cn("h-1 w-1 rounded-full", req.met ? "bg-emerald-500" : "bg-border")} />
+                      <span className={cn("text-[8px] font-bold uppercase tracking-tight", req.met ? "text-emerald-500" : "text-muted-foreground")}>
                         {req.text}
                       </span>
                     </div>
@@ -179,29 +176,31 @@ export default function RegisterPage() {
             <Button
               type="submit"
               disabled={isLoading || !passwordRequirements.every((r) => r.met)}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full h-12 font-bold uppercase tracking-[0.2em] text-[11px] shadow-precision py-6"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Provisionando...
                 </>
               ) : (
-                "Criar Conta"
+                "Gerar Conta"
               )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-600">
-            Já tem uma conta?{" "}
-            <Link href="/login" className="font-medium text-emerald-600 hover:underline">
-              Entrar
-            </Link>
-          </p>
+          <div className="mt-10 pt-6 border-t border-border/50 text-center">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Já possui registro?{" "}
+              <Link href="/login" className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground transition-all">
+                Autenticar
+              </Link>
+            </p>
+          </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
-          © 2026 DUD.IA Finance. Todos os direitos reservados.
+        <p className="mt-12 text-center text-[9px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
+          © 2026 Dudia Finance • Security Infrastructure
         </p>
       </div>
     </div>

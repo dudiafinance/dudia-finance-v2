@@ -319,72 +319,66 @@ export default function TransactionsPage() {
   return (
     <div className="w-full animate-in fade-in duration-500">
       {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-700 px-6 pt-8 pb-10">
+      <div className="px-6 py-8 border-b border-border/50">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-1 bg-blue-500 rounded-full" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Transações</h1>
-            </div>
-            <p className="text-slate-400 font-medium">Controle do seu fluxo de caixa.</p>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Gestão de Fluxo</span>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">Transações</h1>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
               onClick={() => setShowBalances(!showBalances)}
-              className="gap-3 bg-slate-800/50 border-slate-700 text-white hover:bg-slate-800"
+              className="gap-2 h-8 text-[11px] font-bold uppercase"
             >
-              {showBalances ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showBalances ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               <span>{showBalances ? "Ocultar" : "Mostrar"}</span>
             </Button>
 
             <Button
               onClick={openCreate}
-              className="gap-3 font-bold"
+              className="gap-2 h-8 text-[11px] font-bold uppercase"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-3.5 w-3.5" />
               <span>Novo Lançamento</span>
             </Button>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-emerald-400">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Receitas</span>
-            </div>
-            <p className="text-2xl font-bold text-white tabular-nums">
+        {/* Stats Grid - High Density */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              Receitas
+            </p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
               {showBalances ? fmt(totalIncome) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Acumulado filtrado</p>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-red-400">
-              <TrendingDown className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Despesas</span>
-            </div>
-            <p className="text-2xl font-bold text-white tabular-nums">
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <TrendingDown className="h-3 w-3 text-red-500" />
+              Despesas
+            </p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
               {showBalances ? fmt(totalExpense) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Acumulado filtrado</p>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-blue-400">
-              <Wallet className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Resultado</span>
-            </div>
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <Wallet className="h-3 w-3 text-foreground" />
+              Resultado
+            </p>
             <p className={cn(
-              "text-2xl font-bold tabular-nums",
-              netBalance >= 0 ? "text-white" : "text-red-400"
+              "text-xl font-bold tabular-nums",
+              netBalance >= 0 ? "text-foreground" : "text-red-500"
             )}>
               {showBalances ? fmt(netBalance) : "••••••"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Fluxo líquido</p>
           </div>
         </div>
       </div>
@@ -392,24 +386,24 @@ export default function TransactionsPage() {
       {/* Content */}
       <div className="px-6 py-8">
         {/* Search and Filters */}
-        <div className="mb-6 flex flex-col md:flex-row items-center gap-4">
+        <div className="mb-8 flex flex-col md:flex-row items-center gap-4">
           <div className="relative group flex-1 w-full max-w-xl">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground transition-colors group-focus-within:text-foreground" />
             <Input
               type="text"
-              placeholder="Pesquisar transações..."
+              placeholder="Buscar por descrição..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); resetPagination(); }}
-              className="pl-11 h-11"
+              className="pl-10 h-10 text-[13px] bg-secondary/30 border-border focus:bg-background shadow-precision"
             />
           </div>
 
-          <div className="flex gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+          <div className="flex gap-1 rounded-lg bg-secondary p-1 border border-border shadow-precision">
             {[
               { key: "all", label: "Geral" },
               { key: "income", label: "Entradas" },
               { key: "expense", label: "Saídas" },
-              { key: "transfer", label: "Transfer" },
+              { key: "transfer", label: "Transf." },
             ].map(({ key, label }) => (
               <Button
                 key={key}
@@ -417,8 +411,8 @@ export default function TransactionsPage() {
                 size="sm"
                 onClick={() => { setFilterType(key); resetPagination(); }}
                 className={cn(
-                  "px-4 transition-all rounded-lg",
-                  filterType === key ? "bg-white dark:bg-slate-700 shadow-sm" : "text-slate-500 hover:text-slate-700"
+                  "h-7 px-4 transition-all rounded text-[11px] font-bold uppercase",
+                  filterType === key ? "bg-background text-foreground shadow-precision border-precision border-border/50" : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {label}
@@ -427,31 +421,31 @@ export default function TransactionsPage() {
           </div>
 
           <Button
-            variant={showFilters ? "soft" : "outline"}
+            variant={showFilters ? "secondary" : "outline"}
             onClick={() => setShowFilters(!showFilters)}
-            className={cn("gap-2 border-slate-200 dark:border-slate-700",
-              showFilters && "border-blue-200 bg-blue-50 text-blue-600"
+            className={cn("gap-2 h-10 border-border shadow-precision text-[11px] font-bold uppercase",
+              showFilters && "bg-secondary"
             )}
           >
-            <Filter className="h-4 w-4" />
+            <Filter className="h-3.5 w-3.5" />
             <span>Filtros</span>
           </Button>
         </div>
 
         {showFilters && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mb-6 overflow-hidden">
-            <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-5 flex flex-wrap gap-6">
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="mb-8 overflow-hidden">
+            <div className="bg-secondary/20 rounded-lg border border-border/50 p-5 flex flex-wrap gap-6 shadow-precision">
               <div className="space-y-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Status</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Liquidação</p>
                 <div className="flex gap-2">
                   {[{ key: "all", label: "Todos" }, { key: "paid", label: "Confirmados" }, { key: "pending", label: "Pendentes" }].map(({ key, label }) => (
                     <Button 
                       key={key} 
                       size="sm"
-                      variant={filterPaid === key ? "secondary" : "outline"}
+                      variant={filterPaid === key ? "default" : "outline"}
                       onClick={() => { setFilterPaid(key); resetPagination(); }}
-                      className={cn("transition-all border-slate-200 dark:border-slate-700",
-                        filterPaid === key ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-md" : "hover:bg-slate-100"
+                      className={cn("h-8 px-4 text-[10px] font-bold uppercase rounded border-border transition-all",
+                        filterPaid === key ? "shadow-precision" : "bg-background hover:bg-secondary"
                       )}
                     >
                       {label}
@@ -464,9 +458,9 @@ export default function TransactionsPage() {
                   variant="ghost"
                   size="sm"
                   onClick={() => { setFilterPaid("all"); setFilterType("all"); setSearchTerm(""); resetPagination(); }} 
-                  className="text-slate-400 hover:text-red-500 gap-2 font-bold"
+                  className="text-muted-foreground hover:text-red-500 gap-2 font-bold uppercase text-[10px]"
                 >
-                  <X className="h-4 w-4" /> Limpar
+                  <X className="h-3.5 w-3.5" /> Limpar Filtros
                 </Button>
               </div>
             </div>
@@ -560,12 +554,12 @@ export default function TransactionsPage() {
                 variant="outline" 
                 onClick={handleLoadMore} 
                 disabled={txFetching}
-                className="gap-2 px-8 py-6 h-auto text-base font-bold text-slate-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
+                className="gap-2 px-12 h-11 text-[11px] font-bold uppercase tracking-widest transition-all shadow-precision border-border hover:bg-secondary"
               >
                 {txFetching ? (
-                  <div className="h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="h-4 w-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <ArrowRight className="h-5 w-5 rotate-90" />
+                  <ArrowRight className="h-4 w-4 rotate-90" />
                 )}
                 <span>Carregar mais transações</span>
               </Button>
@@ -581,8 +575,8 @@ export default function TransactionsPage() {
         <div className="space-y-8 pt-4">
           
           {/* Hero Amount Section */}
-          <div className="flex flex-col items-center justify-center py-6 bg-secondary/30 rounded-xl border border-border/50">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2">Valor do Lançamento</span>
+          <div className="flex flex-col items-center justify-center py-8 bg-secondary/30 rounded-xl border border-border/50 shadow-precision">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-3">Valor do Lançamento</span>
             <div className="flex items-center gap-2">
               <span className="text-2xl font-light text-muted-foreground">R$</span>
               <input 
@@ -592,10 +586,10 @@ export default function TransactionsPage() {
                 onChange={(e) => set("amount", e.target.value)}
                 placeholder="0,00"
                 autoFocus
-                className="bg-transparent text-5xl font-bold tracking-tighter text-foreground focus:outline-none w-full max-w-[250px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="bg-transparent text-6xl font-bold tracking-tighter text-foreground focus:outline-none w-full max-w-[300px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none tabular-nums"
               />
             </div>
-            {errors.amount && <p className="text-[10px] font-bold text-red-500 uppercase mt-2">{errors.amount}</p>}
+            {errors.amount && <p className="text-[10px] font-bold text-red-500 uppercase mt-3 tracking-widest">{errors.amount}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -734,19 +728,19 @@ export default function TransactionsPage() {
 
       {/* Delete Modal */}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Transação" size="sm">
-        <div className="space-y-4">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <div className="h-14 w-14 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+        <div className="space-y-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
               <Trash2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-white">Confirmar Exclusão?</h3>
-              <p className="text-sm text-slate-500 mt-1">Esta operação é irreversível.</p>
+              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Confirmar Exclusão?</h3>
+              <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">Esta operação removerá o registro permanentemente do seu fluxo de caixa.</p>
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => setDeleteId(null)} className="flex-1 rounded-md font-medium">Cancelar</Button>
-            <Button variant="destructive" onClick={confirmDelete} className="flex-1 rounded-md font-semibold">Excluir</Button>
+            <Button variant="ghost" onClick={() => setDeleteId(null)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6">Excluir</Button>
           </div>
         </div>
       </Modal>

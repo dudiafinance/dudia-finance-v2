@@ -36,95 +36,100 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-emerald-600">DUD.IA</h1>
-          <p className="mt-2 text-slate-600">Financeiro Pessoal</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-12 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded bg-foreground text-background font-bold text-xl mb-4 shadow-precision">D.</div>
+          <h1 className="text-sm font-bold text-foreground uppercase tracking-[0.3em]">Dudia Finance</h1>
+          <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Protocolo de Acesso v2.0</p>
         </div>
 
-        <div className="rounded-xl bg-white p-8 shadow-sm border border-slate-100">
-          <h2 className="text-xl font-semibold text-slate-900">Entrar</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Digite suas credenciais para acessar
-          </p>
+        <div className="rounded-lg bg-background p-8 shadow-precision border border-border/50">
+          <div className="mb-8">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Autenticação</h2>
+            <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+              Insira suas credenciais de rede
+            </p>
+          </div>
 
           {error && (
-            <div className="mt-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded border border-red-500/20 bg-red-500/10 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-red-500">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Email</label>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Identificador (Email)</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                placeholder="seu@email.com"
+                className="block w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm font-medium outline-none focus:border-foreground transition-all"
+                placeholder="nome@provedor.com"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Senha</label>
-              <div className="relative mt-1">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Chave de Acesso</label>
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 pr-10 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  className="block w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm font-medium outline-none focus:border-foreground transition-all pr-10"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
                 </button>
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                <span className="text-sm text-slate-600">Lembrar-me</span>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input type="checkbox" className="h-4 w-4 rounded border-zinc-700 text-foreground focus:ring-zinc-500 bg-transparent" />
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight group-hover:text-foreground transition-colors">Manter Conexão</span>
               </label>
-              <Link href="/forgot-password" className="text-sm text-emerald-600 hover:underline">
-                Esqueceu a senha?
+              <Link href="/forgot-password" hidden className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight hover:text-foreground transition-colors">
+                Recuperar
               </Link>
             </div>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full h-12 font-bold uppercase tracking-[0.2em] text-[11px] shadow-precision py-6"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Entrando...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Verificando...
                 </>
               ) : (
-                "Entrar"
+                "Entrar no Sistema"
               )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-600">
-            Não tem uma conta?{" "}
-            <Link href="/register" className="font-medium text-emerald-600 hover:underline">
-              Criar conta
-            </Link>
-          </p>
+          <div className="mt-10 pt-6 border-t border-border/50 text-center">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Novo no Dudia?{" "}
+              <Link href="/register" className="text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground transition-all">
+                Criar Identidade
+              </Link>
+            </p>
+          </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-slate-400">
-          © 2026 DUD.IA Finance. Todos os direitos reservados.
+        <p className="mt-12 text-center text-[9px] font-bold text-muted-foreground uppercase tracking-[0.3em] opacity-40">
+          © 2026 Dudia Finance • Secure Terminal
         </p>
       </div>
     </div>

@@ -156,7 +156,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700 lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden">
         {bottomNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -164,18 +164,18 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1 text-xs font-medium transition-colors",
-                isActive ? "text-blue-600" : "text-slate-500 dark:text-slate-400"
+                "flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter transition-colors",
+                isActive ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive ? "text-blue-600" : "text-slate-500 dark:text-slate-400")} />
+              <item.icon className={cn("h-5 w-5", isActive ? "text-foreground" : "text-muted-foreground")} />
               <span>{item.label}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setOpen(true)}
-          className="flex flex-col items-center gap-1 px-3 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 transition-colors"
+          className="flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground transition-colors"
         >
           <MoreHorizontal className="h-5 w-5" />
           <span>Mais</span>
@@ -189,7 +189,7 @@ export function Sidebar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 lg:hidden bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 lg:hidden bg-background/60 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
         )}
@@ -198,26 +198,29 @@ export function Sidebar() {
       {/* ── Mobile slide-in drawer ───────────────────────────────── */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-full w-72 bg-slate-900 text-white shadow-xl transition-transform duration-200 lg:hidden flex flex-col",
+          "fixed left-0 top-0 z-50 h-full w-72 bg-sidebar text-sidebar-foreground shadow-precision transition-transform duration-300 lg:hidden flex flex-col border-r border-sidebar-border",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-slate-700 px-5">
+        <div className="flex h-16 items-center justify-between border-b border-sidebar-border/50 px-5">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">DF</span>
+            <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center shadow-precision">
+              <span className="text-background font-bold text-[10px]">D.</span>
             </div>
-            <span className="text-lg font-semibold tracking-tight text-white">Finance</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-tight text-foreground leading-none uppercase">Dudia</span>
+              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Finance</span>
+            </div>
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3 no-scrollbar">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -226,25 +229,25 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
                   isActive
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                    ? "bg-sidebar-accent text-sidebar-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 shrink-0" />
+                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-foreground" : "text-muted-foreground")} />
                 <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-slate-700 p-3">
+        <div className="border-t border-sidebar-border/50 p-3">
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-4 w-4" />
             <span>Sair</span>
           </button>
         </div>

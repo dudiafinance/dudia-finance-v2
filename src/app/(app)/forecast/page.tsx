@@ -49,131 +49,63 @@ export default function ForecastPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pb-20">
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
-          <div className="h-8 w-48 rounded bg-slate-200 dark:bg-slate-700" />
+      <div className="w-full animate-in fade-in duration-500">
+        <div className="px-6 py-8 border-b border-border/50">
+          <div className="h-4 w-32 bg-secondary animate-pulse rounded mb-2" />
+          <div className="h-8 w-48 bg-secondary animate-pulse rounded" />
         </div>
-        <div className="px-6 py-6 space-y-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 rounded-lg bg-slate-100 dark:bg-slate-800" />)}
+        <div className="px-6 py-8 space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden">
+            {[1, 2, 3, 4].map((i) => <div key={i} className="h-24 bg-background animate-pulse" />)}
           </div>
-          <div className="h-80 rounded-lg bg-slate-100 dark:bg-slate-800" />
+          <div className="h-80 rounded-lg bg-secondary/30 border border-border/50 animate-pulse shadow-precision" />
         </div>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="min-h-screen pb-20">
-        <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Previsão</h1>
-        </div>
-        <div className="px-6 py-6">
-          <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 text-red-700 dark:text-red-300">
-            Erro ao carregar previsão de saldo.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const bestMonth = data.reduce((best, m) => m.netBalance > best.netBalance ? m : best, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
-  const worstMonth = data.reduce((worst, m) => m.netBalance < worst.netBalance ? m : worst, data[0] ?? { netBalance: 0, monthName: "-" } as ForecastMonth);
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="w-full animate-in fade-in duration-500">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Previsão</h1>
-            <p className="text-sm text-slate-500 mt-1">Projeção dos próximos 12 meses.</p>
+      <div className="px-6 py-8 border-b border-border/50">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Projeção Patrimonial</span>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight uppercase">Previsão 12 Meses</h1>
+          </div>
+
+          <div className="flex items-center gap-3 px-4 py-2 bg-secondary/30 rounded-lg border border-border/50 shadow-precision">
+            <Info className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Cálculo baseado em médias e recorrências</p>
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-6 space-y-6">
-        {/* Info box */}
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-start gap-4 rounded-2xl bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100/50 dark:border-blue-500/10 px-6 py-4 shadow-sm"
-        >
-          <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-500/20 flex items-center justify-center shrink-0">
-            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex-1">
-            <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-0.5">Entenda a Projeção</h4>
-            <p className="text-xs font-medium text-blue-700/80 dark:text-blue-300/80 leading-relaxed">
-              <span className="font-bold opacity-100">Saldo Final = </span>
-              Receitas − Despesas Fixas − Faturas de Cartão − Orçamentos Definidos − Contribuições para Metas
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Saldo Atual", value: fmt(data[0]?.startingBalance ?? 0), color: "text-slate-900 dark:text-white" },
-            { 
-              label: "Projeção (12m)", 
-              value: fmt(data[12]?.cumulativeBalance ?? 0), 
-              color: (data[12]?.cumulativeBalance ?? 0) >= (data[0]?.startingBalance ?? 0) ? "text-emerald-600" : "text-red-600" 
-            },
-            { 
-              label: "Melhor Mês", 
-              value: fmt(bestMonth?.netBalance ?? 0), 
-              color: "text-emerald-600", 
-              icon: TrendingUp, 
-              iconColor: "text-emerald-500",
-              sub: bestMonth?.monthName 
-            },
-            { 
-              label: "Pior Mês", 
-              value: fmt(worstMonth?.netBalance ?? 0), 
-              color: "text-red-600", 
-              icon: TrendingDown, 
-              iconColor: "text-red-500",
-              sub: worstMonth?.monthName 
-            },
-          ].map((card, i) => (
-            <motion.div 
-              key={card.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 shadow-sm hover:shadow-md transition-all"
+      <div className="px-6 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mb-12 shadow-precision">
+          {statCards.map((card, i) => (
+            <div 
+              key={i} 
+              className="bg-background p-6"
             >
-              <div className="flex items-center gap-2 mb-2">
-                {card.icon && <card.icon className={cn("h-3.5 w-3.5", card.iconColor)} />}
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{card.label}</p>
-              </div>
-              <p className={cn("text-2xl font-bold tracking-tight", card.color)}>{card.value}</p>
-              {card.sub && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase opacity-60">{card.sub}</p>}
-            </motion.div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">{card.label}</p>
+              <p className={cn("text-2xl font-bold tabular-nums tracking-tight", card.color || "text-foreground")}>
+                {card.value}
+              </p>
+              {card.sub && <p className="text-[9px] font-bold text-muted-foreground mt-2 uppercase tracking-tighter opacity-60">{card.sub}</p>}
+            </div>
           ))}
         </div>
 
-        {/* Chart */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-8 shadow-sm"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <ChartIcon className="h-4 w-4 text-slate-400" />
-              <h3 className="font-semibold text-slate-900 dark:text-white">Evolução do Saldo</h3>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-                <span className="text-slate-500">Saldo Projetado</span>
-              </div>
-            </div>
+        {/* Chart Area */}
+        <div className="bg-background rounded-lg border border-border/50 p-8 mb-12 shadow-precision">
+          <div className="flex items-center gap-3 mb-8">
+            <ChartIcon className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">Evolução do Saldo Projetado</h3>
           </div>
-          <div className="h-[280px] w-full">
+          
+          <div className="h-[400px] w-full tabular-nums">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data}>
                 <defs>
@@ -241,95 +173,85 @@ export default function ForecastPage() {
         </motion.div>
 
         {/* Monthly cards */}
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-slate-900 dark:text-white">Detalhamento Mensal</h2>
-          {data.map((m) => {
-            const totalCommitments = m.expenses + m.cardInvoice + m.budgetAllocations + m.goalContributions;
-            const incomeWidth = m.income > 0
-              ? Math.min(100, (m.income / Math.max(m.income, totalCommitments)) * 100)
-              : 0;
-            const commitWidth = totalCommitments > 0
-              ? Math.min(100, (totalCommitments / Math.max(m.income, totalCommitments)) * 100)
-              : 0;
+        <div className="space-y-6">
+          <div className="flex items-center gap-4">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Detalhamento Mensal</h2>
+            <div className="h-px flex-1 bg-border/40" />
+          </div>
 
-            return (
-              <motion.div
-                key={`${m.year}-${m.month}`}
-                layout
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
-                className={cn(
-                  "rounded-2xl bg-white dark:bg-slate-800 border p-6 transition-all cursor-default",
-                  m.isCurrent 
-                    ? "border-blue-500 dark:border-blue-400 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/20" 
-                    : "border-slate-200 dark:border-slate-700 shadow-sm"
-                )}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-slate-400" />
-                    <span className={cn("text-sm font-semibold capitalize", m.isCurrent ? "text-blue-600" : "text-slate-900 dark:text-white")}>
-                      {m.monthName}
-                    </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data.map((m) => {
+              const totalCommitments = m.expenses + m.cardInvoice + m.budgetAllocations + m.goalContributions;
+              const incomeWidth = m.income > 0
+                ? Math.min(100, (m.income / Math.max(m.income, totalCommitments)) * 100)
+                : 0;
+              const commitWidth = totalCommitments > 0
+                ? Math.min(100, (totalCommitments / Math.max(m.income, totalCommitments)) * 100)
+                : 0;
+
+              return (
+                <motion.div
+                  key={`${m.year}-${m.month}`}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "rounded-lg bg-background border p-6 transition-all shadow-precision",
+                    m.isCurrent 
+                      ? "border-foreground/20 ring-1 ring-foreground/10 bg-secondary/20" 
+                      : "border-border/50 hover:border-border"
+                  )}
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className={cn("text-xs font-bold uppercase tracking-widest", m.isCurrent ? "text-foreground" : "text-muted-foreground")}>
+                        {m.monthName}
+                      </span>
+                    </div>
                     {m.isCurrent && (
-                      <span className="rounded-full bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">
-                        Atual
+                      <span className="text-[8px] font-bold uppercase tracking-widest bg-foreground text-background px-2 py-0.5 rounded">
+                        Ciclo Atual
                       </span>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className={cn("text-base font-bold", m.netBalance >= 0 ? "text-emerald-600" : "text-red-600")}>
-                      {m.netBalance >= 0 ? "+" : ""}{fmt(m.netBalance)}
-                    </p>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-tight">
-                      Saldo: {fmt(m.startingBalance)} → {fmt(m.cumulativeBalance)}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Receitas</p>
-                    <p className="font-semibold text-emerald-600">{fmt(m.income)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Despesas</p>
-                    <p className="font-semibold text-red-600">{fmt(m.expenses)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Cartão</p>
-                    <p className="font-semibold text-violet-600">{fmt(m.cardInvoice)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Orçamentos</p>
-                    <p className="font-semibold text-amber-600">{fmt(m.budgetAllocations)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Metas</p>
-                    <p className="font-semibold text-blue-600">{fmt(m.goalContributions)}</p>
-                  </div>
-                </div>
-
-                {/* Bar visual */}
-                <div className="space-y-1.5">
-                  <div className="flex gap-2 items-center">
-                    <span className="w-16 text-[10px] text-slate-400 shrink-0">Receitas</span>
-                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-1.5 bg-emerald-500 rounded-full transition-all" style={{ width: `${incomeWidth}%` }} />
+                  <div className="space-y-4 mb-6">
+                    <div className="flex justify-between items-end">
+                      <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Resultado Projetado</p>
+                      <p className={cn("text-sm font-bold tabular-nums", m.netBalance >= 0 ? "text-emerald-500" : "text-red-500")}>
+                        {m.netBalance >= 0 ? "+" : ""}{fmt(m.netBalance)}
+                      </p>
+                    </div>
+                    <div className="h-px bg-border/30" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Entradas</p>
+                        <p className="text-[11px] font-bold text-foreground tabular-nums">{fmt(m.income)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Compromissos</p>
+                        <p className="text-[11px] font-bold text-foreground tabular-nums">{fmt(totalCommitments)}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 items-center">
-                    <span className="w-16 text-[10px] text-slate-400 shrink-0">Compromissos</span>
-                    <div className="flex-1 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-1.5 bg-red-400 rounded-full transition-all" style={{ width: `${commitWidth}%` }} />
+
+                  {/* Bars visual */}
+                  <div className="space-y-2">
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
+                      <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${incomeWidth}%` }} />
+                    </div>
+                    <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/10">
+                      <div className="h-full bg-red-400 rounded-full transition-all" style={{ width: `${commitWidth}%` }} />
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
+      </div>
+    </div>
       </div>
     </div>
   );

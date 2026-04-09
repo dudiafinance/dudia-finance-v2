@@ -161,8 +161,8 @@ export default function CreditCardsPage() {
   if (isLoadingCards) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-slate-500 font-medium animate-pulse">Carregando cartões...</p>
+        <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Sincronizando cartões...</p>
       </div>
     );
   }
@@ -170,64 +170,56 @@ export default function CreditCardsPage() {
   return (
     <div className="w-full animate-in fade-in duration-500">
       {/* Header */}
-      <div className="bg-slate-900 border-b border-slate-700 px-6 pt-8 pb-10">
+      <div className="px-6 py-8 border-b border-border/50">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-1 bg-blue-500 rounded-full" />
-              <h1 className="text-3xl md:text-4xl font-bold text-white tracking-tight">Cartões de Crédito</h1>
-            </div>
-            <p className="text-slate-400 font-medium">Gerencie suas faturas e limites.</p>
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Gestão de Crédito</span>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight uppercase">Cartões</h1>
           </div>
 
           <Button
             onClick={() => { setEditingCard(null); setIsCardModalOpen(true); }}
-            className="gap-3 font-bold"
+            className="gap-2 h-8 text-[11px] font-bold uppercase"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-3.5 w-3.5" />
             <span>Novo Cartão</span>
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-red-400">
-              <TrendingDown className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Fatura Atual</span>
-            </div>
-            <p className="text-2xl font-bold text-white tabular-nums">
+        {/* Stats Grid - High Density */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mt-8 shadow-precision">
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <TrendingDown className="h-3 w-3 text-red-500" />
+              Fatura do Período
+            </p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
               {selectedCard ? fmt(invoiceTotal) : "R$ 0,00"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">{transactions.length} transações</p>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-emerald-400">
-              <Wallet className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Limite Disponível</span>
-            </div>
-            <p className="text-2xl font-bold text-white tabular-nums">
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <Wallet className="h-3 w-3 text-emerald-500" />
+              Disponível
+            </p>
+            <p className="text-xl font-bold tabular-nums text-foreground">
               {selectedCard ? fmt(Number(selectedCard.limit) - Number(selectedCard.usedAmount)) : "R$ 0,00"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {selectedCard ? `${Math.round((Number(selectedCard.usedAmount) / Number(selectedCard.limit)) * 100)}% utilizado` : "Selecione um cartão"}
-            </p>
           </div>
 
-          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
-            <div className="flex items-center gap-2 mb-2 text-blue-400">
-              <CardIcon className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Status</span>
-            </div>
+          <div className="bg-background p-5">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-2">
+              <CardIcon className="h-3 w-3 text-muted-foreground" />
+              Status
+            </p>
             <div className="flex items-center gap-2">
+              <p className="text-xl font-bold text-foreground uppercase tabular-nums">{currentInvoiceStatus}</p>
               <div className={cn("h-2 w-2 rounded-full", 
-                currentInvoiceStatus === 'ABERTA' ? 'bg-blue-500' : 
+                currentInvoiceStatus === 'ABERTA' ? 'bg-emerald-500' : 
                 currentInvoiceStatus === 'PAGA' ? 'bg-emerald-500' : 'bg-red-500'
               )} />
-              <p className="text-lg font-bold text-white uppercase">{currentInvoiceStatus}</p>
             </div>
-            <p className="text-xs text-slate-500 mt-1">{selectedCard?.bank || "Nenhum cartão"}</p>
           </div>
         </div>
       </div>
@@ -236,30 +228,20 @@ export default function CreditCardsPage() {
       <div className="px-6 py-8">
         {/* Cards List */}
         {cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="h-16 w-16 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center mb-4">
-              <CardIcon className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Nenhum cartão cadastrado</h3>
-            <p className="text-sm text-slate-500 max-w-xs mx-auto mt-2">Adicione seus cartões para gerenciar suas faturas.</p>
-            <Button onClick={() => setIsCardModalOpen(true)} className="mt-6 rounded-md bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Cartão
-            </Button>
+          <div className="flex flex-col items-center justify-center py-20 text-center opacity-30">
+            <CardIcon className="h-12 w-12 mb-4" />
+            <p className="text-[10px] font-bold uppercase tracking-widest">Nenhum cartão</p>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-12">
             {/* Cards Grid */}
             <section>
-              <div className="flex items-center gap-3 mb-5">
-                <div className="h-9 w-9 rounded-lg bg-violet-600 flex items-center justify-center">
-                  <CardIcon className="h-5 w-5 text-white" />
-                </div>
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white uppercase tracking-wider">Meus Cartões</h2>
-                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+              <div className="flex items-center gap-4 mb-6">
+                <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Meus Cartões</h2>
+                <div className="h-px flex-1 bg-border/40" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {cards.map((card) => {
                   const isSelected = selectedCardId === card.id;
                   const usedPercent = (Number(card.usedAmount) / Number(card.limit)) * 100;
@@ -267,62 +249,69 @@ export default function CreditCardsPage() {
                   return (
                     <motion.div
                       key={card.id}
-                      whileHover={{ y: -4 }}
+                      whileHover={{ y: -2 }}
                       onClick={() => setSelectedCardId(card.id)}
                       className={cn(
-                        "cursor-pointer rounded-lg border p-5 transition-shadow",
+                        "group cursor-pointer rounded-lg border p-6 transition-all duration-300 shadow-precision relative overflow-hidden",
                         isSelected 
-                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-500" 
-                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-md"
+                          ? "bg-secondary/50 border-foreground/20 ring-1 ring-foreground/10" 
+                          : "bg-background border-border/50 hover:border-border hover:bg-secondary/20"
                       )}
                     >
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-start justify-between mb-6 relative z-10">
+                        <div className="flex items-center gap-4">
                           <div className={cn(
-                            "h-10 w-10 rounded-lg flex items-center justify-center",
+                            "h-10 w-10 rounded flex items-center justify-center border border-white/10 shadow-precision transition-transform group-hover:scale-105",
                             card.gradient 
                               ? (card.gradient.includes('bg-gradient') ? card.gradient : `bg-gradient-to-br ${card.gradient}`) 
-                              : "bg-slate-800"
+                              : "bg-zinc-800"
                           )}>
                             <CardIcon className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-slate-900 dark:text-white">{card.name}</h3>
-                            <p className="text-xs text-slate-500">{card.bank}</p>
+                            <h3 className="text-sm font-bold text-foreground tracking-tight">{card.name}</h3>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{card.bank}</p>
                           </div>
                         </div>
                         <Button 
-                          variant="secondary"
+                          variant="ghost"
                           size="icon"
                           onClick={(e) => { e.stopPropagation(); setEditingCard(card); setIsCardModalOpen(true); }}
-                          className="h-8 w-8 bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 shadow-none border-none"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-background/50"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-4 relative z-10">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs text-slate-500">•••• {card.lastDigits}</span>
-                          <span className="text-xs font-medium text-slate-400">{card.network.toUpperCase()}</span>
+                          <span className="text-[10px] font-bold tabular-nums text-muted-foreground tracking-widest uppercase">•••• {card.lastDigits}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em]">{card.network}</span>
                         </div>
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-500">Usado</span>
-                          <span className={cn(
-                            "font-semibold",
-                            usedPercent > 80 ? "text-red-500" : "text-slate-900 dark:text-white"
-                          )}>
-                            {Math.round(usedPercent)}%
-                          </span>
-                        </div>
-                        <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(usedPercent, 100)}%` }}
-                            className={cn("h-full rounded-full", usedPercent > 80 ? "bg-red-500" : "bg-blue-500")}
-                          />
+                        
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider">
+                            <span className="text-muted-foreground">Utilização</span>
+                            <span className={cn(
+                              usedPercent > 80 ? "text-red-500" : "text-foreground"
+                            )}>
+                              {usedPercent.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden border border-border/20">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${Math.min(usedPercent, 100)}%` }}
+                              className={cn("h-full rounded-full", usedPercent > 80 ? "bg-red-500" : "bg-foreground")}
+                            />
+                          </div>
                         </div>
                       </div>
+
+                      {/* Accent for selected card */}
+                      {isSelected && (
+                        <div className="absolute top-0 right-0 h-12 w-12 bg-foreground/5 blur-2xl rounded-full -mr-6 -mt-6" />
+                      )}
                     </motion.div>
                   );
                 })}
@@ -331,161 +320,153 @@ export default function CreditCardsPage() {
 
             {/* Selected Card Dashboard */}
             {selectedCard && (
-              <section className="space-y-6">
-                {/* Invoice Header */}
-                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div className="flex items-center gap-1 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <section className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">Detalhamento da Fatura</h2>
+                  <div className="h-px flex-1 bg-border/40" />
+                </div>
+
+                <div className="bg-background rounded-lg border border-border/50 p-6 shadow-precision">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div className="flex items-center gap-1 bg-secondary rounded-lg border border-border p-1">
                       <Button 
                         variant="ghost"
                         size="icon"
                         onClick={prevInvoice} 
-                        className="h-9 w-9"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       >
-                        <ChevronLeft className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                        <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <Button 
-                        variant="ghost"
+                      <button 
                         onClick={goToToday}
-                        className="px-4 h-9 gap-2 font-bold text-slate-900 dark:text-white"
+                        className="px-4 h-8 text-[11px] font-bold uppercase text-foreground flex items-center gap-2"
                       >
                         {MONTH_NAMES[currentMonth-1]} {currentYear}
                         {currentMonth === new Date().getMonth() + 1 && currentYear === new Date().getFullYear() && (
-                          <div className="h-2 w-2 rounded-full bg-blue-500" />
+                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                         )}
-                      </Button>
+                      </button>
                       <Button 
                         variant="ghost"
                         size="icon"
                         onClick={nextInvoice} 
-                        className="h-9 w-9"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       >
-                        <ChevronRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                        <ChevronRight className="h-4 w-4" />
                       </Button>
                     </div>
                     
                     <div className="flex gap-3">
                       <Button 
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => setIsPayModalOpen(true)}
-                        className="font-bold bg-slate-900 dark:bg-white dark:text-slate-900 text-white hover:bg-slate-800"
+                        className="h-9 px-6 text-[11px] font-bold uppercase border-border shadow-precision"
                       >
-                        Pagar Fatura
+                        Liquidar Fatura
                       </Button>
                       <Button 
                         onClick={() => setIsLaunchModalOpen(true)}
-                        className="font-bold shadow-lg"
+                        className="h-9 px-6 text-[11px] font-bold uppercase shadow-precision"
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Lançar
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Lançar Compra
                       </Button>
                     </div>
                   </div>
 
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Fatura do Período</p>
-                      <p className="text-3xl font-bold text-slate-900 dark:text-white tabular-nums">{fmt(invoiceTotal)}</p>
+                  {/* Period Stats Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total da Fatura</p>
+                      <p className="text-2xl font-bold text-foreground tabular-nums tracking-tight">{fmt(invoiceTotal)}</p>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Limite Disponível</p>
-                      <p className="text-3xl font-bold text-emerald-500 tabular-nums">
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Limite Disponível</p>
+                      <p className="text-2xl font-bold text-emerald-500 tabular-nums tracking-tight">
                         {fmt(Number(selectedCard.limit) - Number(selectedCard.usedAmount))}
                       </p>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-3 rounded-md bg-slate-50 dark:bg-slate-700">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Fechamento</p>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Dia {selectedCard.closingDay}</p>
-                      </div>
-                      <div className="p-3 rounded-md bg-slate-50 dark:bg-slate-700">
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">Vencimento</p>
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">Dia {selectedCard.dueDay}</p>
-                      </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Fechamento</p>
+                      <p className="text-sm font-bold text-foreground uppercase tracking-tight">Dia {selectedCard.closingDay}</p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Vencimento</p>
+                      <p className="text-sm font-bold text-foreground uppercase tracking-tight">Dia {selectedCard.dueDay}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Status Button */}
-                <div className="flex justify-center">
+                {/* Status Switcher Hero */}
+                <div className="flex justify-center py-4">
                   <Button
-                    variant={currentInvoiceStatus === "PAGA" ? "glass" : currentInvoiceStatus === "FECHADA" ? "default" : "secondary"}
+                    variant={currentInvoiceStatus === "PAGA" ? "secondary" : "default"}
                     onClick={() => {
                       const statuses = ["ABERTA", "FECHADA", "PAGA"];
                       const next = statuses[(statuses.indexOf(currentInvoiceStatus) + 1) % statuses.length];
                       updateInvoiceStatus.mutate({ month: currentMonth, year: currentYear, status: next });
                     }}
                     className={cn(
-                      "px-8 py-6 font-bold text-base transition-all shadow-xl",
-                      currentInvoiceStatus === "PAGA" ? "bg-emerald-600/20 text-emerald-600 border-emerald-500/30 hover:bg-emerald-600/30" :
-                      currentInvoiceStatus === "FECHADA" ? "bg-red-600 text-white hover:bg-red-700" :
-                      "bg-blue-600/10 text-blue-600 border-blue-500/20 hover:bg-blue-600/20"
+                      "h-14 px-10 text-[12px] font-bold uppercase tracking-[0.2em] transition-all shadow-precision border-precision border-white/5",
+                      currentInvoiceStatus === "PAGA" ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/20" :
+                      currentInvoiceStatus === "FECHADA" ? "bg-red-500 text-white hover:bg-red-600" :
+                      "bg-foreground text-background"
                     )}
                   >
-                    {currentInvoiceStatus === "PAGA" && <CheckCircle2 className="h-5 w-5 mr-3" />}
-                    Marcar como {currentInvoiceStatus === "ABERTA" ? "Fechada" : currentInvoiceStatus === "FECHADA" ? "Paga" : "Aberta"}
+                    {currentInvoiceStatus === "PAGA" && <CheckCircle2 className="h-4 w-4 mr-3" />}
+                    {currentInvoiceStatus === "ABERTA" ? "Fechar Fatura" : currentInvoiceStatus === "FECHADA" ? "Confirmar Pagamento" : "Fatura Liquidada"}
                   </Button>
                 </div>
 
-                {/* Transactions List */}
-                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">Lançamentos</h3>
-                    <span className="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
-                      {transactions.length} registros
+                {/* Transactions Table/List */}
+                <div className="bg-background rounded-lg border border-border/50 overflow-hidden shadow-precision">
+                  <div className="flex items-center justify-between p-5 border-b border-border/50 bg-secondary/20">
+                    <h3 className="text-[11px] font-bold text-foreground uppercase tracking-widest">Lançamentos do Período</h3>
+                    <span className="text-[10px] font-bold text-muted-foreground tabular-nums">
+                      {transactions.length} REGISTROS
                     </span>
                   </div>
 
                   {isLoadingTx ? (
-                    <div className="h-40 flex items-center justify-center">
-                      <div className="h-8 w-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin" />
+                    <div className="p-20 flex flex-col items-center justify-center gap-4">
+                      <div className="h-5 w-5 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : transactions.length === 0 ? (
-                    <div className="py-12 text-center">
-                      <Clock className="h-10 w-10 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-slate-400">Nenhum lançamento em {MONTH_NAMES[currentMonth-1]}</p>
+                    <div className="py-20 text-center opacity-30">
+                      <Clock className="h-10 w-10 mx-auto mb-4" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest">Nenhuma transação nesta fatura</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="divide-y divide-border/50">
                       {transactions.map((tx) => {
                         const cat = categories.find(c => c.id === tx.categoryId);
-                        const color = cat?.color ?? "#94A3B8";
                         const isRefund = Number(tx.amount) < 0;
 
                         return (
                           <div 
                             key={tx.id}
-                            className="group flex items-center gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer transition-all"
+                            className="group flex items-center gap-4 p-4 hover:bg-secondary/30 cursor-pointer transition-all"
                             onClick={() => { setEditingTx(tx); setIsEditModalOpen(true); }}
                           >
-                            <div 
-                              className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ backgroundColor: `${color}20` }}
-                            >
-                              <div 
-                                className="h-8 w-8 rounded-md flex items-center justify-center"
-                                style={{ backgroundColor: color }}
-                              >
-                                {isRefund ? (
-                                  <ArrowDownLeft className="h-4 w-4 text-white" />
-                                ) : (
-                                  <TrendingDown className="h-4 w-4 text-white" />
-                                )}
-                              </div>
+                            <div className={cn(
+                              "h-8 w-8 rounded flex items-center justify-center border border-border/50 shrink-0",
+                              isRefund ? "text-emerald-500" : "text-foreground"
+                            )}>
+                              {isRefund ? <ArrowDownLeft className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                              <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{tx.description}</p>
-                              <p className="text-xs text-slate-500">
-                                {cat?.name ?? "Outros"} • {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                              <p className="text-sm font-bold text-foreground tracking-tight truncate">{tx.description}</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                                {cat?.name ?? "Geral"} • {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                                {tx.installmentNumber && ` • Parcela ${tx.installmentNumber}/${tx.totalInstallments}`}
                               </p>
                             </div>
 
                             <div className="text-right">
                               <p className={cn(
-                                "font-semibold tabular-nums text-sm",
-                                isRefund ? "text-emerald-600" : "text-slate-900 dark:text-white"
+                                "text-sm font-bold tabular-nums tracking-tight",
+                                isRefund ? "text-emerald-500" : "text-foreground"
                               )}>
                                 {isRefund ? `+${fmt(Math.abs(Number(tx.amount)))}` : fmt(Number(tx.amount))}
                               </p>
@@ -497,6 +478,10 @@ export default function CreditCardsPage() {
                   )}
                 </div>
               </section>
+            )}
+          </div>
+        )}
+      </div>
             )}
           </div>
         )}
@@ -631,7 +616,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
             </Select>
           </Field>
           <Field label="Estilo">
-            <div className="flex gap-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex gap-2 p-2 bg-secondary/50 rounded-lg border border-border/50 shadow-precision">
               {GRADIENT_PRESETS.map(preset => {
                 const normalizedGradient = form.gradient?.includes('bg-gradient') 
                   ? form.gradient 
@@ -647,9 +632,9 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
                     size="icon"
                     onClick={() => setForm(p => ({...p, gradient: preset.value, color: preset.color}))}
                     className={cn(
-                      "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all",
+                      "h-10 w-10 p-0 overflow-hidden ring-offset-2 transition-all border border-white/10 shadow-precision",
                       preset.value,
-                      isSelected ? "ring-2 ring-blue-500 scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
+                      isSelected ? "ring-1 ring-foreground scale-110 shadow-lg" : "opacity-40 hover:opacity-100"
                     )}
                   />
                 );
@@ -658,9 +643,9 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
           </Field>
         </FormRow>
 
-        <div className="flex gap-4 pt-6 mt-2 border-t border-slate-100 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-1 font-bold shadow-lg"
+        <div className="flex gap-4 pt-6 mt-2 border-t border-border/50">
+          <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+          <Button onClick={handleSubmit} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
             disabled={createCard.isPending || updateCard.isPending}>
             {createCard.isPending || updateCard.isPending ? "Salvando..." : "Salvar Cartão"}
           </Button>
@@ -717,178 +702,149 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
 
   return (
      <Modal open={open} onClose={onClose} title="Novo Lançamento" size="lg">
-      <div className="space-y-6 pt-2">
-        {/* Step 1: Basic Info */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-5 w-1 bg-blue-500 rounded-full" />
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Informações Básicas</span>
+      <div className="space-y-8 pt-4">
+        {/* Hero Amount Section */}
+        <div className="flex flex-col items-center justify-center py-8 bg-secondary/30 rounded-xl border border-border/50 shadow-precision">
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-3">
+            {form.amountMode === 'total' ? "Valor Total" : "Valor da Parcela"}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-light text-muted-foreground">R$</span>
+            <input 
+              type="number" 
+              step="0.01" 
+              value={form.amount} 
+              onChange={e => setForm(p => ({...p, amount: e.target.value}))}
+              placeholder="0,00"
+              autoFocus
+              className="bg-transparent text-6xl font-bold tracking-tighter text-foreground focus:outline-none w-full max-w-[300px] text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none tabular-nums"
+            />
           </div>
-          
-          <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-            {[
-              { key: "purchase", label: "Compra", icon: TrendingDown },
-              { key: "refund", label: "Estorno", icon: ArrowDownLeft },
-            ].map(({ key, label }) => (
-              <Button 
-                key={key} 
-                variant={form.type === key ? "secondary" : "ghost"}
-                onClick={() => setForm(p => ({...p, type: key}))}
-                className={cn("flex-1 transition-all rounded-lg font-bold",
-                  form.type === key ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm" : "text-slate-500 hover:text-slate-700"
-                )}
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
+          {form.amountMode === 'installment' && form.amount && (
+            <p className="text-[10px] font-bold text-emerald-500 uppercase mt-3 tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+              Custo Total: {formatCurrency(calculatedTotal, "BRL")}
+            </p>
+          )}
+        </div>
 
-          <Field label="Descrição" required>
-            <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="space-y-6">
+            <Field label="Tipo de Operação">
+              <div className="flex gap-1 p-1 bg-secondary rounded-md border border-border shadow-precision">
+                {[
+                  { key: "purchase", label: "Compra" },
+                  { key: "refund", label: "Estorno" },
+                ].map(({ key, label }) => (
+                  <button 
+                    key={key} 
+                    type="button"
+                    onClick={() => setForm(p => ({...p, type: key}))}
+                    className={cn("flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded transition-all",
+                      form.type === key 
+                        ? "bg-background text-foreground shadow-sm border border-border"
+                        : "text-muted-foreground hover:text-foreground")}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Descrição" required>
               <Input value={form.description} onChange={e => setForm(p => ({...p, description: e.target.value}))}
-                placeholder="Ex: Supermercado, Amazon..." className="h-12 rounded-xl font-medium pl-4" />
-            </div>
-          </Field>
+                placeholder="Ex: Assinatura Software" className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+            </Field>
 
-          <FormRow>
             <Field label="Categoria">
               <SearchableSelect 
                 options={expenseCategories.map((c) => ({ value: c.id, label: c.name, color: c.color }))}
                 value={form.categoryId}
                 onChange={val => setForm(p => ({...p, categoryId: val}))}
-                placeholder="Selecione a categoria..."
-                className="h-12 rounded-xl"
+                placeholder="Selecione..."
+                className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
               />
             </Field>
-            <Field label="Data de Lançamento">
-              <Input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="h-12 rounded-xl" />
-            </Field>
-          </FormRow>
-
-          <Field label="Tags">
-            <TagInput 
-              value={form.tags} 
-              onChange={tags => setForm(p => ({...p, tags}))}
-              placeholder="Adicionar tags (ex: #focado, #viagem)..."
-              className="rounded-xl border-slate-200"
-            />
-          </Field>
-        </div>
-
-        {/* Step 2: Payment Details */}
-        <div className="space-y-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-1 bg-amber-500 rounded-full" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Pagamento</span>
-            </div>
-            {form.launchType === 'installment' && (
-              <div className="flex items-center gap-1 bg-white dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                <Button 
-                  size="sm" 
-                  variant={form.amountMode === 'total' ? 'secondary' : 'ghost'}
-                  onClick={() => setForm(p => ({...p, amountMode: 'total'}))}
-                  className="h-7 text-[10px] px-2 font-bold rounded-md"
-                >
-                  $ TOTAL
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant={form.amountMode === 'installment' ? 'secondary' : 'ghost'}
-                  onClick={() => setForm(p => ({...p, amountMode: 'installment'}))}
-                  className="h-7 text-[10px] px-2 font-bold rounded-md"
-                >
-                  $ PARCELA
-                </Button>
-              </div>
-            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label={form.amountMode === 'total' ? "Valor Total" : "Valor da Parcela"} required>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-400">R$</span>
-                <Input type="number" step="0.01" value={form.amount} onChange={e => setForm(p => ({...p, amount: e.target.value}))}
-                  placeholder="0,00" className="pl-10 h-12 text-xl font-bold rounded-xl border-2 focus:border-blue-500" />
-                {form.amountMode === 'installment' && form.amount && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 bg-emerald-500/10 text-emerald-600 rounded-md border border-emerald-500/20 animate-in fade-in zoom-in duration-300">
-                    <span className="text-[10px] font-bold">TOTAL: {formatCurrency(calculatedTotal, "BRL")}</span>
-                  </div>
-                )}
+          <div className="space-y-6">
+            <Field label="Data da Compra">
+              <Input type="date" value={form.date} onChange={e => handleDateChange(e.target.value)} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+            </Field>
+
+            <Field label="Ciclo da Fatura">
+              <div className="grid grid-cols-2 gap-4">
+                <Select 
+                  value={form.invoiceMonth} 
+                  onChange={e => setForm(p => ({...p, invoiceMonth: Number(e.target.value)}))} 
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
+                >
+                  {MONTH_NAMES.map((name, i) => (
+                    <option key={name} value={i + 1}>{name}</option>
+                  ))}
+                </Select>
+                <Input 
+                  type="number" 
+                  value={form.invoiceYear} 
+                  onChange={e => setForm(p => ({...p, invoiceYear: Number(e.target.value)}))} 
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" 
+                />
               </div>
             </Field>
 
-            <Field label="Tipo de Lançamento">
-              <Select value={form.launchType} onChange={e => setForm(p => ({...p, launchType: e.target.value}))} className="h-12 rounded-xl font-semibold">
-                <option value="single">À Vista</option>
-                <option value="installment" disabled={form.type === 'refund'}>Parcelado</option>
-                <option value="fixed" disabled={form.type === 'refund'}>Fixo/Mensal</option>
-              </Select>
+            <Field label="Forma de Pagamento">
+              <div className="grid grid-cols-2 gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setForm(p => ({...p, launchType: "single"}))}
+                  className={cn("py-2 text-[10px] font-bold uppercase border rounded transition-all",
+                    form.launchType === "single" ? "bg-foreground text-background border-foreground" : "text-muted-foreground border-border hover:border-muted-foreground"
+                  )}
+                >
+                  À Vista
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setForm(p => ({...p, launchType: "installment"}))}
+                  className={cn("py-2 text-[10px] font-bold uppercase border rounded transition-all",
+                    form.launchType === "installment" ? "bg-foreground text-background border-foreground" : "text-muted-foreground border-border hover:border-muted-foreground"
+                  )}
+                >
+                  Parcelado
+                </button>
+              </div>
             </Field>
           </div>
-
-          {form.launchType === 'installment' && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex gap-4">
-              <Field label="Parcela Inicial" className="flex-1">
-                <div className="relative">
-                  <Input type="number" min={1} max={Number(form.totalInstallments)} value={form.startInstallment} 
-                    onChange={e => setForm(p => ({...p, startInstallment: e.target.value}))} className="h-12 rounded-xl text-center font-bold" />
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                </div>
-              </Field>
-              <Field label="Total de Parcelas" className="flex-1">
-                <div className="relative">
-                  <Input type="number" min={2} value={form.totalInstallments} 
-                    onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-12 rounded-xl text-center font-bold" />
-                  <ArrowRightLeft className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                </div>
-              </Field>
-            </motion.div>
-          )}
         </div>
 
-        {/* Step 3: Schedule */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="h-5 w-1 bg-emerald-500 rounded-full" />
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ciclo de Fatura</span>
-          </div>
-          
-          <FormRow>
-            <Field label="Mês Inicial">
-              <Select 
-                value={form.invoiceMonth} 
-                onChange={e => setForm(p => ({...p, invoiceMonth: Number(e.target.value)}))} 
-                className="h-12 rounded-xl font-medium"
-              >
-                {MONTH_NAMES.map((name, i) => (
-                  <option key={name} value={i + 1}>{name}</option>
-                ))}
-              </Select>
+        {form.launchType === 'installment' && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-5 bg-secondary/30 rounded-lg border border-border/50 grid grid-cols-3 gap-6 shadow-precision">
+            <Field label="Modo de Valor">
+              <div className="flex bg-background p-1 rounded border border-border">
+                <button onClick={() => setForm(p => ({...p, amountMode: 'total'}))} className={cn("flex-1 text-[9px] font-bold py-1 rounded", form.amountMode === 'total' ? "bg-secondary" : "text-muted-foreground")}>TOTAL</button>
+                <button onClick={() => setForm(p => ({...p, amountMode: 'installment'}))} className={cn("flex-1 text-[9px] font-bold py-1 rounded", form.amountMode === 'installment' ? "bg-secondary" : "text-muted-foreground")}>PARCELA</button>
+              </div>
             </Field>
-            <Field label="Ano">
-              <Input 
-                type="number" 
-                value={form.invoiceYear} 
-                onChange={e => setForm(p => ({...p, invoiceYear: Number(e.target.value)}))} 
-                className="h-12 rounded-xl font-medium" 
-              />
+            <Field label="Parcela Inicial">
+              <Input type="number" min={1} max={Number(form.totalInstallments)} value={form.startInstallment} 
+                onChange={e => setForm(p => ({...p, startInstallment: e.target.value}))} className="h-9 text-xs border-zinc-800" />
             </Field>
-          </FormRow>
-        </div>
+            <Field label="Total de Parcelas">
+              <Input type="number" min={2} value={form.totalInstallments} 
+                onChange={e => setForm(p => ({...p, totalInstallments: e.target.value}))} className="h-9 text-xs border-zinc-800" />
+            </Field>
+          </motion.div>
+        )}
 
-        {/* Footer Actions */}
-        <div className="flex gap-4 pt-6 border-t border-slate-100 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 h-12 font-bold rounded-xl border-slate-200">Cancelar</Button>
+        <div className="flex gap-4 pt-6 border-t border-border/50">
+          <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
           {form.launchType === 'installment' ? (
-            <Button onClick={() => setIsPreviewOpen(true)} className="flex-1 h-12 font-bold rounded-xl shadow-xl shadow-blue-500/20"
+            <Button onClick={() => setIsPreviewOpen(true)} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
               disabled={!form.amount || !form.description}>
-              Ver Parcelas Planejadas
+              Revisar Parcelamento
             </Button>
           ) : (
-            <Button onClick={handleSubmit} className="flex-1 h-12 font-bold rounded-xl shadow-xl shadow-blue-500/20"
+            <Button onClick={handleSubmit} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
               disabled={!form.amount || !form.description || createTx.isPending}>
-              {createTx.isPending ? "Lançando..." : "Confirmar Lançamento"}
+              {createTx.isPending ? "Processando..." : "Confirmar Lançamento"}
             </Button>
           )}
         </div>
@@ -957,34 +913,32 @@ function InstallmentPreviewModal({ open, onClose, form, onConfirm, isSubmitting 
   }, [form]);
 
   return (
-    <Modal open={open} onClose={onClose} title="Pré-visualização das Parcelas" size="md">
-      <div className="space-y-4 pt-2">
-        <p className="text-sm text-slate-500">Confira abaixo os lançamentos que serão gerados nas suas próximas faturas:</p>
-        
-        <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+    <Modal open={open} onClose={onClose} title="Plano de Parcelas" size="md">
+      <div className="space-y-6 pt-2">
+        <div className="max-h-[50vh] overflow-y-auto space-y-3 pr-2 no-scrollbar">
           {installments.map((item, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400">
+            <div key={idx} className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 border border-border/50 shadow-precision">
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-8 rounded bg-foreground text-background flex items-center justify-center text-[10px] font-bold">
                   {item.num}/{item.total}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    Fatura de {MONTH_NAMES[item.month-1]} {item.year}
+                  <p className="text-[11px] font-bold text-foreground uppercase tracking-tight">
+                    Fatura {MONTH_NAMES[item.month-1]} {item.year}
                   </p>
                 </div>
               </div>
-              <p className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+              <p className="text-sm font-bold text-foreground tabular-nums tracking-tight">
                 {formatCurrency(item.amount, "BRL")}
               </p>
             </div>
           ))}
         </div>
 
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-700 flex gap-3">
-          <Button variant="outline" onClick={onClose} className="flex-1 font-bold">Voltar</Button>
-          <Button onClick={onConfirm} className="flex-1 font-bold shadow-lg" disabled={isSubmitting}>
-            {isSubmitting ? "Lançando..." : "Confirmar Lançamentos"}
+        <div className="pt-6 border-t border-border/50 flex gap-4">
+          <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Voltar</Button>
+          <Button onClick={onConfirm} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision" disabled={isSubmitting}>
+            {isSubmitting ? "Processando..." : "Confirmar Lançamentos"}
           </Button>
         </div>
       </div>
@@ -1013,30 +967,32 @@ function PayInvoiceModal({ open, onClose, card, total, accounts, month, year, fm
 
   return (
     <Modal open={open} onClose={onClose} title="Liquidar Fatura" size="md">
-      <div className="space-y-5 pt-2">
-        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-5 text-center border border-blue-100 dark:border-blue-800">
-          <p className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Valor da Fatura</p>
-          <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">{fmt(Number(form.amount))}</p>
+      <div className="space-y-8 pt-4">
+        <div className="bg-secondary/30 rounded-xl p-8 text-center border border-border/50 shadow-precision">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-3">Valor da Liquidação</p>
+          <p className="text-4xl font-bold text-foreground tabular-nums tracking-tighter">{fmt(Number(form.amount))}</p>
         </div>
 
-        <Field label="Conta de Origem" required>
-          <Select value={form.accountId} onChange={e => setForm(p => ({...p, accountId: e.target.value}))} className="h-11 rounded-md">
-            <option value="">Selecione a conta...</option>
-            {accounts.filter((a) => a.type !== 'credit_card').map((acc) => (
-              <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
-            ))}
-          </Select>
-        </Field>
+        <div className="space-y-6">
+          <Field label="Conta para Débito" required>
+            <Select value={form.accountId} onChange={e => setForm(p => ({...p, accountId: e.target.value}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+              <option value="">Selecione...</option>
+              {accounts.filter((a) => a.type !== 'credit_card').map((acc) => (
+                <option key={acc.id} value={acc.id}>{acc.name} ({fmt(Number(acc.balance))})</option>
+              ))}
+            </Select>
+          </Field>
 
-        <Field label="Data do Pagamento">
-          <Input type="date" value={form.date} onChange={e => setForm(p => ({...p, date: e.target.value}))} className="h-11 rounded-md" />
-        </Field>
+          <Field label="Data do Pagamento">
+            <Input type="date" value={form.date} onChange={e => setForm(p => ({...p, date: e.target.value}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+          </Field>
+        </div>
 
-        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <Button variant="outline" onClick={onClose} className="flex-1 rounded-md font-medium">Cancelar</Button>
-          <Button onClick={handlePay} className="flex-1 rounded-md font-semibold bg-emerald-600 hover:bg-emerald-700"
+        <div className="flex gap-4 pt-6 border-t border-border/50">
+          <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+          <Button onClick={handlePay} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
             disabled={!form.accountId || payInvoice.isPending}>
-            {payInvoice.isPending ? "Processando..." : "Confirmar Pagamento"}
+            {payInvoice.isPending ? "Processando..." : "Confirmar Liquidação"}
           </Button>
         </div>
       </div>
@@ -1090,56 +1046,59 @@ function EditTxModal({ open, onClose, tx, card }: { open: boolean, onClose: () =
 
   return (
     <Modal open={open} onClose={onClose} title="Editar Lançamento" size="md">
-      <div className="space-y-5 pt-2">
-        <Field label="Descrição">
-          <Input value={form.description} onChange={e => setForm((p) => ({...p, description: e.target.value}))} className="h-11 rounded-md" />
-        </Field>
+      <div className="space-y-8 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="space-y-6">
+            <Field label="Descrição">
+              <Input value={form.description} onChange={e => setForm((p) => ({...p, description: e.target.value}))} className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+            </Field>
 
-        <FormRow>
-          <Field label="Valor (R$)">
-            <Input type="number" value={form.amount} onChange={e => setForm((p) => ({...p, amount: e.target.value}))} className="h-11 rounded-md" />
-          </Field>
-          <Field label="Categoria">
-            <Select value={form.categoryId} onChange={e => setForm((p) => ({...p, categoryId: e.target.value}))} className="h-11 rounded-md">
-              <option value="">Sem Categoria</option>
-              {(categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense').map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </Select>
-          </Field>
-        </FormRow>
+            <Field label="Valor (R$)">
+              <Input type="number" value={form.amount} onChange={e => setForm((p) => ({...p, amount: e.target.value}))} className="h-10 text-sm font-medium border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground tabular-nums" />
+            </Field>
+          </div>
 
-        <FormRow>
-          <Field label="Mês">
-            <Select value={form.invoiceMonth} onChange={e => setForm((p) => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-11 rounded-md">
-              {MONTH_NAMES.map((name, i) => (
-                <option key={name} value={i + 1}>{name}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Ano">
-            <Input type="number" value={form.invoiceYear} onChange={e => setForm((p) => ({...p, invoiceYear: Number(e.target.value)}))} className="h-11 rounded-md" />
-          </Field>
-        </FormRow>
+          <div className="space-y-6">
+            <Field label="Categoria">
+              <Select value={form.categoryId} onChange={e => setForm((p) => ({...p, categoryId: e.target.value}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                <option value="">Sem Categoria</option>
+                {(categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense').map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </Select>
+            </Field>
+
+            <Field label="Fatura de Referência">
+              <div className="grid grid-cols-2 gap-4">
+                <Select value={form.invoiceMonth} onChange={e => setForm((p) => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                  {MONTH_NAMES.map((name, i) => (
+                    <option key={name} value={i + 1}>{name}</option>
+                  ))}
+                </Select>
+                <Input type="number" value={form.invoiceYear} onChange={e => setForm((p) => ({...p, invoiceYear: Number(e.target.value)}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+              </div>
+            </Field>
+          </div>
+        </div>
 
         {tx.groupId && (
-          <label className="flex items-center gap-3 p-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 cursor-pointer">
+          <label className="flex items-center gap-3 p-4 rounded-lg bg-secondary/50 border border-border shadow-precision cursor-pointer transition-colors hover:bg-secondary">
             <input type="checkbox" checked={updateGroup} onChange={e => setUpdateGroup(e.target.checked)}
-              className="w-5 h-5 rounded border-amber-300 text-amber-500" />
-            <span className="text-sm font-medium text-amber-900 dark:text-amber-100">
+              className="w-4 h-4 rounded border-zinc-700 text-foreground focus:ring-zinc-500" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
               Aplicar em todas as parcelas seguintes
             </span>
           </label>
         )}
 
-        <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <Button variant="ghost" onClick={handleDelete} className="text-red-500 hover:bg-red-50 hover:text-red-600 rounded-md">
+        <div className="flex gap-4 pt-6 border-t border-border/50">
+          <Button variant="ghost" onClick={handleDelete} className="text-red-500 hover:bg-red-500/10 border-red-500/20">
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={onClose} className="flex-1 rounded-md font-medium">Cancelar</Button>
-          <Button onClick={handleUpdate} className="flex-1 rounded-md font-semibold bg-blue-600 hover:bg-blue-700"
+          <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+          <Button onClick={handleUpdate} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
             disabled={updateTx.isPending}>
-            {updateTx.isPending ? "Salvando..." : "Salvar"}
+            {updateTx.isPending ? "Salvando..." : "Confirmar Alterações"}
           </Button>
         </div>
       </div>
