@@ -408,6 +408,7 @@ export function useCardTransactions(cardId: string, month?: number, year?: numbe
     queryKey: ["card-transactions", cardId, month ?? null, year ?? null],
     queryFn: () => apiFetch<CardTransaction[]>(url),
     staleTime: ONE_MINUTE,
+    enabled: !!cardId && cardId !== "undefined" && cardId !== "null",
   });
 }
 
