@@ -3,7 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { budgets } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { budgetSchema } from "@/lib/validations";
+import { budgetBaseSchema } from "@/lib/validations";
 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -12,7 +12,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const body = await req.json();
-  const parsed = budgetSchema.partial().safeParse(body);
+  const parsed = budgetBaseSchema.partial().safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
   }
@@ -24,7 +24,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (d.amount !== undefined) updateData.amount = String(d.amount);
   if (d.period) updateData.period = d.period;
   if (d.startDate) updateData.startDate = d.startDate;
-  if (d.endDate !== undefined) updateData.endDate = d.endDate;
+  if (d.endDate !== undefined) updateData.endDate = d.endDate && d.endDate.trim() !== "" ? d.endDate : null;
   if (d.alertsEnabled !== undefined) updateData.alertsEnabled = d.alertsEnabled;
   if (d.alertThreshold !== undefined) updateData.alertThreshold = String(d.alertThreshold);
 

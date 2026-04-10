@@ -3,7 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { goalSchema } from "@/lib/validations";
+import { goalBaseSchema } from "@/lib/validations";
 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     const body = await req.json();
-    const parsed = goalSchema.partial().safeParse(body);
+    const parsed = goalBaseSchema.partial().safeParse(body);
     if (!parsed.success) {
       console.error("Validation error:", parsed.error.issues);
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (d.targetAmount !== undefined) updateData.targetAmount = d.targetAmount ? String(d.targetAmount) : null;
     if (d.currentAmount !== undefined) updateData.currentAmount = String(d.currentAmount);
     if (d.startDate !== undefined) updateData.startDate = d.startDate;
-    if (d.endDate !== undefined) updateData.endDate = d.endDate ?? null;
+    if (d.endDate !== undefined) updateData.endDate = d.endDate && d.endDate.trim() !== "" ? d.endDate : null;
     if (d.goalType) updateData.goalType = d.goalType;
     if (d.priority) updateData.priority = d.priority;
     if (d.status) updateData.status = d.status;

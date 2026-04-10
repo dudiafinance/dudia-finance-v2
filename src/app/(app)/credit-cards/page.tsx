@@ -19,6 +19,7 @@ import {
   useDeleteCardTransaction,
   useCreateCreditCard,
   useUpdateCreditCard,
+  useDeleteCreditCard,
   usePayCardInvoice,
   useCategories,
   useAccounts,
@@ -527,6 +528,19 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 
   const createCard = useCreateCreditCard();
   const updateCard = useUpdateCreditCard();
+  const deleteCard = useDeleteCreditCard();
+
+  const handleDelete = () => {
+    if (!editingCard) return;
+    if (window.confirm("Deseja realmente excluir este cartão? Todas as transações vinculadas serão perdidas.")) {
+      deleteCard.mutate(editingCard.id, {
+        onSuccess: () => {
+          toast("Cartão excluído!");
+          onClose();
+        }
+      });
+    }
+  };
 
   React.useEffect(() => {
     if (editingCard && open) {
@@ -655,9 +669,14 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
         </div>
 
         <div className="flex gap-4 pt-6 border-t border-border/50">
+          {editingCard && (
+            <Button variant="ghost" onClick={handleDelete} className="text-red-500 hover:bg-red-500/10 border-red-500/20 px-3">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
           <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
           <Button onClick={handleSubmit} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
-            disabled={createCard.isPending || updateCard.isPending}>
+            disabled={createCard.isPending || updateCard.isPending || deleteCard.isPending}>
             {createCard.isPending || updateCard.isPending ? "Salvando..." : "Salvar Cartão"}
           </Button>
         </div>

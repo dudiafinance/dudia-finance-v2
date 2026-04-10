@@ -51,7 +51,7 @@ export const transactionSchema = z.object({
   location: z.string().max(255).optional().nullable(),
 });
 
-export const budgetSchema = z.object({
+export const budgetBaseSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
   categoryId: z.string().uuid().optional().nullable(),
   amount: z.coerce.number().positive("Valor deve ser positivo"),
@@ -60,13 +60,15 @@ export const budgetSchema = z.object({
   endDate: z.string().optional().nullable(),
   alertsEnabled: z.boolean().default(true),
   alertThreshold: z.coerce.number().min(50).max(100).default(80),
-}).refine((data) => {
+});
+
+export const budgetSchema = budgetBaseSchema.refine((data) => {
   if (data.endDate === undefined || data.startDate === undefined) return true;
   if (data.endDate && data.startDate && data.endDate <= data.startDate) return false;
   return true;
 }, { message: "Data de fim deve ser posterior à data de início", path: ["endDate"] });
 
-export const goalSchema = z.object({
+export const goalBaseSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
   targetAmount: z.coerce.number().positive("Valor alvo deve ser positivo").optional().nullable(),
   currentAmount: z.coerce.number().min(0).default(0),
@@ -77,7 +79,9 @@ export const goalSchema = z.object({
   priority: z.enum(["low", "medium", "high"]).default("medium"),
   status: z.enum(["active", "completed", "cancelled"]).default("active"),
   notes: z.string().max(1000).optional().nullable(),
-}).refine((data) => {
+});
+
+export const goalSchema = goalBaseSchema.refine((data) => {
   // Ignora validação se algum dos campos de valor estiver ausente (provável update parcial)
   if (data.targetAmount === undefined || data.monthlyContribution === undefined) return true;
   return !!data.targetAmount || !!data.monthlyContribution;
@@ -104,7 +108,7 @@ export const cardTransactionSchema = z.object({
   isPending: z.boolean().default(false),
 });
 
-export const creditCardSchema = z.object({
+export const creditCardBaseSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(255),
   bank: z.string().min(1, "Banco obrigatório").max(100),
   lastDigits: z.string().max(4).optional().nullable(),
@@ -114,7 +118,9 @@ export const creditCardSchema = z.object({
   color: z.string().max(7).optional(),
   gradient: z.string().max(100).optional(),
   network: z.string().max(20).optional(),
-}).refine((data) => {
+});
+
+export const creditCardSchema = creditCardBaseSchema.refine((data) => {
   if (data.dueDay !== undefined && data.closingDay !== undefined) {
     return data.dueDay !== data.closingDay;
   }

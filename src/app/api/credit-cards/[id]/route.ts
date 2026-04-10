@@ -3,7 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { creditCardSchema } from "@/lib/validations";
+import { creditCardBaseSchema } from "@/lib/validations";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const body = await req.json();
 
-    const parsed = creditCardSchema.partial().safeParse(body);
+    const parsed = creditCardBaseSchema.partial().safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
     }
