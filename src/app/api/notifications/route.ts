@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -14,7 +14,7 @@ export async function GET() {
     const data = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, session.user.id))
+      .where(eq(notifications.userId, userId))
       .orderBy(desc(notifications.createdAt))
       .limit(20);
 
@@ -26,8 +26,8 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
         .set({ isRead: true, updatedAt: new Date() })
         .where(
           and(
-            eq(notifications.userId, session.user.id),
+            eq(notifications.userId, userId),
             eq(notifications.isRead, false)
           )
         );
@@ -51,7 +51,7 @@ export async function PATCH(req: Request) {
         .where(
           and(
             eq(notifications.id, id),
-            eq(notifications.userId, session.user.id)
+            eq(notifications.userId, userId)
           )
         );
     }

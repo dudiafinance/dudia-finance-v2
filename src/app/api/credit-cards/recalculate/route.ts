@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { recalculateUsedAmount } from "@/lib/credit-card-utils";
 import { eq } from "drizzle-orm";
 
 export async function POST() {
-  const session = await auth();
-  const userId = (session?.user as { id?: string })?.id;
+  const userId = await getUserId();
   
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

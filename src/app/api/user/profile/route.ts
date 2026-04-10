@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function PUT(req: Request) {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -24,7 +24,7 @@ export async function PUT(req: Request) {
 
     // Check if email belongs to another user
     const existingUser = await db.query.users.findFirst({
-      where: (users, { and, eq, not }) => and(eq(users.email, email.toLowerCase().trim()), not(eq(users.id, session.user.id)))
+      where: (users, { and, eq, not }) => and(eq(users.email, email.toLowerCase().trim()), not(eq(users.id, userId)))
     });
 
     if (existingUser) {
@@ -39,7 +39,7 @@ export async function PUT(req: Request) {
         avatar,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, session.user.id));
+      .where(eq(users.id, userId));
 
     return NextResponse.json({ success: true, message: "Perfil atualizado com sucesso" });
   } catch (error) {

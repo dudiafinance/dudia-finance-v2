@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 interface ForecastMonth {
   year: number;
@@ -38,8 +38,8 @@ async function fetchForecast(): Promise<ForecastMonth[]> {
 }
 
 export default function ForecastPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const { data = [], isLoading, error } = useQuery({

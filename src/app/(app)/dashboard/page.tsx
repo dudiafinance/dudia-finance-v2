@@ -10,7 +10,7 @@ import { useDashboard } from "@/hooks/use-api";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -18,8 +18,8 @@ const MONTH_NAMES = [
 ];
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const now = new Date();

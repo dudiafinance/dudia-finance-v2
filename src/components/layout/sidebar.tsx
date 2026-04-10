@@ -14,7 +14,6 @@ import {
   Target,
   BarChart3,
   Settings,
-  LogOut,
   ChevronLeft,
   ChevronRight,
   TrendingUp,
@@ -22,7 +21,6 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMobileNav } from "./mobile-nav-context";
 
@@ -62,29 +60,21 @@ export function Sidebar() {
         )}
       >
         <div className={cn("flex h-16 items-center border-b border-sidebar-border/50 px-6", collapsed && "justify-center px-0")}>
-          {collapsed ? (
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }}
-              className="h-8 w-8 rounded-md bg-foreground flex items-center justify-center shadow-precision"
-            >
-              <span className="text-background font-bold text-[10px] tracking-tighter">D.</span>
-            </motion.div>
-          ) : (
-            <motion.div 
-              initial={{ x: -10, opacity: 0 }} 
-              animate={{ x: 0, opacity: 1 }}
-              className="flex items-center gap-2"
-            >
-              <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center shadow-precision">
-                <span className="text-background font-bold text-[10px]">D.</span>
-              </div>
+          <motion.div 
+            initial={{ x: -10, opacity: 0 }} 
+            animate={{ x: 0, opacity: 1 }}
+            className="flex items-center gap-2"
+          >
+            <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center shadow-precision">
+              <span className="text-background font-bold text-[10px]">D.</span>
+            </div>
+            {!collapsed && (
               <div className="flex flex-col">
-                <span className="text-sm font-bold tracking-tight text-foreground leading-none">DUDIA</span>
+                <span className="text-sm font-bold tracking-tight text-foreground leading-none uppercase">Dudia</span>
                 <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Finance</span>
               </div>
-            </motion.div>
-          )}
+            )}
+          </motion.div>
         </div>
 
         <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto no-scrollbar">
@@ -107,7 +97,7 @@ export function Sidebar() {
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ delay: index * 0.02 }}
+                    transition={{ delay: index * 0.01 }}
                   >
                     {item.label}
                   </motion.span>
@@ -124,7 +114,7 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="p-3 space-y-1 bg-sidebar/50 backdrop-blur-md border-t border-sidebar-border/50">
+        <div className="p-3 bg-sidebar/50 backdrop-blur-md border-t border-sidebar-border/50">
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
@@ -132,25 +122,12 @@ export function Sidebar() {
               collapsed && "justify-center px-0 h-9 w-9 mx-auto"
             )}
           >
-            {collapsed ? (
-               <ChevronRight className="h-4 w-4" />
-            ) : (
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : (
               <>
                 <ChevronLeft className="h-4 w-4" />
-                <span>Recolher</span>
+                <span>Recolher Menu</span>
               </>
             )}
-          </button>
-          
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-150 group",
-              collapsed && "justify-center px-0 h-9 w-9 mx-auto"
-            )}
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Sair</span>}
           </button>
         </div>
       </aside>
@@ -182,76 +159,67 @@ export function Sidebar() {
         </button>
       </nav>
 
-      {/* ── Mobile drawer overlay ────────────────────────────────── */}
+      {/* ── Mobile slide-in drawer ───────────────────────────────── */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 lg:hidden bg-background/60 backdrop-blur-sm"
-            onClick={() => setOpen(false)}
-          />
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 lg:hidden bg-background/60 backdrop-blur-sm"
+              onClick={() => setOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 z-50 h-full w-72 bg-sidebar text-sidebar-foreground shadow-precision flex flex-col border-r border-sidebar-border"
+            >
+              <div className="flex h-16 items-center justify-between border-b border-sidebar-border/50 px-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center shadow-precision">
+                    <span className="text-background font-bold text-[10px]">D.</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold tracking-tight text-foreground leading-none uppercase">Dudia</span>
+                    <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Finance</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <nav className="flex-1 space-y-0.5 overflow-y-auto p-3 no-scrollbar">
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-foreground"
+                          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                      )}
+                    >
+                      <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-foreground" : "text-muted-foreground")} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </motion.aside>
+          </>
         )}
       </AnimatePresence>
-
-      {/* ── Mobile slide-in drawer ───────────────────────────────── */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-50 h-full w-72 bg-sidebar text-sidebar-foreground shadow-precision transition-transform duration-300 lg:hidden flex flex-col border-r border-sidebar-border",
-          open ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex h-16 items-center justify-between border-b border-sidebar-border/50 px-5">
-          <div className="flex items-center gap-3">
-            <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center shadow-precision">
-              <span className="text-background font-bold text-[10px]">D.</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-foreground leading-none uppercase">Dudia</span>
-              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Finance</span>
-            </div>
-          </div>
-          <button
-            onClick={() => setOpen(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3 no-scrollbar">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium transition-colors",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className={cn("h-4 w-4 shrink-0", isActive ? "text-foreground" : "text-muted-foreground")} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="border-t border-sidebar-border/50 p-3">
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Sair</span>
-          </button>
-        </div>
-      </aside>
     </>
   );
 }

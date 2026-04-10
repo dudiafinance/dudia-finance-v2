@@ -9,11 +9,11 @@ import { useReports } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 export default function ReportsPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const [period, setPeriod] = useState<"week" | "month" | "year">("month");

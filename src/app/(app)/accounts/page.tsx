@@ -22,7 +22,7 @@ import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 type Account = {
   id: string;
@@ -79,8 +79,8 @@ const emptyForm = (): FormData => ({
 });
 
 export default function AccountsPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const { toast } = useToast();

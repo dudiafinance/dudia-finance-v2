@@ -28,7 +28,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -102,8 +102,8 @@ function getSuggestedInvoice(card: CreditCard | null | undefined, dateStr: strin
 
 export default function CreditCardsPage() {
   const { toast } = useToast();
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);

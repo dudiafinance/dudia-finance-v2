@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera, Check, Eye, EyeOff } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form-field";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession();
+  const { user } = useUser();
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   
@@ -51,15 +51,15 @@ export default function SettingsPage() {
 
   // Initial Data Load
   useEffect(() => {
-    if (session?.user) {
+    if (user) {
       setProfileData({
-        name: session.user.name ?? "",
-        email: session.user.email ?? "",
-        avatar: session.user.image ?? "",
+        name: user.fullName ?? "",
+        email: user.primaryEmailAddress?.emailAddress ?? "",
+        avatar: user.imageUrl ?? "",
       });
       fetchSettings();
     }
-  }, [session]);
+  }, [user]);
 
   const fetchSettings = async () => {
     try {
@@ -96,7 +96,7 @@ export default function SettingsPage() {
       if (res.ok) {
         const blob = await res.json();
         setProfileData(prev => ({ ...prev, avatar: blob.url }));
-        await update(); // Update session
+        await user?.reload(); // Update session
         alert("Foto atualizada com sucesso!");
       } else {
         alert("Falha ao atualizar foto");
@@ -118,7 +118,7 @@ export default function SettingsPage() {
       });
       
       if (res.ok) {
-        await update();
+        await user?.reload();
         alert("Perfil atualizado!");
       } else {
         const data = await res.json();

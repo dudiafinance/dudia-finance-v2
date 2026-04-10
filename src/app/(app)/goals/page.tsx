@@ -14,7 +14,7 @@ import { Field, Input, Select, Textarea } from "@/components/ui/form-field";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 
 type FormData = {
   name: string;
@@ -63,8 +63,8 @@ const priorityConfig = {
 } as const;
 
 export default function GoalsPage() {
-  const { data: session } = useSession();
-  const userCurrency = session?.user?.currency ?? "BRL";
+  const { user } = useUser();
+  const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
 
   const { toast } = useToast();

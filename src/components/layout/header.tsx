@@ -1,23 +1,15 @@
 "use client";
 
-import Image from "next/image";
-import { Search, User, Menu } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { Search, Menu } from "lucide-react";
+import { UserButton, useUser } from "@clerk/nextjs";
 import { useMobileNav } from "./mobile-nav-context";
 import { NotificationBell } from "./notification-bell";
-import { motion } from "framer-motion";
 
 export function Header() {
-  const { data: session } = useSession();
+  const { user } = useUser();
   const { setOpen } = useMobileNav();
-  const name = session?.user?.name ?? "";
-  const email = session?.user?.email ?? "";
-  const initials = name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const name = user?.fullName ?? user?.username ?? "Usuário";
+  const email = user?.primaryEmailAddress?.emailAddress ?? "";
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border/50 bg-background/80 px-6 backdrop-blur-md transition-all">
@@ -45,25 +37,19 @@ export function Header() {
 
         <div className="h-4 w-px bg-border hidden md:block" />
 
-        <div className="flex items-center gap-3 cursor-pointer group">
+        <div className="flex items-center gap-4 cursor-pointer group">
           <div className="hidden text-right lg:block">
             <p className="text-[12px] font-bold text-foreground leading-tight transition-colors uppercase tracking-tight">{name}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{email ? email.split('@')[0] : 'Usuário'}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{email ? email.split('@')[0] : 'Terminal'}</p>
           </div>
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-foreground text-background text-[11px] font-bold select-none overflow-hidden border border-border">
-            {session?.user?.image ? (
-              <Image 
-                src={session.user.image} 
-                alt={name} 
-                width={32} 
-                height={32} 
-                className="h-full w-full object-cover"
-                unoptimized
-              />
-            ) : (
-              initials || <User className="h-4 w-4" />
-            )}
-          </div>
+          <UserButton 
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8 rounded-md border border-border shadow-precision",
+                userButtonPopoverCard: "bg-background border border-border/50 shadow-precision rounded-lg",
+              }
+            }}
+          />
         </div>
       </div>
     </header>
