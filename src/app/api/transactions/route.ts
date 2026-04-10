@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { eq, desc, and, gte, lte, ilike, or, count, SQL, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, ilike, or, count, SQL, sql, isNull } from "drizzle-orm";
 import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 import { FinancialEngine } from "@/lib/services/financial-engine";

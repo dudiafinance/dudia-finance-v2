@@ -3,7 +3,28 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, categories } from "@/lib/db/schema";
 import { eq, and, gte, lte, isNull } from "drizzle-orm";
-...
+
+export async function GET(req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const now = new Date();
+  const month = Number(searchParams.get("month")) || now.getMonth() + 1;
+  const year = Number(searchParams.get("year")) || now.getFullYear();
+
+  const startOfMonth = new Date(year, month - 1, 1).toISOString().split("T")[0];
+  const endOfMonth = new Date(year, month, 0).toISOString().split("T")[0];
+
+  try {
+    const [monthTx, monthCardTx] = await Promise.all([
+      db
+        .select({
+          categoryId: transactions.categoryId,
+          amount: transactions.amount,
+          type: transactions.type,
+        })
+        .from(transactions)
         .where(
           and(
             eq(transactions.userId, userId),
@@ -26,19 +47,6 @@ import { eq, and, gte, lte, isNull } from "drizzle-orm";
             isNull(cardTransactions.deletedAt)
           )
         ),
-      db
-        .select({
-          categoryId: cardTransactions.categoryId,
-          amount: cardTransactions.amount,
-        })
-        .from(cardTransactions)
-        .where(
-          and(
-            eq(cardTransactions.userId, userId),
-            eq(cardTransactions.invoiceMonth, month),
-            eq(cardTransactions.invoiceYear, year)
-          )
-        ),
     ]);
 
     const userCategories = await db
@@ -50,10 +58,9 @@ import { eq, and, gte, lte, isNull } from "drizzle-orm";
 
     const stats: Record<string, number> = {};
 
-    // Helper para adicionar valor na categoria e em todos os seus pais
     const addAmountRecursive = (catId: string, amount: number) => {
       let currentId: string | null = catId;
-      let depth = 0; // Anti-ciclo fallback
+      let depth = 0; 
 
       while (currentId && depth < 10) {
         stats[currentId] = (stats[currentId] ?? 0) + amount;
@@ -62,14 +69,12 @@ import { eq, and, gte, lte, isNull } from "drizzle-orm";
       }
     };
 
-    // Regular transactions
     for (const t of monthTx) {
       if (t.type === "expense" && t.categoryId) {
         addAmountRecursive(t.categoryId, Number(t.amount));
       }
     }
 
-    // Card transactions
     for (const t of monthCardTx) {
       if (t.categoryId) {
         addAmountRecursive(t.categoryId, Number(t.amount));

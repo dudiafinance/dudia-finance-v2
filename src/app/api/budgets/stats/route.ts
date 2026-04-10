@@ -3,18 +3,30 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { budgets, transactions, cardTransactions, categories } from "@/lib/db/schema";
 import { eq, and, gte, sql, isNull } from "drizzle-orm";
-...
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
+
+export async function GET(_req: NextRequest) {
+  const userId = await getUserId();
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const now = new Date();
+    const yearStartStr = format(startOfYear(now), 'yyyy-MM-dd');
+
+    const [userBudgets, allCategories, bankAgg, cardAgg] = await Promise.all([
+      db.select().from(budgets).where(eq(budgets.userId, userId)),
+      db.select().from(categories).where(eq(categories.userId, userId)),
+      db.select({ 
+          categoryId: transactions.categoryId, 
+          date: transactions.date, 
+          total: sql<number>`SUM(CAST(${transactions.amount} AS NUMERIC))` 
+        })
+        .from(transactions)
         .where(and(
           eq(transactions.userId, userId),
           eq(transactions.type, 'expense'),
           gte(transactions.date, yearStartStr),
           isNull(transactions.deletedAt)
-        ))
-...
-        .where(and(
-          eq(cardTransactions.userId, userId),
-          gte(cardTransactions.date, yearStartStr),
-          isNull(cardTransactions.deletedAt)
         ))
         .groupBy(transactions.categoryId, transactions.date),
       db.select({ 
@@ -25,23 +37,22 @@ import { eq, and, gte, sql, isNull } from "drizzle-orm";
         .from(cardTransactions)
         .where(and(
           eq(cardTransactions.userId, userId),
-          gte(cardTransactions.date, yearStartStr)
+          gte(cardTransactions.date, yearStartStr),
+          isNull(cardTransactions.deletedAt)
         ))
         .groupBy(cardTransactions.categoryId, cardTransactions.date)
     ]);
 
-    // 2. Recursive function to get all descendants of a category
     const getDescendants = (parentId: string | null): string[] => {
       if (!parentId) return [];
       const children = allCategories.filter(c => c.parentId === parentId);
-      let desc = children.map(c => c.id);
+      let descArr = children.map(c => c.id);
       for (const child of children) {
-        desc = desc.concat(getDescendants(child.id));
+        descArr = descArr.concat(getDescendants(child.id));
       }
-      return desc;
+      return descArr;
     };
 
-    // 3. Process budgets in-memory
     const results = userBudgets.map(budget => {
       let start: Date;
       let end: Date;
@@ -65,17 +76,15 @@ import { eq, and, gte, sql, isNull } from "drizzle-orm";
       const startDateStr = format(start, 'yyyy-MM-dd');
       const endDateStr = format(end, 'yyyy-MM-dd');
 
-      // Resolve valid categories (parent + all descendants)
       const validCategoryIds = new Set<string>();
       if (budget.categoryId) {
         validCategoryIds.add(budget.categoryId);
         getDescendants(budget.categoryId).forEach(id => validCategoryIds.add(id));
       }
 
-      // Sum from aggregations
       let totalSpent = 0;
 
-      const sumAggs = (aggList: { categoryId?: string | null; date?: string | null; total?: string | number | null }[]) => {
+      const sumAggs = (aggList: any[]) => {
         for (const row of aggList) {
           if (row.categoryId && validCategoryIds.has(row.categoryId) && row.date) {
             if (row.date >= startDateStr && row.date <= endDateStr) {
