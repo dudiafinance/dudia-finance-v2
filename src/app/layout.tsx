@@ -9,8 +9,8 @@ import { ToastProvider } from "@/components/ui/toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DUD.IA Finance - Controle Financeiro Pessoal",
-  description: "Sistema de controle financeiro pessoal com IA",
+  title: "DUDIA | Terminal Financeiro de Alta Precisão",
+  description: "Engenharia de fluxo de caixa, projeções IA e dashboard de alta densidade.",
 };
 
 export default function RootLayout({

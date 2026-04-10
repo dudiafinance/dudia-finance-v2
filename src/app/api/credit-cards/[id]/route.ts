@@ -23,12 +23,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (d.name !== undefined) updateData.name = d.name;
     if (d.bank !== undefined) updateData.bank = d.bank;
     if (d.lastDigits !== undefined) updateData.lastDigits = d.lastDigits;
-    if (d.limit !== undefined) updateData.limit = d.limit;
+    if (d.limit !== undefined) updateData.limit = String(d.limit); // Garantir formato string para decimal
     if (d.dueDay !== undefined) updateData.dueDay = d.dueDay;
     if (d.closingDay !== undefined) updateData.closingDay = d.closingDay;
     if (d.color !== undefined) updateData.color = d.color;
     if (d.gradient !== undefined) updateData.gradient = d.gradient;
     if (d.network !== undefined) updateData.network = d.network;
+
+    console.log(`[API] Tentando atualizar cartão ${id} para usuário ${userId}`);
 
     const [row] = await db
       .update(creditCards)

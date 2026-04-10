@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const offset = (page - 1) * limit;
 
-  const where: SQL[] = [eq(transactions.userId, userId)];
+  const where: SQL[] = [eq(transactions.userId, userId), isNull(transactions.deletedAt)];
 
   if (month && year) {
     const startOfMonth = new Date(Number(year), Number(month) - 1, 1).toISOString().split("T")[0];

@@ -295,10 +295,22 @@ export class FinancialEngine {
       const [oldTx] = await tx.select().from(cardTransactions).where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId))).limit(1);
       if (!oldTx) throw new Error("Lançamento não encontrado");
 
+      // Higienização rigorosa dos dados para evitar update de colunas restritas
+      const { id: _, userId: __, createdAt: ___, groupId: ____, ...rawUpdateData } = data as any;
+      
+      // Filtra apenas campos que não sejam undefined
+      const updateData: any = {};
+      Object.keys(rawUpdateData).forEach(key => {
+        if (rawUpdateData[key] !== undefined) {
+          updateData[key] = rawUpdateData[key];
+        }
+      });
+
       if (updateGroup && oldTx.groupId) {
-        const monthDelta = (data.invoiceMonth && data.invoiceYear) 
-          ? (Number(data.invoiceYear) * 12 + Number(data.invoiceMonth)) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth)
-          : 0;
+        // Cálculo seguro do monthDelta para evitar NaN
+        const newMonth = Number(updateData.invoiceMonth || oldTx.invoiceMonth);
+        const newYear = Number(updateData.invoiceYear || oldTx.invoiceYear);
+        const monthDelta = (newYear * 12 + newMonth) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth);
 
         const allGroup = await tx.select().from(cardTransactions)
           .where(and(eq(cardTransactions.groupId, oldTx.groupId), eq(cardTransactions.userId, userId)));
@@ -308,7 +320,7 @@ export class FinancialEngine {
             let newM = item.invoiceMonth;
             let newY = item.invoiceYear;
 
-            if (monthDelta !== 0) {
+            if (monthDelta !== 0 && !isNaN(monthDelta)) {
               const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
               newM = (totalMonths % 12) + 1;
               newY = Math.floor(totalMonths / 12);
@@ -316,9 +328,9 @@ export class FinancialEngine {
 
             await tx.update(cardTransactions)
               .set({
-                description: String(data.description ?? item.description),
-                categoryId: data.categoryId ? String(data.categoryId) : item.categoryId,
-                amount: data.amount ? String(data.amount) : item.amount,
+                description: String(updateData.description ?? item.description),
+                categoryId: updateData.categoryId !== undefined ? updateData.categoryId : item.categoryId,
+                amount: updateData.amount ? String(updateData.amount) : item.amount,
                 invoiceMonth: newM,
                 invoiceYear: newY,
                 updatedAt: new Date(),
@@ -327,9 +339,10 @@ export class FinancialEngine {
           }
         }
       } else {
+        // Update simples higienizado
         await tx.update(cardTransactions)
-          .set({ ...data, updatedAt: new Date() } as any)
-          .where(eq(cardTransactions.id, id));
+          .set({ ...updateData, updatedAt: new Date() })
+          .where(and(eq(cardTransactions.id, id), eq(cardTransactions.userId, userId)));
       }
 
       await this.recalculateCardLimit(tx, oldTx.cardId);

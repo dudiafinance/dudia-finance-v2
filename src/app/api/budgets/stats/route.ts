@@ -2,31 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { budgets, transactions, cardTransactions, categories } from "@/lib/db/schema";
-import { eq, and, gte, sql } from "drizzle-orm";
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
-
-export async function GET(_req: NextRequest) {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  try {
-    const now = new Date();
-    const yearStartStr = format(startOfYear(now), 'yyyy-MM-dd');
-
-    // 1. O(1) Queries: Fetches all budgets, categories, and aggregated transactions for the year
-    const [userBudgets, allCategories, bankAgg, cardAgg] = await Promise.all([
-      db.select().from(budgets).where(eq(budgets.userId, userId)),
-      db.select().from(categories).where(eq(categories.userId, userId)),
-      db.select({ 
-          categoryId: transactions.categoryId, 
-          date: transactions.date, 
-          total: sql<number>`SUM(CAST(${transactions.amount} AS NUMERIC))` 
-        })
-        .from(transactions)
+import { eq, and, gte, sql, isNull } from "drizzle-orm";
+...
         .where(and(
           eq(transactions.userId, userId),
           eq(transactions.type, 'expense'),
-          gte(transactions.date, yearStartStr)
+          gte(transactions.date, yearStartStr),
+          isNull(transactions.deletedAt)
+        ))
+...
+        .where(and(
+          eq(cardTransactions.userId, userId),
+          gte(cardTransactions.date, yearStartStr),
+          isNull(cardTransactions.deletedAt)
         ))
         .groupBy(transactions.categoryId, transactions.date),
       db.select({ 
