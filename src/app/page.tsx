@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BarChart3, Shield, Zap, Globe, Cpu, MousePointer2 } from "lucide-react";
+import { ArrowRight, BarChart3, Shield, Zap, Cpu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInButton, SignUpButton, useUser } from "@clerk/nextjs";
 
@@ -80,9 +80,11 @@ export default function LandingPage() {
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </SignUpButton>
-                  <Button variant="outline" className="h-14 px-10 text-[11px] font-bold uppercase tracking-[0.2em] border-border shadow-precision">
-                    Ver Documentação
-                  </Button>
+                  <SignInButton mode="modal">
+                    <Button variant="outline" className="h-14 px-10 text-[11px] font-bold uppercase tracking-[0.2em] border-border shadow-precision">
+                      Já tenho conta
+                    </Button>
+                  </SignInButton>
                 </>
               )
             )}
