@@ -74,11 +74,13 @@ export class FinancialEngine {
 
     const totalIncome = Number(incomes[0]?.total ?? 0);
     const totalExpense = Number(expenses[0]?.total ?? 0);
-    const newBalance = totalIncome - totalExpense;
+    
+    // Precisão matemática garantida via arredondamento de centavos
+    const newBalance = Math.round((totalIncome - totalExpense) * 100) / 100;
 
     await tx.update(accounts)
       .set({ 
-        balance: String(newBalance),
+        balance: newBalance.toFixed(2),
         updatedAt: new Date()
       })
       .where(eq(accounts.id, accountId));

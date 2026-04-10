@@ -1,6 +1,14 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Carregar variáveis de ambiente se não estiverem presentes (útil para testes/scripts)
+if (!process.env.DATABASE_URL) {
+  dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+  dotenv.config(); // Fallback para .env padrão
+}
 
 const connectionString = process.env.DATABASE_URL!;
 
