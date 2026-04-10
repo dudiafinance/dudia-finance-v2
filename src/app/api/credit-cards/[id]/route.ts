@@ -19,11 +19,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const d = parsed.data;
-    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    const updateData: any = { updatedAt: new Date() };
     if (d.name !== undefined) updateData.name = d.name;
     if (d.bank !== undefined) updateData.bank = d.bank;
     if (d.lastDigits !== undefined) updateData.lastDigits = d.lastDigits;
-    if (d.limit !== undefined) updateData.limit = String(d.limit);
+    if (d.limit !== undefined) updateData.limit = d.limit;
     if (d.dueDay !== undefined) updateData.dueDay = d.dueDay;
     if (d.closingDay !== undefined) updateData.closingDay = d.closingDay;
     if (d.color !== undefined) updateData.color = d.color;
@@ -39,8 +39,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(row);
   } catch (error) {
-    console.error("Error updating credit card:", error);
-    return NextResponse.json({ error: "Erro ao atualizar cartão" }, { status: 500 });
+    console.error("DEBUG - Error updating credit card:", error);
+    return NextResponse.json({ 
+      error: "Erro ao atualizar cartão", 
+      details: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 });
   }
 }
 
