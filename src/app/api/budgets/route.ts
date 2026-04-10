@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       amount: String(d.amount),
       period: d.period,
       startDate: d.startDate,
-      endDate: d.endDate ?? null,
+      endDate: d.endDate && d.endDate.trim() !== "" ? d.endDate : null,
       alertsEnabled: d.alertsEnabled,
       alertThreshold: String(d.alertThreshold),
       isActive: true,

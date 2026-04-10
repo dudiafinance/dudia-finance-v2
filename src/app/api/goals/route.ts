@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
         targetAmount: d.targetAmount ? String(d.targetAmount) : null,
         currentAmount: String(d.currentAmount),
         startDate: d.startDate,
-        endDate: d.endDate ?? null,
+        endDate: d.endDate && d.endDate.trim() !== "" ? d.endDate : null,
         goalType: goalType,
         monthlyContribution: d.monthlyContribution ? String(d.monthlyContribution) : null,
         priority: d.priority,

@@ -177,6 +177,9 @@ commands:
     visibility: [full]
     args: '{story}'
     description: 'Review and critique specification for completeness and clarity'
+  - name: test-web
+    visibility: [full, key]
+    description: 'Run deep E2E system debug and web scanning'
   - name: backlog-add
     visibility: [full]
     args: '{story} {type} {priority} {title}'

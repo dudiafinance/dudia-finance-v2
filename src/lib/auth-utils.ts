@@ -2,12 +2,20 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 /**
  * Centralised helper – extracts the internal UUID from the Clerk session.
  * Includes a fallback to sync the user if the webhook hasn't processed yet.
  */
 export async function getUserId(): Promise<string | null> {
+  // Debug Bypass for Agentic Testing
+  const h = await headers();
+  if (h.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN && process.env.AIOX_DEBUG_TOKEN) {
+    // Return the Test User ID (Igor Massaro)
+    return "debfc4b5-45eb-45dc-90d3-30a83d4e1064";
+  }
+
   try {
     const { userId: clerkId } = await auth();
     

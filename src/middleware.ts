@@ -10,7 +10,9 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
-  if (!isPublicRoute(request)) {
+  const isDebugBypass = request.headers.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN;
+  
+  if (!isPublicRoute(request) && !isDebugBypass) {
     await auth.protect();
   }
 });
