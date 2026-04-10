@@ -24,20 +24,20 @@ export default function LandingPage() {
             {isLoaded && (
               isSignedIn ? (
                 <Link href="/dashboard">
-                  <Button size="sm" className="h-8 px-4 text-[10px] font-bold uppercase tracking-widest shadow-precision">
+                  <Button size="sm" className="h-9 px-6 text-[10px] font-bold uppercase tracking-widest shadow-precision">
                     Painel de Controle
                   </Button>
                 </Link>
               ) : (
                 <>
                   <SignInButton mode="modal">
-                    <button className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors px-4">
-                      Acessar
+                    <button className="text-[11px] font-bold uppercase tracking-widest text-zinc-100 hover:text-white transition-colors px-5 h-9 border border-zinc-700 hover:border-zinc-500 rounded-md">
+                      Acessar Terminal
                     </button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <Button size="sm" className="h-8 px-4 text-[10px] font-bold uppercase tracking-widest shadow-precision">
-                      Começar agora
+                    <Button size="sm" className="h-9 px-6 text-[11px] font-bold uppercase tracking-widest shadow-precision bg-white text-black hover:bg-zinc-200 transition-colors">
+                      Criar Conta
                     </Button>
                   </SignUpButton>
                 </>
