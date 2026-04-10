@@ -18,7 +18,7 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   clerkId: text('clerk_id'),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  passwordHash: varchar('password_hash', { length: 255 }),
   name: varchar('name', { length: 255 }).notNull(),
   avatar: text('avatar'),
   currency: varchar('currency', { length: 3 }).default('BRL'),
@@ -218,40 +218,6 @@ export const recurringTransactions = pgTable('recurring_transactions', {
   index('recurring_next_due_idx').on(table.nextDueDate),
 ]);
 
-// Sessões (NextAuth)
-export const sessions = pgTable('sessions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
-  sessionToken: varchar('session_token', { length: 255 }).notNull().unique(),
-  expires: timestamp('expires').notNull(),
-}, (table) => [
-  index('sessions_user_id_idx').on(table.userId),
-  index('sessions_expires_idx').on(table.expires),
-]);
-
-// Contas de Autenticação (NextAuth)
-export const authAccounts = pgTable('auth_accounts', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
-  type: varchar('type', { length: 255 }).notNull(),
-  provider: varchar('provider', { length: 255 }).notNull(),
-  providerAccountId: varchar('provider_account_id', { length: 255 }).notNull(),
-  refresh_token: text('refresh_token'),
-  access_token: text('access_token'),
-  expires_at: integer('expires_at'),
-  token_type: varchar('token_type', { length: 255 }),
-  scope: text('scope'),
-  id_token: text('id_token'),
-  session_state: varchar('session_state', { length: 255 }),
-});
-
-// Tokens de Verificação (NextAuth)
-export const verificationTokens = pgTable('verification_tokens', {
-  identifier: varchar('identifier', { length: 255 }).notNull(),
-  token: varchar('token', { length: 255 }).notNull().unique(),
-  expires: timestamp('expires').notNull(),
-});
-
 // Relacionamentos
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
@@ -261,8 +227,6 @@ export const usersRelations = relations(users, ({ many }) => ({
   goals: many(goals),
   goalContributions: many(goalContributions),
   recurringTransactions: many(recurringTransactions),
-  sessions: many(sessions),
-  authAccounts: many(authAccounts),
   notifications: many(notifications),
 }));
 

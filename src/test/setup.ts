@@ -1,14 +1,16 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
-// Mock Next.js modules
-vi.mock('next-auth/react', () => ({
-  useSession: vi.fn(() => ({
-    data: null,
-    status: 'unauthenticated',
+// Mock Clerk modules
+vi.mock('@clerk/nextjs', () => ({
+  useUser: vi.fn(() => ({
+    isSignedIn: false,
+    user: null,
+    isLoaded: true,
   })),
-  signIn: vi.fn(),
-  signOut: vi.fn(),
+  SignInButton: ({ children }: any) => children,
+  SignUpButton: ({ children }: any) => children,
+  UserButton: () => null,
 }))
 
 vi.mock('next/navigation', () => ({
