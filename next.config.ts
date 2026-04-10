@@ -20,7 +20,8 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy', 
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev blob:",
+              "worker-src 'self' blob:",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://img.clerk.com https://*.clerk.accounts.dev https:",
               "font-src 'self' data:",
