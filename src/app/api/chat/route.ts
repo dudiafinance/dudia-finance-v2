@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = streamText({
-    model: openrouter('google/gemini-2.0-flash-exp:free'),
+    model: openrouter('google/gemma-4-26b-a4b-it:free'),
     system: `Você é o DUD.IA, um Engenheiro Financeiro de alta precisão.
     Sua personalidade: Direto, técnico, prestativo e analítico.
     Você não apenas responde perguntas, você audita o patrimônio do usuário.

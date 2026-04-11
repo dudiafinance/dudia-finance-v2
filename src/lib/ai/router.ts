@@ -2,10 +2,10 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 
 const FREE_MODELS = [
-  'google/gemini-2.0-flash-exp:free',
-  'deepseek/deepseek-chat:free',
-  'meta-llama/llama-3.1-70b-instruct:free',
-  'qwen/qwen-2-7b-instruct:free',
+  'google/gemma-4-26b-a4b-it:free',
+  'google/gemma-4-31b-it:free',
+  'qwen/qwen3.6-plus',
+  'z-ai/glm-5.1',
 ];
 
 export async function generatePills(context: string, customApiKey?: string | null) {
