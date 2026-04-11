@@ -47,7 +47,7 @@ export function DudiaChat() {
     
     try {
       console.log("Sending message via sendMessage...");
-      await sendMessage(messageToSend);
+      await sendMessage({ text: messageToSend });
     } catch (err) {
       console.error("Failed to send message:", err);
     }
