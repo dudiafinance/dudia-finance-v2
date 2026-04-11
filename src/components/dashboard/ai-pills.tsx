@@ -11,6 +11,14 @@ type Pill = {
   type: "warning" | "info" | "success";
 };
 
+const getIcon = (type: Pill["type"]) => {
+  switch (type) {
+    case "warning": return <AlertCircle className="h-3.5 w-3.5 text-orange-500" />;
+    case "success": return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
+    default: return <Info className="h-3.5 w-3.5 text-blue-500" />;
+  }
+};
+
 export function AIInsightsPills() {
   const [pills, setPills] = useState<Pill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,15 +53,34 @@ export function AIInsightsPills() {
     );
   }
 
-  if (error || pills.length === 0) return null;
-
-  const getIcon = (type: Pill["type"]) => {
-    switch (type) {
-      case "warning": return <AlertCircle className="h-3.5 w-3.5 text-orange-500" />;
-      case "success": return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
-      default: return <Info className="h-3.5 w-3.5 text-blue-500" />;
-    }
-  };
+  // Se não houver insights, mostra um estado de boas-vindas
+  if (pills.length === 0) {
+    const defaultPills: Pill[] = [
+      { title: "Boas-vindas", content: "Adicione seus primeiros lançamentos para receber insights personalizados da nossa IA.", type: "info" },
+      { title: "Dica de Hoje", content: "Organize seus gastos por categorias para ter uma visão clara do seu fluxo de caixa.", type: "success" },
+      { title: "Meta", content: "Defina uma meta financeira para que a IA possa te ajudar a alcançá-la mais rápido.", type: "warning" }
+    ];
+    
+    return (
+      <div className="relative mb-10 group">
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="h-3 w-3 text-purple-500" />
+          <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Iniciando IA Dudia</span>
+        </div>
+        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+          {defaultPills.map((pill, idx) => (
+            <div key={idx} className="min-w-[280px] flex-1 bg-background rounded-lg border border-border/50 p-4 shadow-precision flex flex-col gap-1.5 opacity-70">
+              <div className="flex items-center gap-2">
+                {getIcon(pill.type)}
+                <span className="text-[10px] font-bold uppercase tracking-wider text-foreground">{pill.title}</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-muted-foreground font-medium">{pill.content}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative mb-10 group">

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
+import * as schema from "@/lib/db/schema";
 import { transactions, accounts, goals, cardTransactions, budgets } from "@/lib/db/schema";
 import { eq, and, gte, lte, sum, sql, isNull } from "drizzle-orm";
 import { generatePills } from "@/lib/ai/router";
+import { decrypt } from "@/lib/utils/encryption";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -17,7 +19,7 @@ export async function GET(req: NextRequest) {
     const endOfMonth = new Date(currentYear, currentMonth, 0).toISOString().split("T")[0];
 
     // Aggregating context data
-    const [balanceData, statsData, cardData, goalsData, budgetData] = await Promise.all([
+    const [balanceData, statsData, cardData, goalsData, budgetData, userData] = await Promise.all([
       db.select({ balance: sum(accounts.balance) }).from(accounts).where(and(eq(accounts.userId, userId), isNull(accounts.deletedAt))),
       db.select({
         income: sql<string>`SUM(CASE WHEN ${transactions.type} = 'income' THEN ${transactions.amount} ELSE 0 END)`,
@@ -25,7 +27,8 @@ export async function GET(req: NextRequest) {
       }).from(transactions).where(and(eq(transactions.userId, userId), gte(transactions.date, startOfMonth), lte(transactions.date, endOfMonth), isNull(transactions.deletedAt))),
       db.select({ total: sum(cardTransactions.amount) }).from(cardTransactions).where(and(eq(cardTransactions.userId, userId), eq(cardTransactions.invoiceMonth, currentMonth), eq(cardTransactions.invoiceYear, currentYear), isNull(cardTransactions.deletedAt))),
       db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, 'active'), isNull(goals.deletedAt))),
-      db.select().from(budgets).where(and(eq(budgets.userId, userId), eq(budgets.isActive, true)))
+      db.select().from(budgets).where(and(eq(budgets.userId, userId), eq(budgets.isActive, true))),
+      db.select({ apiKey: schema.users.openRouterApiKey }).from(schema.users).where(eq(schema.users.id, userId)).limit(1)
     ]);
 
     const context = {
@@ -37,7 +40,8 @@ export async function GET(req: NextRequest) {
       activeBudgets: budgetData.map(b => ({ name: b.name, limit: b.amount }))
     };
 
-    const pills = await generatePills(JSON.stringify(context));
+    const userKey = userData[0]?.apiKey ? decrypt(userData[0].apiKey) : null;
+    const pills = await generatePills(JSON.stringify(context), userKey);
     return NextResponse.json(pills);
   } catch (error) {
     console.error("AI Insights error:", error);

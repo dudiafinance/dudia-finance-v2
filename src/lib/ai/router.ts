@@ -1,11 +1,6 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 
-const openrouter = createOpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 const FREE_MODELS = [
   'google/gemini-2.0-flash-exp:free',
   'deepseek/deepseek-chat:free',
@@ -13,7 +8,14 @@ const FREE_MODELS = [
   'qwen/qwen-2-7b-instruct:free',
 ];
 
-export async function generatePills(context: string) {
+export async function generatePills(context: string, customApiKey?: string | null) {
+  const apiKey = customApiKey || process.env.OPENROUTER_API_KEY;
+
+  const openrouter = createOpenAI({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: apiKey,
+  });
+
   let lastError = null;
 
   for (const model of FREE_MODELS) {
