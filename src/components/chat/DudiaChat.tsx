@@ -11,6 +11,7 @@ export function DudiaChat() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAlert, setHasAlert] = useState(false);
   const [hasOpenedOnce, setHasOpenedOnce] = useState(false);
+  const [input, setInput] = useState(""); // Managed manually now
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const chat = (useChat as any)({
@@ -28,11 +29,29 @@ export function DudiaChat() {
   });
 
   const messages = chat.messages as any[];
-  const isLoading = chat.isLoading as boolean;
+  const status = chat.status as string; // 'idle', 'streaming', etc.
+  const isLoading = status === 'streaming' || chat.isLoading;
   const setMessages = chat.setMessages as any;
-  const input = chat.input as string;
-  const handleInputChange = chat.handleInputChange as any;
-  const handleSubmit = chat.handleSubmit as any;
+  const sendMessage = chat.sendMessage as any;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+    
+    const messageToSend = input;
+    setInput(""); // Clear input
+    
+    try {
+      console.log("Sending message via sendMessage...");
+      await sendMessage(messageToSend);
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
+  };
 
   // Auto-open on first session mount
   useEffect(() => {
