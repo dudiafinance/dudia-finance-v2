@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header";
 import { MobileNavProvider } from "@/components/layout/mobile-nav-context";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
+import { DudiaChat } from "@/components/chat/DudiaChat";
 
 export default function AppLayout({
   children,
@@ -29,6 +30,7 @@ export default function AppLayout({
           <Header />
           <main className="p-4 lg:p-6">{children}</main>
         </div>
+        <DudiaChat />
       </div>
     </MobileNavProvider>
   );

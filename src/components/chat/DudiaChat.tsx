@@ -15,6 +15,13 @@ export function DudiaChat() {
 
   const chat = (useChat as any)({
     api: "/api/chat",
+    onError: (err: any) => {
+        console.error("Chat Error:", err);
+        setMessages((prev: any) => [
+            ...prev,
+            { id: Date.now().toString(), role: 'assistant', content: '⚠️ Erro na conexão com DUD.IA. Verifique sua chave de API nas configurações.' }
+        ]);
+    },
     onFinish: () => {
         // Optional: auto-check health after each interaction
     }
@@ -107,7 +114,11 @@ export function DudiaChat() {
             </div>
 
             {/* Input */}
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(e); }} className="p-4 border-t border-border/50 bg-background flex gap-2">
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              console.log("Submitting chat...");
+              handleSubmit(e);
+            }} className="p-4 border-t border-border/50 bg-background flex gap-2">
               <input
                 className="flex-1 bg-secondary/30 border border-border/50 rounded-md px-3 py-2 text-[11px] focus:outline-none focus:border-foreground transition-all font-medium"
                 placeholder="Perguntar ao DUD.IA..."

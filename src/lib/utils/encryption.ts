@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-secret-key-32-chars-long!!'; // Deve ter 32 bytes em prod
+const ENCRYPTION_KEY = (process.env.ENCRYPTION_KEY || 'default-secret-key-32-chars-long').slice(0, 32).padEnd(32, '0');
 const IV_LENGTH = 16; // Para AES-256-CBC
 
 /**
