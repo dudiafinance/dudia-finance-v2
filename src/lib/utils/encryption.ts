@@ -1,21 +1,29 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY_RAW = process.env.ENCRYPTION_KEY;
-if (!ENCRYPTION_KEY_RAW && process.env.NODE_ENV === 'production') {
-  throw new Error('[encryption] ENCRYPTION_KEY env var is required in production');
-}
-if (!ENCRYPTION_KEY_RAW) {
-  console.warn('[encryption] ENCRYPTION_KEY not set — using fallback key (UNSAFE, development only)');
-}
-const ENCRYPTION_KEY = (ENCRYPTION_KEY_RAW || 'default-secret-key-32-chars-long').slice(0, 32).padEnd(32, '0');
 const IV_LENGTH = 16; // Para AES-256-CBC
+
+/**
+ * Resolves encryption key at call time (not module load) so Next.js build
+ * page collection doesn't crash — ENCRYPTION_KEY is a runtime env var.
+ */
+function getEncryptionKey(): string {
+  const key = process.env.ENCRYPTION_KEY;
+  if (!key && process.env.NODE_ENV === 'production') {
+    throw new Error('[encryption] ENCRYPTION_KEY env var is required in production');
+  }
+  if (!key) {
+    console.warn('[encryption] ENCRYPTION_KEY not set — using fallback key (UNSAFE, development only)');
+  }
+  return (key || 'default-secret-key-32-chars-long').slice(0, 32).padEnd(32, '0');
+}
 
 /**
  * Criptografa um texto usando AES-256-CBC.
  */
 export function encrypt(text: string): string {
   if (!text) return text;
-  
+
+  const ENCRYPTION_KEY = getEncryptionKey();
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
   let encrypted = cipher.update(text);
@@ -29,7 +37,8 @@ export function encrypt(text: string): string {
  */
 export function decrypt(text: string): string {
   if (!text || !text.includes(':')) return text;
-  
+
+  const ENCRYPTION_KEY = getEncryptionKey();
   try {
     const textParts = text.split(':');
     const iv = Buffer.from(textParts.shift()!, 'hex');
