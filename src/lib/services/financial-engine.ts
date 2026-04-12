@@ -125,9 +125,12 @@ export class FinancialEngine {
 
       if (oldTx.linkedTransactionId && oldTx.subtype === 'transfer') {
         const linkedTxs = await tx.select().from(transactions).where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
-        
-        await tx.delete(transactions).where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
-        
+
+        // Soft delete both legs of the transfer to preserve audit trail
+        await tx.update(transactions)
+          .set({ deletedAt: new Date() })
+          .where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
+
         const accountIdsToRecalculate = [...new Set(linkedTxs.map(t => t.accountId))];
         for (const accId of accountIdsToRecalculate) {
           await this.recalculateAccountBalance(tx, accId);

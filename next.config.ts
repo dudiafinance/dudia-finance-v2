@@ -1,10 +1,21 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const ALLOWED_ORIGIN = process.env.NEXT_PUBLIC_APP_URL ?? "https://dudia-finance-v2.vercel.app";
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.15.6'],
   async headers() {
     return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: ALLOWED_ORIGIN },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, PATCH, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, x-debug-bypass' },
+          { key: 'Access-Control-Max-Age', value: '86400' },
+        ],
+      },
       {
         source: '/:path*',
         headers: [

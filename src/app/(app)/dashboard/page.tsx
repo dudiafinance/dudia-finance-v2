@@ -61,7 +61,7 @@ export default function DashboardPage() {
   const totalIncome = (dashData?.totalIncome as number) ?? 0;
   const totalExpense = (dashData?.totalExpense as number) ?? 0;
   const totalCardInvoice = (dashData?.totalCardInvoice as number) ?? 0;
-  const monthlyVariation = (dashData?.monthlyVariation as number) ?? 0;
+  const monthlyVariation = (dashData?.monthlyVariation as number | null) ?? null;
   const recentActivity: ActivityItem[] = (dashData?.recentActivity as ActivityItem[]) ?? [];
   const goals: GoalItem[] = (dashData?.goals as GoalItem[]) ?? [];
   const topExpenses: ExpenseItem[] = (dashData?.topExpenses as ExpenseItem[]) ?? [];
@@ -129,13 +129,19 @@ export default function DashboardPage() {
               <p className="text-5xl md:text-6xl font-bold tracking-tighter tabular-nums text-foreground">
                 {showBalances ? fmt(totalBalance) : "••••••••"}
               </p>
-              <div className={cn(
-                "flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border tabular-nums shadow-precision",
-                monthlyVariation >= 0 ? "bg-success-subtle text-success border-success-subtle" : "bg-error-subtle text-error border-error-subtle"
-              )}>
-                {monthlyVariation >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                <span>{Math.abs(monthlyVariation).toFixed(1)}%</span>
-              </div>
+              {monthlyVariation !== null ? (
+                <div className={cn(
+                  "flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border tabular-nums shadow-precision",
+                  monthlyVariation >= 0 ? "bg-success-subtle text-success border-success-subtle" : "bg-error-subtle text-error border-error-subtle"
+                )}>
+                  {monthlyVariation >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  <span>{Math.abs(monthlyVariation).toFixed(1)}%</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border tabular-nums shadow-precision text-muted-foreground bg-secondary border-border/50">
+                  <span>Sem dados anteriores</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

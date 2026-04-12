@@ -85,10 +85,10 @@ describe('Financial Engine Integration Audit', () => {
     const n = 3;
     const amountInCents = Math.round(amount * 100);
     const baseCents = Math.floor(amountInCents / n);
-    const remainderCents = amountInCents - baseCents * (n - 1);
+    const remainder = amountInCents - n * baseCents; // Remainder goes to FIRST installment
 
     for (let i = 1; i <= n; i++) {
-        const val = (i === n ? remainderCents : baseCents) / 100;
+        const val = (i === 1 ? baseCents + remainder : baseCents) / 100;
         await FinancialEngine.addCardTransaction({
             cardId: card.id,
             userId,

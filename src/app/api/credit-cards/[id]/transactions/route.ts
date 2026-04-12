@@ -97,14 +97,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         
         const amountInCents = Math.round(amount * 100);
         const baseCents = Math.floor(amountInCents / n);
-        const remainderCents = amountInCents - baseCents * (n - 1);
+        // Remainder from integer division — assigned to the FIRST installment of the batch
+        // so each subsequent installment has a clean equal value
+        const remainder = amountInCents - n * baseCents; // equivalent to amountInCents % n
         const groupId = crypto.randomUUID();
 
         let m = invoiceMonth;
         let y = invoiceYear;
 
         for (let i = start; i <= n; i++) {
-          const installmentCents = i === n ? remainderCents : baseCents;
+          const installmentCents = i === start ? baseCents + remainder : baseCents;
           const installmentAmount = installmentCents / 100;
           const row = await FinancialEngine.addCardTransaction({
             cardId,

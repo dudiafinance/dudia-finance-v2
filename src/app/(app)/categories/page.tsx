@@ -5,7 +5,7 @@ import {
   Plus, Search, Edit, Trash2, Sparkles, Loader2,
   Coffee, Car, Home, Heart, Film, Book, Briefcase, Laptop,
   TrendingUp, ShoppingBag, Zap, Phone, MoreHorizontal,
-  ChevronLeft, ChevronRight, Layers,
+  ChevronLeft, ChevronRight,
   AlertCircle
 } from "lucide-react";
 import { 
@@ -17,7 +17,7 @@ import {
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
+import { Field, Input, Select } from "@/components/ui/form-field";
 import { TagInput } from "@/components/ui/tag-input";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
@@ -81,7 +81,7 @@ type FormData = {
   color: string;
   icon: string;
   budgetAmount: string;
-  budgetPeriod: string;
+  budgetPeriod: "weekly" | "monthly" | "yearly";
   tags: string[];
 };
 
@@ -146,7 +146,7 @@ export default function CategoriesPage() {
       color: c.color,
       icon: c.icon ?? "more-horizontal",
       budgetAmount: c.budgetAmount ? String(Number(c.budgetAmount)) : "",
-      budgetPeriod: c.budgetPeriod ?? "monthly",
+      budgetPeriod: (c.budgetPeriod ?? "monthly") as "weekly" | "monthly" | "yearly",
       tags: c.tags ?? [],
     });
     setErrors({});
@@ -173,9 +173,11 @@ export default function CategoriesPage() {
     };
     try {
       if (editingId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await updateCategory.mutateAsync({ id: editingId, ...formPayload } as any);
         toast("Categoria atualizada!");
       } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await createCategory.mutateAsync(formPayload as any);
         toast("Categoria criada!");
       }

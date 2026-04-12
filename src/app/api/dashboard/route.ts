@@ -162,7 +162,10 @@ export async function GET(req: NextRequest) {
 
     const currentNet = currentIncome - (currentExpense + currentCard);
     const prevNet = prevIncome - (prevExpense + prevCard);
-    const monthlyVariation = prevNet !== 0 ? ((currentNet - prevNet) / Math.abs(prevNet)) * 100 : 0;
+    // Returns null when there's no prior month data (new users), not 0
+    const monthlyVariation = prevNet !== 0
+      ? ((currentNet - prevNet) / Math.abs(prevNet)) * 100
+      : null;
 
     const recentActivity = [
       ...queries[5].map(t => ({

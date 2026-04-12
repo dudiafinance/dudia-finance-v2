@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   Search, Plus, ArrowUpRight, ArrowDownRight, ArrowRightLeft,
   Trash2, CheckCircle2, Clock, Filter, X,
-  RefreshCw, Repeat2, TrendingUp, TrendingDown, Wallet, Eye, EyeOff,
+  TrendingUp, TrendingDown, Wallet, Eye, EyeOff,
   FileText, ArrowRight
 } from "lucide-react";
 import { 
@@ -18,7 +18,7 @@ import {
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, Textarea, FormRow, FormDivider } from "@/components/ui/form-field";
+import { Field, Input, Select, FormDivider } from "@/components/ui/form-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
@@ -146,7 +146,10 @@ export default function TransactionsPage() {
   };
 
   // Efeito para acumular itens quando os dados chegam
-  const items = (txData?.items ?? []) as unknown as Transaction[];
+  const items = useMemo(
+    () => (txData?.items ?? []) as unknown as Transaction[],
+    [txData?.items]
+  );
   const metadata = txData?.metadata;
   const itemsKey = useMemo(() => JSON.stringify(items.map(i => i.id)), [items]);
 
@@ -604,7 +607,7 @@ export default function TransactionsPage() {
                     <button 
                       key={key} 
                       type="button"
-                      onClick={() => { set("type", key as any); set("categoryId", ""); }}
+                      onClick={() => { set("type", key as FormData["type"]); set("categoryId", ""); }}
                       className={cn("flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded transition-all",
                         form.type === key 
                           ? "bg-background text-foreground shadow-sm border border-border"
@@ -674,7 +677,7 @@ export default function TransactionsPage() {
                     <button 
                       key={key} 
                       type="button"
-                      onClick={() => set("subtype", key as any)}
+                      onClick={() => set("subtype", key as Subtype)}
                       className={cn("py-2 text-[10px] font-bold uppercase border rounded-md transition-all",
                         form.subtype === key ? "bg-foreground text-background border-foreground" : "text-muted-foreground border-border hover:border-muted-foreground"
                       )}

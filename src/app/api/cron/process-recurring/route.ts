@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { recurringTransactions } from "@/lib/db/schema";
 import { FinancialEngine } from "@/lib/services/financial-engine";
-import { and, eq, lte, sql } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 /**
@@ -30,32 +30,49 @@ export async function GET(req: Request) {
         )
       );
 
+    // Max 3 missed periods per recurrence to prevent bulk inserts after long outages
+    const MAX_CATCH_UP = 3;
+
     console.log(`[CRON] Processando ${pendingRecurrences.length} recorrências.`);
 
     const results = [];
 
     for (const rec of pendingRecurrences) {
-      try {
-        // 3. Gerar a transação real via FinancialEngine (Atômico)
-        const newTx = await FinancialEngine.addTransaction({
-          userId: rec.userId,
-          accountId: rec.accountId,
-          categoryId: rec.categoryId,
-          amount: rec.amount,
-          type: rec.type,
-          description: `[Recorrente] ${rec.description}`,
-          date: rec.nextDueDate, // Data do vencimento atual
-          isPaid: true,
-          subtype: "recurring",
-          recurringId: rec.id,
-        });
+      let catchUpCount = 0;
+      let currentDueDate = rec.nextDueDate;
 
-        // 4. Calcular próxima data de vencimento
-        const nextDate = calculateNextDueDate(rec.nextDueDate, rec.frequency, rec.interval ?? 1);
-        
+      try {
+        // Process up to MAX_CATCH_UP missed periods per recurrence
+        while (currentDueDate <= todayStr && catchUpCount < MAX_CATCH_UP) {
+          catchUpCount++;
+
+          // 3. Gerar a transação real via FinancialEngine (Atômico)
+          const newTx = await FinancialEngine.addTransaction({
+            userId: rec.userId,
+            accountId: rec.accountId,
+            categoryId: rec.categoryId,
+            amount: rec.amount,
+            type: rec.type,
+            description: `[Recorrente] ${rec.description}`,
+            date: currentDueDate,
+            isPaid: true,
+            subtype: "recurring",
+            recurringId: rec.id,
+          });
+
+          results.push({ id: rec.id, status: "success", txId: newTx.id, date: currentDueDate });
+
+          // 4. Calcular próxima data de vencimento
+          currentDueDate = calculateNextDueDate(currentDueDate, rec.frequency, rec.interval ?? 1);
+        }
+
+        if (catchUpCount >= MAX_CATCH_UP && currentDueDate <= todayStr) {
+          console.warn(`[CRON] Recorrência ${rec.id} atingiu o limite de catch-up (${MAX_CATCH_UP}). nextDue atualizado para ${currentDueDate}.`);
+        }
+
         // 5. Verificar se a recorrência deve ser desativada (endDate)
         let isActive = true;
-        if (rec.endDate && nextDate > rec.endDate) {
+        if (rec.endDate && currentDueDate > rec.endDate) {
           isActive = false;
         }
 
@@ -63,13 +80,12 @@ export async function GET(req: Request) {
         await db
           .update(recurringTransactions)
           .set({
-            nextDueDate: nextDate,
-            isActive: isActive,
+            nextDueDate: currentDueDate,
+            isActive,
             updatedAt: new Date(),
           })
           .where(eq(recurringTransactions.id, rec.id));
 
-        results.push({ id: rec.id, status: "success", txId: newTx.id });
       } catch (error) {
         console.error(`[CRON] Erro ao processar recorrência ${rec.id}:`, error);
         const message = error instanceof Error ? error.message : "Erro desconhecido";

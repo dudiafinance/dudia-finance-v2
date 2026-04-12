@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import {
-  Plus, Edit, Trash2, CheckCircle2,
+  Plus, Edit, Trash2,
   Bell, Filter, Zap, TrendingUp
 } from "lucide-react";
 import {
@@ -11,7 +11,7 @@ import {
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
+import { Field, Input, Select, FormDivider } from "@/components/ui/form-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useToast } from "@/components/ui/toast";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -42,7 +42,7 @@ type FormData = {
   name: string;
   categoryId: string;
   amount: string;
-  period: string;
+  period: "weekly" | "monthly" | "yearly";
   startDate: string;
   endDate: string;
   alertsEnabled: boolean;
@@ -98,7 +98,7 @@ export default function BudgetsPage() {
       name: b.name,
       categoryId: b.categoryId ?? "",
       amount: String(Number(b.amount)),
-      period: b.period,
+      period: b.period as "weekly" | "monthly" | "yearly",
       startDate: b.startDate ? new Date(b.startDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       endDate: b.endDate ? new Date(b.endDate).toISOString().split("T")[0] : "",
       alertsEnabled: b.alertsEnabled,
@@ -122,14 +122,17 @@ export default function BudgetsPage() {
       name: form.name,
       categoryId: form.categoryId || undefined,
       amount: Number(form.amount),
-      period: form.period as any,
+      period: form.period,
       startDate: form.startDate,
       endDate: form.endDate || undefined,
       alertsEnabled: form.alertsEnabled,
       alertThreshold: Number(form.alertThreshold),
     };
     try {
+      // Dates are strings in form state; cast is safe because the API accepts ISO strings
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (editingId) await updateBudget.mutateAsync({ id: editingId, ...formPayload } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       else await createBudget.mutateAsync(formPayload as any);
       toast(editingId ? "Orçamento atualizado!" : "Orçamento criado!");
       setModalOpen(false);

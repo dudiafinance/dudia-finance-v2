@@ -4,13 +4,15 @@ import { db } from "@/lib/db";
 import { cardTransactions } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
-
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not available in production" }, { status: 403 });
+  }
+
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
-    // Get recent transactions filtered by userId
     const recent = await db
       .select()
       .from(cardTransactions)

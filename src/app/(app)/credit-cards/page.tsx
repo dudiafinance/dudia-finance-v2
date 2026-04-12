@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { 
+import {
   Plus, ChevronRight, ChevronLeft, CreditCard as CardIcon,
-  Clock, TrendingDown, Trash2, Pencil, PieChart,
-  CheckCircle2, Wallet, ArrowDownLeft, ArrowRightLeft
+  Clock, TrendingDown, Trash2, Pencil,
+  CheckCircle2, Wallet, ArrowDownLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, FormRow } from "@/components/ui/form-field";
+import { Field, Input, Select } from "@/components/ui/form-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { TagInput } from "@/components/ui/tag-input";
+
 import { 
   useCreditCards, 
   useCardTransactions, 
@@ -102,7 +102,6 @@ function getSuggestedInvoice(card: CreditCard | null | undefined, dateStr: strin
 }
 
 export default function CreditCardsPage() {
-  const { toast } = useToast();
   const { user } = useUser();
   const userCurrency = user?.publicMetadata?.currency as string ?? "BRL";
   const fmt = (v: number) => formatCurrency(v, userCurrency);
@@ -123,7 +122,6 @@ export default function CreditCardsPage() {
   const cards = rawCards as unknown as CreditCard[];
   const selectedCard = cards.find(c => c.id === selectedCardId) || cards[0];
   
-  const showBalances = true; // Forced true for now based on previous redesign logic
 
   React.useEffect(() => {
     if (!selectedCardId && cards.length > 0) {
@@ -521,7 +519,11 @@ export default function CreditCardsPage() {
 
 function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose: () => void, editingCard?: CreditCard | null }) {
   const { toast } = useToast();
-  const [form, setForm] = useState({
+  type NetworkType = "mastercard" | "visa" | "elo" | "amex" | "hipercard";
+  const [form, setForm] = useState<{
+    name: string; bank: string; lastDigits: string; limit: string;
+    dueDay: string; closingDay: string; gradient: string; color: string; network: NetworkType;
+  }>({
     name: "", bank: "", lastDigits: "", limit: "", dueDay: "10", closingDay: "3",
     gradient: GRADIENT_PRESETS[0].value, color: GRADIENT_PRESETS[0].color, network: "mastercard",
   });
@@ -558,7 +560,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
         closingDay: String(editingCard.closingDay),
         gradient: normalizedGradient, 
         color: editingCard.color || GRADIENT_PRESETS[0].color, 
-        network: editingCard.network || "mastercard"
+        network: (editingCard.network || "mastercard") as "mastercard" | "visa" | "elo" | "amex" | "hipercard"
       });
     } else if (open) {
       setForm({
@@ -571,7 +573,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
   const handleSubmit = () => {
     const payload = { ...form, limit: Number(form.limit), dueDay: Number(form.dueDay), closingDay: Number(form.closingDay) };
     if (editingCard) {
-      updateCard.mutate({ id: editingCard.id, ...payload } as any, { 
+      updateCard.mutate({ id: editingCard.id, ...payload }, {
         onSuccess: () => {
           toast("Cartão atualizado!");
           onClose();
@@ -581,7 +583,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
         }
       });
     } else {
-      createCard.mutate(payload as any, { 
+      createCard.mutate(payload, {
         onSuccess: () => {
           toast("Cartão criado!");
           onClose();
@@ -634,7 +636,7 @@ function CardFormModal({ open, onClose, editingCard }: { open: boolean, onClose:
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <Field label="Bandeira">
-            <Select value={form.network} onChange={e => setForm(p => ({...p, network: e.target.value}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground uppercase font-bold tracking-widest">
+            <Select value={form.network} onChange={e => setForm(p => ({...p, network: e.target.value as "mastercard" | "visa" | "elo" | "amex" | "hipercard"}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground uppercase font-bold tracking-widest">
               <option value="mastercard">Mastercard</option>
               <option value="visa">Visa</option>
               <option value="elo">Elo</option>
@@ -708,7 +710,8 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
       const suggested = getSuggestedInvoice(selectedCard, form.date);
       setForm(p => ({ ...p, invoiceMonth: suggested.month, invoiceYear: suggested.year }));
     }
-  }, [open, selectedCard]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, selectedCard]); // form.date intentionally excluded to avoid re-running on every keystroke
 
   const calculatedTotal = useMemo(() => {
     if (form.amountMode === "total") return Number(form.amount) || 0;
@@ -725,7 +728,7 @@ function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear 
       ...form,
       amount: amountVal,
       categoryId: form.categoryId || undefined,
-    } as any, { onSuccess: onClose });
+    } as unknown as Parameters<typeof createTx.mutate>[0], { onSuccess: onClose });
   };
 
   const expenseCategories = (categories as unknown as CategoryItem[]).filter((c) => c.type === 'expense');
@@ -1061,7 +1064,7 @@ function EditTxModal({ open, onClose, tx, card }: { open: boolean, onClose: () =
       amount: amountVal,
       categoryId: form.categoryId || undefined,
       updateGroup
-    } as any, { onSuccess: onClose });
+    } as unknown as Parameters<typeof updateTx.mutate>[0], { onSuccess: onClose });
   };
 
   const handleDelete = () => {

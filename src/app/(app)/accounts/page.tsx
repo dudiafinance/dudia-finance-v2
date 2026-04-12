@@ -16,7 +16,7 @@ import {
 } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { Field, Input, Select, FormRow, FormDivider } from "@/components/ui/form-field";
+import { Field, Input, Select, FormDivider } from "@/components/ui/form-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { useToast } from "@/components/ui/toast";
@@ -150,7 +150,7 @@ export default function AccountsPage() {
     if (!validate()) return;
     const formPayload = {
       name: form.name,
-      type: form.type as any,
+      type: form.type as "checking" | "savings" | "credit_card" | "investment",
       bank: form.bank || undefined,
       agency: form.agency || undefined,
       number: form.number || undefined,
@@ -325,7 +325,7 @@ export default function AccountsPage() {
         </div>
 
         <div className="space-y-12">
-          {groupedByType.map(({ value: type, label, icon: Icon, items }) => (
+          {groupedByType.map(({ value: type, label, items }) => (
             <section key={type}>
               <div className="flex items-center gap-4 mb-6">
                 <h2 className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{label}</h2>
