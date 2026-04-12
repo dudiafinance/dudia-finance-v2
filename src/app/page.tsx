@@ -4,7 +4,7 @@ import { useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { SignIn, SignUp, useUser, ClerkLoading, ClerkLoaded } from "@clerk/nextjs";
-import { ArrowRight, Loader2, Target, Zap, ShieldCheck, Cpu } from "lucide-react";
+import { ArrowRight, Loader2, Target, ShieldCheck, Wallet, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -121,53 +121,88 @@ export default function Home() {
                     D.
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-xs font-bold uppercase tracking-[0.3em]">DUDIA Infrastructure</span>
-                    <span className="text-[8px] font-mono text-muted-foreground uppercase opacity-60">System v2.0.4 // Production Build</span>
+                    <span className="text-xs font-bold uppercase tracking-[0.3em]">DUDIA Finance</span>
                 </div>
             </div>
 
             {/* Content */}
             <div className="max-w-md space-y-6">
-                <h1 className="text-4xl lg:text-5xl font-bold tracking-tighter leading-[0.9] uppercase italic italic">
-                    Engenharia <br/> 
-                    <span className="text-muted-foreground">de Fluxo de</span> <br/>
-                    Caixa.
-                </h1>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase leading-relaxed tracking-wider">
-                    DUDIA não é apenas um gestor financeiro. É um terminal de alta precisão 
-                    desenvolvido para quem enxerga patrimônio como um sistema de engenharia.
-                    Auditoria atômica, roteamento de IA e análise preditiva em um único ecossistema.
-                </p>
+                <motion.h1 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="text-4xl lg:text-5xl font-bold tracking-tighter leading-[0.9] uppercase italic"
+                >
+                    Controle Total <br/> 
+                    <span className="text-muted-foreground">das Suas</span> <br/>
+                    Finanças.
+                </motion.h1>
+                <motion.p 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, delay: 0.1 }}
+                    className="text-[11px] font-medium text-muted-foreground uppercase leading-relaxed tracking-wider"
+                >
+                    Organize contas, cartões, metas e orçamentos. 
+                    Tudo em um único painel, sempre atualizado.
+                </motion.p>
             </div>
+
+            {/* Stats Visual Mockup */}
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="grid grid-cols-3 gap-3"
+            >
+                {[
+                    { label: "Saldo Líquido", value: "R$ 4.820", sub: "+12% este mês" },
+                    { label: "Metas Ativas", value: "3", sub: "2 próximo alvo" },
+                    { label: "Orçamento", value: "R$ 1.200", sub: "este mês" },
+                ].map((stat, i) => (
+                    <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.3 + (i * 0.1) }}
+                        className="p-3 rounded-lg border border-border/50 bg-secondary/10 backdrop-blur-sm"
+                    >
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground mb-1">{stat.label}</p>
+                        <p className="text-sm font-bold text-foreground">{stat.value}</p>
+                        <p className="text-[7px] text-muted-foreground uppercase">{stat.sub}</p>
+                    </motion.div>
+                ))}
+            </motion.div>
 
             {/* Features Mini Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                 {[
-                    { icon: Target, title: "Precisão Atômica", desc: "Cálculos garantidos em centavos sem erros de arredondamento." },
-                    { icon: Cpu, title: "Inteligência IA", desc: "Insights automáticos via Gemini 2.0 e DeepSeek de custo zero." },
-                    { icon: ShieldCheck, title: "Auditoria E2E", desc: "Mecanismo de self-healing para consistência total de extrato." },
-                    { icon: Zap, title: "Alta Densidade", desc: "Interface otimizada para visualização rápida de métricas complexas." },
+                    { icon: Wallet, title: "Contas e Cartões", desc: "Gerencie múltiplas contas e faturas de cartão em um único painel." },
+                    { icon: PieChart, title: "Orçamentos", desc: "Defina limites por categoria e acompanhe seu progresso em tempo real." },
+                    { icon: Target, title: "Metas Financeiras", desc: "Crie objetivos com prazo e acompanhe a evolução mês a mês." },
+                    { icon: ShieldCheck, title: "Auditoria Automática", desc: "Consistência garantida com self-healing de saldos." },
                 ].map((f, i) => (
-                    <div key={i} className="space-y-2">
+                    <motion.div 
+                        key={i}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.5 + (i * 0.05) }}
+                        className="space-y-2"
+                    >
                         <div className="flex items-center gap-2">
                             <f.icon className="h-3 w-3 text-foreground" />
                             <span className="text-[9px] font-bold uppercase tracking-widest text-foreground">{f.title}</span>
                         </div>
                         <p className="text-[9px] text-muted-foreground uppercase leading-tight opacity-70">{f.desc}</p>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
         </div>
 
         {/* Footer info */}
         <div className="pt-12">
-            <div className="flex gap-4 items-center opacity-30 grayscale pointer-events-none">
-                <div className="h-6 w-20 bg-muted-foreground/20 rounded" />
-                <div className="h-6 w-16 bg-muted-foreground/20 rounded" />
-                <div className="h-6 w-24 bg-muted-foreground/20 rounded" />
-            </div>
-            <p className="mt-8 text-[8px] font-mono text-muted-foreground uppercase tracking-[0.2em]">
-                Built with precision architecture • End-to-End Encrypted Identity
+            <p className="text-[8px] font-mono text-muted-foreground uppercase tracking-[0.2em]">
+                Dados protegidos com criptografia E2E
             </p>
         </div>
       </div>
