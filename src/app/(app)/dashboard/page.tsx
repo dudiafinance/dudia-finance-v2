@@ -11,7 +11,6 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
-import { AIInsightsPills } from "@/components/dashboard/ai-pills";
 
 const MONTH_NAMES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -144,8 +143,6 @@ export default function DashboardPage() {
 
       {/* Content Section */}
       <div className="px-6 py-8">
-        <AIInsightsPills />
-        
         {/* Stats Grid - High Density */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border/50 border border-border/50 rounded-lg overflow-hidden mb-12 shadow-precision">
           <div className="bg-background p-6">

@@ -19,6 +19,7 @@ This project uses the **AIOX (AI-Orchestrated System)** framework v4.0. Use the 
 - **@pm**: Product Manager. Feature prioritization, roadmap, and backlog management.
 - **@architect**: System design, technical strategy, and architectural patterns.
 - **@ux-expert**: UX/UI design, accessibility (A11y), and design systems.
+- **@advisor**: Strategic guidance, architectural review, and complex problem resolution.
 
 ### 🛠️ Execution Agents (Phase 2)
 - **@sm**: Scrum Master. Orchestrates development, manages stories and subtasks.

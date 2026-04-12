@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { User, Bell, Shield, Palette, Globe, Key, Save, Loader2, Camera, Check, Eye, EyeOff } from "lucide-react";
+import { User, Bell, Shield, Palette, Globe, Save, Loader2, Camera, Check, Eye, EyeOff } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,6 @@ export default function SettingsPage() {
     currency: "BRL",
     locale: "pt-BR",
     timezone: "America/Sao_Paulo",
-    openRouterApiKey: "",
     notificationPreferences: {
       budgetAlerts: true,
       recurringReminders: true,
@@ -70,7 +69,6 @@ export default function SettingsPage() {
           currency: data.currency || "BRL",
           locale: data.locale || "pt-BR",
           timezone: data.timezone || "America/Sao_Paulo",
-          openRouterApiKey: data.openRouterApiKey || "",
           notificationPreferences: data.notificationPreferences || {
             budgetAlerts: true,
             recurringReminders: true,
@@ -191,7 +189,6 @@ export default function SettingsPage() {
     { id: "security", label: "Segurança", icon: Shield },
     { id: "appearance", label: "Aparência", icon: Palette },
     { id: "regional", label: "Regional", icon: Globe },
-    { id: "api", label: "API Keys", icon: Key },
   ];
 
   return (
@@ -533,63 +530,6 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {activeTab === "api" && (
-              <div className="bg-background rounded-lg border border-border/50 p-8 shadow-precision">
-                <div className="mb-8">
-                  <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Inteligência Artificial</h2>
-                  <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Integração técnica com redes neurais externas</p>
-                </div>
-                
-                <div className="mt-8">
-                  <div className="mb-10 p-6 bg-secondary/50 border border-border rounded-lg shadow-precision">
-                    <h3 className="text-[10px] font-bold text-foreground uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                      <Key className="h-3 w-3" /> Protocolo de Conexão:
-                    </h3>
-                    <ol className="space-y-3">
-                      {[
-                        "Acesse o portal openrouter.ai e autentique sua conta.",
-                        "Gere uma nova 'API Key' com o identificador 'DUD.IA Finance'.",
-                        "Copie o token gerado (sk-or-...) e insira no campo abaixo.",
-                        "Salve para habilitar os módulos de análise preditiva."
-                      ].map((step, i) => (
-                        <li key={i} className="flex gap-3 text-[10px] font-medium text-muted-foreground uppercase tracking-tight">
-                          <span className="text-foreground font-bold">{i+1}.</span>
-                          <span>{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-
-                  <Field label="Token de Acesso (OpenRouter API)">
-                    <div className="flex flex-col md:flex-row gap-4">
-                      <div className="relative flex-1">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          value={settingsData.openRouterApiKey}
-                          onChange={(e) => setSettingsData(prev => ({ ...prev, openRouterApiKey: e.target.value }))}
-                          placeholder="sk-or-v1-..."
-                          className="h-10 text-sm font-mono border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground transition-all pr-10"
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
-                          {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                        </button>
-                      </div>
-                      <Button 
-                        onClick={handleSettingsSave}
-                        disabled={isSavingSettings}
-                        className="h-10 px-8 font-bold uppercase text-[10px] tracking-widest shadow-precision shrink-0"
-                      >
-                        {isSavingSettings ? <Loader2 className="h-3 w-3 animate-spin" /> : "Vincular Chave"}
-                      </Button>
-                    </div>
-                  </Field>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
