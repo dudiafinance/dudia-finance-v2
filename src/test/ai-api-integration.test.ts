@@ -146,7 +146,7 @@ describe('API Response Format Validation', () => {
     if (response.status === 200) {
       const data = await response.json()
       expect(Array.isArray(data)).toBe(true)
-      data.forEach(pill => {
+      data.forEach((pill: { title: string; content: string; type: string }) => {
         expect(pill).toHaveProperty('title')
         expect(pill).toHaveProperty('content')
         expect(pill).toHaveProperty('type')

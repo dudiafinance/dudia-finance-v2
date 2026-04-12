@@ -2,10 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { transferSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { checkIdempotencyKey, storeIdempotencyKey, getIdempotencyKey } from "@/lib/idempotency";
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // BUG-002: Idempotency check — prevent duplicate transfers on retries/double-submits
+  const idempotencyKey = getIdempotencyKey(req);
+  if (idempotencyKey) {
+    const cached = await checkIdempotencyKey(idempotencyKey, userId);
+    if (cached) return NextResponse.json(cached.body, { status: cached.status });
+  }
 
   try {
     const body = await req.json();
@@ -29,6 +37,7 @@ export async function POST(req: NextRequest) {
       categoryId: categoryId ?? undefined
     });
 
+    if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: result, status: 201 });
     return NextResponse.json(result, { status: 201 });
 
   } catch (error) {

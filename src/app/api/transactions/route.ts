@@ -7,6 +7,7 @@ import { transactionSchema } from "@/lib/validations";
 import { randomUUID } from "crypto";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { sanitizeText, sanitizeOptionalText } from "@/lib/sanitize";
+import { checkIdempotencyKey, storeIdempotencyKey, getIdempotencyKey } from "@/lib/idempotency";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -99,6 +100,13 @@ export async function POST(req: NextRequest) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // BUG-002: Idempotency check — prevent duplicate transactions on retries/double-submits
+  const idempotencyKey = getIdempotencyKey(req);
+  if (idempotencyKey) {
+    const cached = await checkIdempotencyKey(idempotencyKey, userId);
+    if (cached) return NextResponse.json(cached.body, { status: cached.status });
+  }
+
   try {
     const body = await req.json();
     const parsed = transactionSchema.safeParse(body);
@@ -149,6 +157,8 @@ export async function POST(req: NextRequest) {
         })
       );
       results.push(...rows);
+      const recurringResponse = { body: results, status: 201 };
+      if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, recurringResponse);
       return NextResponse.json(results, { status: 201 });
     }
 
@@ -170,6 +180,7 @@ export async function POST(req: NextRequest) {
       location: safeLocation,
     });
 
+    if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: row, status: 201 });
     return NextResponse.json(row, { status: 201 });
 
   } catch (error) {

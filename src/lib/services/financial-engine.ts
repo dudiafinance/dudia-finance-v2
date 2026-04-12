@@ -179,6 +179,21 @@ export class FinancialEngine {
 
       if (!fromAccount) throw FinancialError.notFound("Conta de origem");
 
+      // BUG-003: Validate destination account belongs to the same user
+      const [toAccount] = await tx
+        .select()
+        .from(accounts)
+        .where(
+          and(
+            eq(accounts.id, data.toAccountId),
+            eq(accounts.userId, data.userId),
+            isNull(accounts.deletedAt)
+          )
+        )
+        .limit(1);
+
+      if (!toAccount) throw FinancialError.notFound("Conta de destino");
+
       const balance = Number(fromAccount.balance);
       const amount = Number(data.amount);
 
@@ -223,6 +238,11 @@ export class FinancialEngine {
   }
 
   static async recalculateCardLimit(tx: DbTransaction, cardId: string) {
+    // BUG-009: Only include current and past months to avoid inflating limit with future installments
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
     const result = await tx
       .select({
         total: sql<string>`COALESCE(SUM(CAST(${cardTransactions.amount} AS DECIMAL(15,2))), 0)`,
@@ -240,7 +260,15 @@ export class FinancialEngine {
         and(
           eq(cardTransactions.cardId, cardId),
           isNull(cardTransactions.deletedAt),
-          sql`( ${creditCardInvoices.status} IS NULL OR ${creditCardInvoices.status} != 'PAGA' )`
+          sql`( ${creditCardInvoices.status} IS NULL OR ${creditCardInvoices.status} != 'PAGA' )`,
+          // Only include transactions from current and past months
+          sql`(
+            ${cardTransactions.invoiceYear} < ${currentYear}
+            OR (
+              ${cardTransactions.invoiceYear} = ${currentYear}
+              AND ${cardTransactions.invoiceMonth} <= ${currentMonth}
+            )
+          )`
         )
       );
 
@@ -387,7 +415,8 @@ export class FinancialEngine {
         isPaid: true
       }).returning();
 
-      await tx.update(accounts).set({ balance: sql`${accounts.balance} - ${data.amount}`, updatedAt: new Date() }).where(eq(accounts.id, data.accountId));
+      // Use self-healing recalculate instead of direct SQL mutation
+      await this.recalculateAccountBalance(tx, data.accountId);
 
       if (data.month && data.year) {
         const [existing] = await tx.select().from(creditCardInvoices).where(and(eq(creditCardInvoices.cardId, data.cardId), eq(creditCardInvoices.month, data.month), eq(creditCardInvoices.year, data.year))).limit(1);
@@ -413,7 +442,18 @@ export class FinancialEngine {
     return await db.transaction(async (tx) => {
       const [goal] = await tx.select().from(goals).where(and(eq(goals.id, data.goalId), eq(goals.userId, data.userId))).limit(1);
       if (!goal) throw new Error("Meta não encontrada");
-      
+
+      // BUG-004: Cap deposit at target amount
+      if (goal.targetAmount) {
+        const currentAmount = Number(goal.currentAmount);
+        const depositAmount = Number(data.amount);
+        const targetAmount = Number(goal.targetAmount);
+        const remaining = targetAmount - currentAmount;
+        if (depositAmount > remaining) {
+          throw new Error(`Depósito ultrapassa a meta. Valor máximo permitido: R$ ${remaining.toFixed(2)}`);
+        }
+      }
+
       const [expense] = await tx.insert(transactions).values({
         userId: data.userId,
         accountId: data.accountId,
@@ -427,10 +467,17 @@ export class FinancialEngine {
         goalId: data.goalId
       }).returning();
 
-      await tx.update(accounts).set({ balance: sql`${accounts.balance} - ${data.amount}`, updatedAt: new Date() }).where(eq(accounts.id, data.accountId));
+      // Use self-healing recalculate instead of direct SQL mutation
+      await this.recalculateAccountBalance(tx, data.accountId);
 
-      const newCurrentAmount = Number(goal.currentAmount) + Number(data.amount);
-      const [updatedGoal] = await tx.update(goals).set({ currentAmount: String(newCurrentAmount), updatedAt: new Date() }).where(eq(goals.id, data.goalId)).returning();
+      // BUG-005: Atomic SQL update to prevent race condition on concurrent deposits
+      const [updatedGoal] = await tx.update(goals)
+        .set({
+          currentAmount: sql`CAST(${goals.currentAmount} AS DECIMAL(15,2)) + CAST(${data.amount} AS DECIMAL(15,2))`,
+          updatedAt: new Date()
+        })
+        .where(eq(goals.id, data.goalId))
+        .returning();
 
       const d = new Date(data.date);
       await tx.insert(goalContributions).values({ userId: data.userId, goalId: data.goalId, month: d.getMonth() + 1, year: d.getFullYear(), amount: data.amount, originalAmount: data.amount, status: "paid" });

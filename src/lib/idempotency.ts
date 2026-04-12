@@ -8,7 +8,7 @@
 
 import { db } from "@/lib/db"
 import { idempotencyKeys } from "@/lib/db/schema"
-import { eq, and, gt } from "drizzle-orm"
+import { eq, and, gt, lt } from "drizzle-orm"
 
 interface StoredResponse {
   status: number
@@ -105,7 +105,7 @@ export async function cleanupOldIdempotencyKeys(
   
   const result = await db
     .delete(idempotencyKeys)
-    .where(gt(idempotencyKeys.createdAt, cutoff))
+    .where(lt(idempotencyKeys.createdAt, cutoff))
     .returning()
 
   return result.length

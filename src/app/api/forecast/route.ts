@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, budgets, goals, accounts, recurringTransactions } from "@/lib/db/schema";
-import { eq, and, sum, isNull } from "drizzle-orm";
+import { eq, and, sum, isNull, gte } from "drizzle-orm";
 
 function monthName(year: number, month: number): string {
   const d = new Date(year, month - 1, 1);
@@ -25,10 +25,12 @@ export async function GET() {
     const currentMonth = now.getMonth() + 1; // 1-12
     const todayStr = now.toISOString().split("T")[0];
 
-    // Escalabilidade: Buscamos todas as records, mas o ideal em DB gigantes seria filtrar DTE >= (HOJE - 30)
+    // BUG-011: Filter transactions to last 24 months to prevent OOM/timeout on large accounts
+    const lookbackDate = new Date(currentYear - 2, currentMonth - 1, 1).toISOString().split("T")[0];
+
     const [allTransactions, allCardTx, allBudgets, allGoals, allRecurring, accountBalances] = await Promise.all([
-      db.select().from(transactions).where(and(eq(transactions.userId, userId), isNull(transactions.deletedAt))),
-      db.select().from(cardTransactions).where(and(eq(cardTransactions.userId, userId), isNull(cardTransactions.deletedAt))),
+      db.select().from(transactions).where(and(eq(transactions.userId, userId), isNull(transactions.deletedAt), gte(transactions.date, lookbackDate))),
+      db.select().from(cardTransactions).where(and(eq(cardTransactions.userId, userId), isNull(cardTransactions.deletedAt), gte(cardTransactions.date, lookbackDate))),
       db.select().from(budgets).where(and(eq(budgets.userId, userId), eq(budgets.isActive, true))),
       db.select().from(goals).where(and(eq(goals.userId, userId), eq(goals.status, "active"), isNull(goals.deletedAt))),
       db.select().from(recurringTransactions).where(and(eq(recurringTransactions.userId, userId), eq(recurringTransactions.isActive, true))),

@@ -53,7 +53,7 @@ describe('FinancialEngine Integration Tests', () => {
 
     expect(newTx.amount).toBe(amount);
 
-    const balance = await FinancialEngine.recalculateAccountBalance(db, testAccountId);
+    const balance = await db.transaction(async (tx) => FinancialEngine.recalculateAccountBalance(tx, testAccountId!));
     expect(balance).toBeDefined();
 
     const [audit] = await db.select().from(auditLogs).where(eq(auditLogs.entityId, newTx.id));

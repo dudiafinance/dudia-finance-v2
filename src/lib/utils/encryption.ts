@@ -1,6 +1,13 @@
 import crypto from 'crypto';
 
-const ENCRYPTION_KEY = (process.env.ENCRYPTION_KEY || 'default-secret-key-32-chars-long').slice(0, 32).padEnd(32, '0');
+const ENCRYPTION_KEY_RAW = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY_RAW && process.env.NODE_ENV === 'production') {
+  throw new Error('[encryption] ENCRYPTION_KEY env var is required in production');
+}
+if (!ENCRYPTION_KEY_RAW) {
+  console.warn('[encryption] ENCRYPTION_KEY not set — using fallback key (UNSAFE, development only)');
+}
+const ENCRYPTION_KEY = (ENCRYPTION_KEY_RAW || 'default-secret-key-32-chars-long').slice(0, 32).padEnd(32, '0');
 const IV_LENGTH = 16; // Para AES-256-CBC
 
 /**
@@ -33,7 +40,7 @@ export function decrypt(text: string): string {
     
     return decrypted.toString();
   } catch (error) {
-    console.error('Falha na descriptografia:', error);
-    return text; // Fallback para o original se falhar (ex: dado não criptografado ainda)
+    console.error('[encryption] Falha na descriptografia — dado corrompido ou chave incorreta:', error);
+    throw new Error('DECRYPTION_FAILED');
   }
 }

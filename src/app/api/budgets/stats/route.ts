@@ -43,12 +43,21 @@ export async function GET(_req: NextRequest) {
         .groupBy(cardTransactions.categoryId, cardTransactions.date)
     ]);
 
+    // BUG-016: Build children map once (O(n)) instead of O(n²) linear scans
+    const childrenMap = new Map<string, string[]>();
+    for (const cat of allCategories) {
+      if (cat.parentId) {
+        if (!childrenMap.has(cat.parentId)) childrenMap.set(cat.parentId, []);
+        childrenMap.get(cat.parentId)!.push(cat.id);
+      }
+    }
+
     const getDescendants = (parentId: string | null): string[] => {
       if (!parentId) return [];
-      const children = allCategories.filter(c => c.parentId === parentId);
-      let descArr = children.map(c => c.id);
-      for (const child of children) {
-        descArr = descArr.concat(getDescendants(child.id));
+      const children = childrenMap.get(parentId) ?? [];
+      let descArr = [...children];
+      for (const childId of children) {
+        descArr = descArr.concat(getDescendants(childId));
       }
       return descArr;
     };

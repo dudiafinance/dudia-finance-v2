@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { accounts, transactions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 
 
@@ -21,13 +21,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const updateData: Record<string, unknown> = { ...data, updatedAt: new Date() };
   if (data.balance !== undefined) updateData.balance = String(data.balance);
 
+  // BUG-013: Prevent updating soft-deleted accounts
   const [row] = await db
     .update(accounts)
     .set(updateData)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, userId)))
+    .where(and(eq(accounts.id, id), eq(accounts.userId, userId), isNull(accounts.deletedAt)))
     .returning();
 
-  if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!row) return NextResponse.json({ error: "Conta não encontrada ou já excluída" }, { status: 404 });
   return NextResponse.json(row);
 }
 

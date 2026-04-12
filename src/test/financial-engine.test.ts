@@ -138,9 +138,11 @@ describe('Financial Engine Integration Audit', () => {
         });
     }
 
-    // 3. Verify used amount (all 12 months should count if they are not paid)
+    // 3. Verify used amount — BUG-009 fix: only current + past months count towards limit.
+    // The loop creates months: Apr(current), May..Dec(future), Jan..Mar(past)
+    // Past months (Jan, Feb, Mar 2026) + current (Apr 2026) = 4 months × R$50 = R$200
     const [updatedCard] = await db.select().from(creditCards).where(eq(creditCards.id, card.id));
-    expect(Number(updatedCard.usedAmount)).toBe(600.00); // 50 * 12
+    expect(Number(updatedCard.usedAmount)).toBe(200.00); // 4 months × 50 (excludes future months)
 
     // Cleanup
     await db.update(creditCards).set({ deletedAt: new Date() }).where(eq(creditCards.id, card.id));

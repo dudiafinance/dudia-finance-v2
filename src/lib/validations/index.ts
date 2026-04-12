@@ -39,7 +39,7 @@ export const transactionSchema = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   amount: z.coerce.number().positive("Valor deve ser positivo"),
   type: z.enum(["income", "expense", "transfer"]),
-  date: z.string().min(1, "Data obrigatória"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   description: z.string().min(1, "Descrição obrigatória").max(255),
   notes: z.string().max(1000).optional().nullable(),
   isPaid: z.boolean().default(true),
@@ -59,7 +59,7 @@ export const budgetBaseSchema = z.object({
   startDate: z.string().min(1, "Data início obrigatória"),
   endDate: z.string().optional().nullable(),
   alertsEnabled: z.boolean().default(true),
-  alertThreshold: z.coerce.number().min(50).max(100).default(80),
+  alertThreshold: z.coerce.number().min(1, "Limite mínimo é 1%").max(100, "Limite máximo é 100%").default(80),
 });
 
 export const budgetSchema = budgetBaseSchema.refine((data) => {
@@ -106,6 +106,14 @@ export const cardTransactionSchema = z.object({
   totalInstallments: z.coerce.number().int().min(2).max(360).optional().nullable(),
   startInstallment: z.coerce.number().int().min(1).default(1),
   isPending: z.boolean().default(false),
+}).refine((data) => {
+  if (data.launchType === "installment" && data.totalInstallments && data.startInstallment) {
+    return data.startInstallment <= data.totalInstallments;
+  }
+  return true;
+}, {
+  message: "Parcela inicial não pode ser maior que o total de parcelas",
+  path: ["startInstallment"],
 });
 
 export const creditCardBaseSchema = z.object({
@@ -134,7 +142,7 @@ export const goalContributionSchema = z.object({
   goalId: z.string().uuid("Meta inválida"),
   month: z.number().int().min(1).max(12),
   year: z.number().int().min(2020).max(2100),
-  amount: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
+  amount: z.coerce.number().positive("Valor do aporte deve ser positivo"),
   status: z.enum(["pending", "paid", "cancelled"]).default("pending"),
   notes: z.string().max(1000).optional().nullable(),
 });

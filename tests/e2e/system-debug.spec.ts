@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const TEST_ACCOUNT_NAME = 'TEST_DEBUG_ACC';
 const TEST_TRANSACTION_DESC = 'DEBUG_TRANSACTION_TEST';
@@ -27,7 +27,7 @@ test.describe('Deep System Debug & Interaction', () => {
     });
   });
 
-  async function waitForLoading(page) {
+  async function waitForLoading(page: Page) {
     const spinner = page.locator('.animate-spin');
     if (await spinner.isVisible()) {
         await spinner.waitFor({ state: 'hidden', timeout: 30000 });

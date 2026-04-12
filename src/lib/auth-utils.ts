@@ -9,10 +9,13 @@ import { headers } from "next/headers";
  * Includes a fallback to sync the user if the webhook hasn't processed yet.
  */
 export async function getUserId(): Promise<string | null> {
-  // Debug Bypass for Agentic Testing
+  // Debug Bypass for Agentic Testing — ONLY in non-production environments
   const h = await headers();
-  if (h.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN && process.env.AIOX_DEBUG_TOKEN) {
-    // Return the Test User ID (Igor Massaro)
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.AIOX_DEBUG_TOKEN &&
+    h.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN
+  ) {
     return "debfc4b5-45eb-45dc-90d3-30a83d4e1064";
   }
 

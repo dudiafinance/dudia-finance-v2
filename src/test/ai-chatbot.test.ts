@@ -42,7 +42,6 @@ vi.mock('@/lib/db/schema', () => ({
   budgets: {
     userId: 'userId',
     isActive: 'isActive',
-    userId: 'userId'
   },
   categories: {
     id: 'id',
