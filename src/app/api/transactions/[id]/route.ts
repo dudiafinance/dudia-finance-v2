@@ -41,13 +41,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const { id } = await params;
-    await FinancialEngine.deleteTransaction(id, userId);
+    const { searchParams } = new URL(req.url);
+    const deleteMode = searchParams.get("mode") === "all" ? "all" : "single";
+    
+    await FinancialEngine.deleteTransaction(id, userId, deleteMode);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting transaction:", error);

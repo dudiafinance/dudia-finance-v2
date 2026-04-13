@@ -134,6 +134,7 @@ export const transactions = pgTable('transactions', {
   index('transactions_category_id_idx').on(table.categoryId),
   index('transactions_user_cat_date_idx').on(table.userId, table.categoryId, table.date), // Otimização para orçamentos
   index('transactions_linked_tx_idx').on(table.linkedTransactionId),
+  index('transactions_recurring_group_idx').on(table.recurringGroupId),
 ]);
 
 // Orçamentos

@@ -38,6 +38,7 @@ type Transaction = {
   receiveDate?: string | null;
   isPaid: boolean;
   subtype?: string;
+  recurringGroupId?: string | null;
   totalOccurrences?: number | null;
   notes?: string | null;
   tags?: string[];
@@ -189,6 +190,7 @@ export default function TransactionsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteMode, setDeleteMode] = useState<'single' | 'all'>('single');
   const [form, setForm] = useState<FormData>(emptyForm());
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
@@ -277,12 +279,13 @@ export default function TransactionsPage() {
   const confirmDelete = async () => {
     if (!deleteId) return;
     try {
-      await deleteTransaction.mutateAsync(deleteId);
+      await deleteTransaction.mutateAsync({ id: deleteId, mode: deleteMode });
       toast("Transação excluída.", "warning");
     } catch {
       toast("Erro ao excluir", "error");
     }
     setDeleteId(null);
+    setDeleteMode('single');
   };
 
   const grouped = useMemo(() => {
@@ -730,19 +733,61 @@ export default function TransactionsPage() {
       </Modal>
 
       {/* Delete Modal */}
-      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Excluir Transação" size="sm">
+      <Modal open={!!deleteId} onClose={() => { setDeleteId(null); setDeleteMode('single'); }} title="Excluir Transação" size="sm">
         <div className="space-y-6">
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="h-16 w-16 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
               <Trash2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Confirmar Exclusão?</h3>
-              <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">Esta operação removerá o registro permanentemente do seu fluxo de caixa.</p>
+              {(() => {
+                const txToDelete = accumulatedItems.find(t => t.id === deleteId);
+                const hasGroup = txToDelete?.recurringGroupId != null;
+                
+                if (hasGroup) {
+                  return (
+                    <>
+                      <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Excluir Transação Recorrente</h3>
+                      <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">Esta transação faz parte de um lançamento recorrente.</p>
+                      <div className="mt-4 space-y-2">
+                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-md border border-border hover:bg-secondary/50 transition-colors">
+                          <input 
+                            type="radio" 
+                            name="deleteMode" 
+                            value="single" 
+                            checked={deleteMode === 'single'} 
+                            onChange={() => setDeleteMode('single')} 
+                            className="accent-foreground"
+                          />
+                          <span className="text-xs font-bold">Excluir apenas esta ocorrência</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer p-3 rounded-md border border-border hover:bg-secondary/50 transition-colors">
+                          <input 
+                            type="radio" 
+                            name="deleteMode" 
+                            value="all" 
+                            checked={deleteMode === 'all'} 
+                            onChange={() => setDeleteMode('all')} 
+                            className="accent-foreground"
+                          />
+                          <span className="text-xs font-bold">Excluir todas as ocorrências</span>
+                        </label>
+                      </div>
+                    </>
+                  );
+                }
+                
+                return (
+                  <>
+                    <h3 className="text-sm font-bold text-foreground uppercase tracking-widest">Confirmar Exclusão?</h3>
+                    <p className="text-xs text-muted-foreground mt-2 px-4 leading-relaxed">Esta operação removerá o registro permanentemente do seu fluxo de caixa.</p>
+                  </>
+                );
+              })()}
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="ghost" onClick={() => setDeleteId(null)} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
+            <Button variant="ghost" onClick={() => { setDeleteId(null); setDeleteMode('single'); }} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
             <Button variant="destructive" onClick={confirmDelete} className="flex-1 text-[11px] font-bold uppercase tracking-widest py-6">Excluir</Button>
           </div>
         </div>

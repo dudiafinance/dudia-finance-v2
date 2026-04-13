@@ -218,7 +218,10 @@ export function useDeleteTransaction() {
   const qc = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/transactions/${id}`, { method: "DELETE" }),
+    mutationFn: ({ id, mode }: { id: string; mode?: 'single' | 'all' }) => {
+      const url = mode ? `/api/transactions/${id}?mode=${mode}` : `/api/transactions/${id}`;
+      return apiFetch<{ success: boolean }>(url, { method: "DELETE" });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
     onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir transação", "error"),
   });

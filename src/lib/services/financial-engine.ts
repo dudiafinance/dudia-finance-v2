@@ -14,7 +14,7 @@ import { FinancialError } from "@/lib/errors";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-export type FinancialAction = "create" | "update" | "delete" | "transfer";
+export type FinancialAction = "create" | "update" | "delete" | "delete_all" | "transfer";
 
 export class FinancialEngine {
   /**
@@ -118,10 +118,28 @@ export class FinancialEngine {
     });
   }
 
-  static async deleteTransaction(id: string, userId: string) {
+  static async deleteTransaction(id: string, userId: string, deleteMode: 'single' | 'all' = 'single') {
     return await db.transaction(async (tx) => {
       const [oldTx] = await tx.select().from(transactions).where(and(eq(transactions.id, id), eq(transactions.userId, userId))).limit(1);
       if (!oldTx) throw FinancialError.notFound("Transação");
+
+      // Handle delete all for recurring/fixed transactions
+      if (deleteMode === 'all' && oldTx.recurringGroupId) {
+        const allGroupTxs = await tx.select().from(transactions)
+          .where(and(eq(transactions.recurringGroupId, oldTx.recurringGroupId), eq(transactions.userId, userId)));
+
+        await tx.update(transactions)
+          .set({ deletedAt: new Date() })
+          .where(and(eq(transactions.recurringGroupId, oldTx.recurringGroupId), eq(transactions.userId, userId)));
+
+        const accountIds = [...new Set(allGroupTxs.map(t => t.accountId))];
+        for (const accId of accountIds) {
+          await this.recalculateAccountBalance(tx, accId);
+        }
+
+        await this.logAudit(tx, userId, "transaction", id, "delete_all", { transactions: allGroupTxs }, null);
+        return;
+      }
 
       if (oldTx.linkedTransactionId && oldTx.subtype === 'transfer') {
         const linkedTxs = await tx.select().from(transactions).where(eq(transactions.linkedTransactionId, oldTx.linkedTransactionId));
