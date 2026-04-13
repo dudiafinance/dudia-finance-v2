@@ -358,17 +358,17 @@ export default function AccountsPage() {
                             variant="ghost"
                             size="icon"
                             onClick={(e) => { e.stopPropagation(); openEdit(a); }}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                            className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                           >
-                            <Edit className="h-3.5 w-3.5" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost"
                             size="icon"
                             onClick={(e) => { e.stopPropagation(); setDeleteId(a.id); }}
-                            className="h-8 w-8 text-muted-foreground hover:text-error hover:bg-error-subtle"
+                            className="h-10 w-10 text-muted-foreground hover:text-error hover:bg-error-subtle"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>

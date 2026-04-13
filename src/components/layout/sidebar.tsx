@@ -133,7 +133,7 @@ export function Sidebar() {
       </aside>
 
       {/* ── Mobile bottom nav (< lg) ─────────────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-around border-t border-border bg-background lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-[72px] items-center justify-around border-t border-border bg-background pb-safe lg:hidden">
         {bottomNavItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
           return (
@@ -141,20 +141,20 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter transition-colors",
+                "flex flex-col items-center justify-center gap-1 px-4 py-2 min-w-[64px] text-[11px] font-bold uppercase tracking-tight transition-colors",
                 isActive ? "text-foreground" : "text-muted-foreground"
               )}
             >
-              <item.icon className={cn("h-5 w-5", isActive ? "text-foreground" : "text-muted-foreground")} />
+              <item.icon className={cn("h-6 w-6", isActive ? "text-foreground" : "text-muted-foreground")} />
               <span>{item.label}</span>
             </Link>
           );
         })}
         <button
           onClick={() => setOpen(true)}
-          className="flex flex-col items-center gap-1 px-3 py-1 text-[10px] font-bold uppercase tracking-tighter text-muted-foreground transition-colors"
+          className="flex flex-col items-center justify-center gap-1 px-4 py-2 min-w-[64px] text-[11px] font-bold uppercase tracking-tight text-muted-foreground transition-colors"
         >
-          <MoreHorizontal className="h-5 w-5" />
+          <MoreHorizontal className="h-6 w-6" />
           <span>Mais</span>
         </button>
       </nav>

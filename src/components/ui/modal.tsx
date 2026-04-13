@@ -11,7 +11,7 @@ interface ModalProps {
   title: string;
   description?: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
 const sizes = {
@@ -19,6 +19,7 @@ const sizes = {
   md: "max-w-md",
   lg: "max-w-lg",
   xl: "max-w-2xl",
+  full: "inset-0 rounded-none",
 };
 
 export function Modal({ open, onClose, title, description, children, size = "md" }: ModalProps) {
@@ -48,7 +49,10 @@ export function Modal({ open, onClose, title, description, children, size = "md"
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className={cn(
+          "fixed inset-0 z-50 flex items-center justify-center",
+          size === "full" ? "p-0" : "p-4"
+        )}>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -63,8 +67,9 @@ export function Modal({ open, onClose, title, description, children, size = "md"
             exit={{ opacity: 0, scale: 0.98, y: 10 }}
             transition={{ type: "spring", damping: 30, stiffness: 400 }}
             className={cn(
-              "relative w-full rounded-lg bg-background shadow-precision overflow-hidden border border-border/50",
-              sizes[size]
+              "relative w-full bg-background shadow-precision overflow-hidden border border-border/50",
+              sizes[size],
+              size === "full" ? "h-full w-full rounded-none" : "rounded-lg"
             )}
           >
             <div className="flex items-start justify-between border-b border-border/50 px-8 py-6">
