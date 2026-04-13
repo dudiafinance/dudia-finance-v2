@@ -163,58 +163,61 @@ export async function POST(req: NextRequest) {
     }
 
     // Caso: Transação Única
-    const row = await FinancialEngine.addTransaction({
-      userId,
-      accountId: d.accountId,
-      categoryId: d.categoryId ?? null,
-      amount: String(d.amount),
-      type: d.type,
-      date: d.date,
-      description: safeDescription,
-      notes: safeNotes,
-      isPaid: d.isPaid,
-      subtype: d.subtype ?? 'single',
-      dueDate: d.dueDate ?? null,
-      receiveDate: d.receiveDate ?? null,
-      tags: d.tags,
-      location: safeLocation,
-    });
-
-    // Caso: Transação Fixa - gerar cópias para próximos 11 meses
-    if (d.subtype === 'fixed') {
-      const groupId = randomUUID();
-      const baseDate = new Date(d.date + 'T12:00:00');
-      
-      // Gerar cópias para os próximos 11 meses (total 12 ocorrências)
-      await Promise.all(
-        Array.from({ length: 11 }, async (_, i) => {
-          const futureDate = new Date(baseDate);
-          futureDate.setMonth(futureDate.getMonth() + (i + 1));
-          const dateStr = futureDate.toISOString().split('T')[0];
-          
-          return FinancialEngine.addTransaction({
-            userId,
-            accountId: d.accountId,
-            categoryId: d.categoryId ?? null,
-            amount: String(d.amount),
-            type: d.type,
-            date: dateStr,
-            description: safeDescription,
-            notes: safeNotes,
-            isPaid: false,
-            subtype: 'fixed',
-            recurringGroupId: groupId,
-            dueDate: d.dueDate ?? null,
-            receiveDate: d.receiveDate ?? null,
-            tags: d.tags,
-            location: safeLocation,
-          });
-        })
-      );
+    if (d.subtype !== 'fixed') {
+      const row = await FinancialEngine.addTransaction({
+        userId,
+        accountId: d.accountId,
+        categoryId: d.categoryId ?? null,
+        amount: String(d.amount),
+        type: d.type,
+        date: d.date,
+        description: safeDescription,
+        notes: safeNotes,
+        isPaid: d.isPaid,
+        subtype: d.subtype ?? 'single',
+        dueDate: d.dueDate ?? null,
+        receiveDate: d.receiveDate ?? null,
+        tags: d.tags,
+        location: safeLocation,
+      });
+      if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: row, status: 201 });
+      return NextResponse.json(row, { status: 201 });
     }
 
-    if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: row, status: 201 });
-    return NextResponse.json(row, { status: 201 });
+    // Caso: Transação Fixa — groupId criado ANTES para que TODAS as ocorrências (incluindo a primeira) compartilhem o mesmo grupo
+    const groupId = randomUUID();
+    const baseDate = new Date(d.date + 'T12:00:00');
+    const fixedRows = await Promise.all(
+      Array.from({ length: 12 }, async (_, i) => {
+        const occurrenceDate = new Date(baseDate);
+        occurrenceDate.setMonth(occurrenceDate.getMonth() + i);
+        const dateStr = occurrenceDate.toISOString().split('T')[0];
+
+        return FinancialEngine.addTransaction({
+          userId,
+          accountId: d.accountId,
+          categoryId: d.categoryId ?? null,
+          amount: String(d.amount),
+          type: d.type,
+          date: dateStr,
+          description: safeDescription,
+          notes: safeNotes,
+          isPaid: i === 0 ? d.isPaid : false,
+          subtype: 'fixed',
+          recurringGroupId: groupId,
+          totalOccurrences: 12,
+          currentOccurrence: i + 1,
+          dueDate: d.dueDate ?? null,
+          receiveDate: d.receiveDate ?? null,
+          tags: d.tags,
+          location: safeLocation,
+        });
+      })
+    );
+
+    const firstRow = fixedRows[0];
+    if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: firstRow, status: 201 });
+    return NextResponse.json(firstRow, { status: 201 });
 
   } catch (error) {
     console.error("Error creating transaction:", error);

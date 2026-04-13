@@ -342,13 +342,17 @@ export function useReports(period: "week" | "month" | "year") {
   });
 }
 
-// Notifications
+const TWO_MINUTES = 2 * 60 * 1000;
+
+// Notifications — polling pausado quando a aba está em background (visibilitychange)
 export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => apiFetch<Notification[]>("/api/notifications"),
     staleTime: ONE_MINUTE,
-    refetchInterval: ONE_MINUTE, // Atualiza notificações a cada minuto
+    refetchInterval: TWO_MINUTES,
+    // Pausa o polling quando a aba está oculta — reduz requests desnecessários em background
+    refetchIntervalInBackground: false,
   });
 }
 export function useUpdateNotifications() {

@@ -47,7 +47,11 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
-  const isDebugBypass = request.headers.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN;
+  // Debug bypass ONLY allowed in non-production environments
+  const isDebugBypass =
+    process.env.NODE_ENV !== "production" &&
+    !!process.env.AIOX_DEBUG_TOKEN &&
+    request.headers.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN;
 
   if (!isPublicRoute(request) && !isDebugBypass) {
     await auth.protect();

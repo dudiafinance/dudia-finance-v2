@@ -134,6 +134,13 @@
       "when": 1775860355858,
       "tag": "0018_lovely_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1776097176663,
+      "tag": "0019_drop_password_hash",
+      "breakpoints": true
     }
   ]
 }

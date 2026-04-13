@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { recurringTransactions } from "@/lib/db/schema";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { cleanupOldIdempotencyKeys } from "@/lib/idempotency";
 import { and, eq, lte } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -93,9 +94,14 @@ export async function GET(req: Request) {
       }
     }
 
+    // Limpeza periódica de idempotency keys antigas (> 7 dias)
+    const deletedKeys = await cleanupOldIdempotencyKeys();
+    console.log(`[CRON] Limpeza de idempotency_keys: ${deletedKeys} registros removidos.`);
+
     return NextResponse.json({
       processed: pendingRecurrences.length,
       results,
+      cleanedIdempotencyKeys: deletedKeys,
     });
   } catch (error) {
     console.error("[CRON] Erro crítico no worker:", error);

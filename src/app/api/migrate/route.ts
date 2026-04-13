@@ -3,20 +3,17 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
-  // Security: Disable in production without explicit migration secret
-  const isProduction = process.env.NODE_ENV === "production";
+  // Este endpoint foi desativado. Migrações devem rodar via `drizzle-kit migrate` no processo de deploy.
+  // Manter este endpoint ativo em produção é uma superfície de ataque desnecessária.
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Migration endpoint disabled in production. Use drizzle-kit migrate during deploy." }, { status: 403 });
+  }
+
+  // Em desenvolvimento, ainda requer autenticação básica
   const authHeader = req.headers.get("authorization");
   const expectedAuth = process.env.MIGRATION_SECRET;
 
-  // In production, require MIGRATION_SECRET to be set AND valid
-  if (isProduction) {
-    if (!expectedAuth || expectedAuth.length < 32) {
-      console.error("[SECURITY] Migration endpoint blocked: MIGRATION_SECRET not configured or too weak");
-      return NextResponse.json({ error: "Migration endpoint disabled" }, { status: 403 });
-    }
-  }
-
-  if (authHeader !==`Bearer ${expectedAuth}`) {
+  if (!expectedAuth || authHeader !== `Bearer ${expectedAuth}`) {
     console.warn(`[SECURITY] Unauthorized migration attempt from ${req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown"}`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

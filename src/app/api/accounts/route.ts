@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { accounts } from "@/lib/db/schema";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, and, isNull } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 
@@ -15,7 +15,7 @@ export async function GET() {
     const rows = await db
       .select()
       .from(accounts)
-      .where(eq(accounts.userId, userId))
+      .where(and(eq(accounts.userId, userId), isNull(accounts.deletedAt)))
       .orderBy(asc(accounts.createdAt));
 
     return NextResponse.json(rows);

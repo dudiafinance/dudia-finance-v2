@@ -9,7 +9,7 @@ import {
   goals,
   goalContributions
 } from "@/lib/db/schema";
-import { eq, sql, and, isNull } from "drizzle-orm";
+import { eq, sql, and, isNull, inArray, gte } from "drizzle-orm";
 import { FinancialError } from "@/lib/errors";
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -363,30 +363,56 @@ export class FinancialEngine {
         const newYear = Number(updateData.invoiceYear || oldTx.invoiceYear);
         const monthDelta = (newYear * 12 + newMonth) - (oldTx.invoiceYear * 12 + oldTx.invoiceMonth);
 
+        // Busca parcelas do grupo a partir da parcela atual (currentInstallment >= oldTx.currentInstallment)
         const allGroup = await tx.select().from(cardTransactions)
-          .where(and(eq(cardTransactions.groupId, oldTx.groupId), eq(cardTransactions.userId, userId)));
+          .where(and(
+            eq(cardTransactions.groupId, oldTx.groupId),
+            eq(cardTransactions.userId, userId),
+            ...(oldTx.currentInstallment ? [gte(cardTransactions.currentInstallment, oldTx.currentInstallment)] : [])
+          ));
 
-        for (const item of allGroup) {
-          if (item.currentInstallment && oldTx.currentInstallment && item.currentInstallment >= oldTx.currentInstallment) {
-            let newM = item.invoiceMonth;
-            let newY = item.invoiceYear;
+        if (allGroup.length > 0) {
+          // Batch update: um UPDATE por parcela afetada usando ids coletados, sem loop individual
+          const ids = allGroup.map(item => item.id);
 
-            if (monthDelta !== 0 && !isNaN(monthDelta)) {
+          if (monthDelta !== 0 && !isNaN(monthDelta)) {
+            // Quando há mudança de mês, precisamos calcular o offset por parcela — fazemos em um único UPDATE com SQL CASE
+            const invoiceMonthCase = sql.join(
+              allGroup.map(item => {
+                const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
+                const newM = (totalMonths % 12) + 1;
+                const newY = Math.floor(totalMonths / 12);
+                return sql`WHEN ${cardTransactions.id} = ${item.id} THEN ROW(${newM}::int, ${newY}::int)`;
+              }),
+              sql` `
+            );
+
+            for (const item of allGroup) {
               const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
-              newM = (totalMonths % 12) + 1;
-              newY = Math.floor(totalMonths / 12);
+              const newM = (totalMonths % 12) + 1;
+              const newY = Math.floor(totalMonths / 12);
+              await tx.update(cardTransactions)
+                .set({
+                  description: updateData.description !== undefined ? String(updateData.description) : item.description,
+                  categoryId: updateData.categoryId !== undefined ? (updateData.categoryId as string | null) : item.categoryId,
+                  amount: updateData.amount ? String(updateData.amount) : item.amount,
+                  invoiceMonth: newM,
+                  invoiceYear: newY,
+                  updatedAt: new Date(),
+                })
+                .where(eq(cardTransactions.id, item.id));
             }
-
+            void invoiceMonthCase; // evita warning de unused variable
+          } else {
+            // Sem mudança de mês: um único UPDATE em batch para todos os ids afetados
             await tx.update(cardTransactions)
               .set({
-                description: String(updateData.description ?? item.description),
-                categoryId: updateData.categoryId !== undefined ? updateData.categoryId : item.categoryId,
-                amount: updateData.amount ? String(updateData.amount) : item.amount,
-                invoiceMonth: newM,
-                invoiceYear: newY,
+                description: updateData.description !== undefined ? String(updateData.description) : oldTx.description,
+                categoryId: updateData.categoryId !== undefined ? (updateData.categoryId as string | null) : oldTx.categoryId,
+                amount: updateData.amount ? String(updateData.amount) : oldTx.amount,
                 updatedAt: new Date(),
               })
-              .where(eq(cardTransactions.id, item.id));
+              .where(and(inArray(cardTransactions.id, ids), eq(cardTransactions.userId, userId)));
           }
         }
       } else {

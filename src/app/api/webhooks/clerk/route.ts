@@ -73,13 +73,12 @@ export async function POST(req: Request) {
           })
           .where(eq(users.id, existingUser.id))
       } else if (eventType === 'user.created') {
-        // Criar novo usuário se não existir (opcional, dependendo se você quer auto-cadastro)
+        // Criar novo usuário se não existir (Clerk gerencia autenticação)
         await db.insert(users).values({
           email,
           clerkId: id,
           name: name || 'Usuário',
           avatar: image_url,
-          passwordHash: 'clerk_authenticated', // Senha dummy pois Clerk gerencia auth
         })
       }
     }

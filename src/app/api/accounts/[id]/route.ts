@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { accounts, transactions } from "@/lib/db/schema";
+import { accounts } from "@/lib/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 
@@ -41,23 +41,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const [accountExists] = await db
     .select({ id: accounts.id })
     .from(accounts)
-    .where(and(eq(accounts.id, id), eq(accounts.userId, userId)))
-    .limit(1);
-  
-  if (!accountExists) return NextResponse.json({ error: "Conta não encontrada" }, { status: 404 });
-
-  const hasTransactions = await db
-    .select({ id: transactions.id })
-    .from(transactions)
-    .where(eq(transactions.accountId, id))
+    .where(and(eq(accounts.id, id), eq(accounts.userId, userId), isNull(accounts.deletedAt)))
     .limit(1);
 
-  if (hasTransactions.length > 0) {
-    return NextResponse.json({ error: "Não é possível deletar conta com transações existentes" }, { status: 400 });
-  }
+  if (!accountExists) return NextResponse.json({ error: "Conta não encontrada ou já excluída" }, { status: 404 });
 
+  // Soft-delete: preserva histórico e integridade referencial das transações
   await db
-    .delete(accounts)
+    .update(accounts)
+    .set({ deletedAt: new Date(), isActive: false, updatedAt: new Date() })
     .where(and(eq(accounts.id, id), eq(accounts.userId, userId)));
 
   return NextResponse.json({ success: true });

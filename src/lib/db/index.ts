@@ -12,8 +12,14 @@ if (!process.env.DATABASE_URL) {
 
 const connectionString = process.env.DATABASE_URL!;
 
-// Conexão para queries
-const client = postgres(connectionString);
+// Serverless-safe: 1 conexão por função, timeout curto para liberar rapidamente
+// Evita esgotamento de conexões no Neon/Vercel com múltiplas invocações paralelas
+// SSL: deixamos o postgres.js ler sslmode diretamente da connection string (padrão Neon)
+const client = postgres(connectionString, {
+  max: 1,              // Uma conexão por instância serverless
+  idle_timeout: 20,    // Fecha conexões ociosas após 20s
+  connect_timeout: 10, // Falha rápido se não conseguir conectar em 10s
+});
 
 export const db = drizzle(client, { schema });
 

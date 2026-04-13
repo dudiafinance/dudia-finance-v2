@@ -18,7 +18,6 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   clerkId: text('clerk_id'),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }),
   name: varchar('name', { length: 255 }).notNull(),
   avatar: text('avatar'),
   currency: varchar('currency', { length: 3 }).default('BRL'),
