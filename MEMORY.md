@@ -3,7 +3,7 @@
 ## 📌 Status Atual
 - **Versão:** 0.9.x (Stabilization Phase - Em Progresso)
 - **Fase:** Implementação do PRD-STABILIZATION.md
-- **Story Ativa:** STORY-004 (Semana 2 - Finalização pendente)
+- **Story Ativa:** STORY-005 (Semana 3 - Completa)
 - **Build Status:** ✅ Passando (com warnings)
 
 ## 🛠️ Decisões Técnicas
@@ -54,15 +54,15 @@
 | `[TYPE]` Unificação de Tipos | ✅ Feito | `src/types/finance.ts` |
 | `[REFAC]` Credit Cards Page | ✅ Feito (~1100 → ~350 linhas) | `src/app/(app)/credit-cards/page.tsx` |
 
-### ⏳ Semana 3: Infraestrutura & Performance — 0%
-**Status:** Não iniciada  
-**Story:** STORY-005 (A criar)
+### ✅ Semana 3: Infraestrutura & Performance — 100%
+**Responsável:** @dev  
+**Story:** STORY-005
 
-| Item | Status | Como Fazer |
-|------|--------|------------|
-| `[SEC]` Rate Limiting | ⏳ Pendente | `middleware.ts` + `@upstash/ratelimit` |
-| `[PERF]` Optimistic Updates | ⏳ Pendente | React Query `onMutate` |
-| `[PERF]` Paginação Cursor-Based | ⏳ Pendente | API `cursor` parameter |
+| Item | Status | Arquivos |
+|------|--------|----------|
+| `[SEC]` Rate Limiting | ✅ Feito | `src/middleware.ts` |
+| `[PERF]` Optimistic Updates | ✅ Feito | `src/hooks/use-api.ts` |
+| `[PERF]` Paginação Cursor-Based | ✅ Feito | `src/app/api/transactions/route.ts`, `src/app/api/dashboard/route.ts`, `src/app/api/reports/route.ts` |
 
 ### ⏳ Semana 4: Qualidade & Observabilidade — 0%
 **Status:** Não iniciada  
@@ -100,10 +100,12 @@
 3. [x] **Commit (@devops):** `41340f7` — 24 arquivos, +2757/-1533
 4. [x] **Deploy (@devops):** https://dudia-finance-v2-cimbam6a2-dudiafinances-projects.vercel.app
 
-### Curto Prazo: Semana 3
-- [ ] Rate Limiting no middleware
-- [ ] Optimistic Updates nos hooks
-- [ ] Paginação cursor-based
+### Semana 3: Infraestrutura & Performance — ✅ COMPLETA
+- [x] **Commit (@devops):** `bb608c4` — 14 arquivos, +1185/-138
+- [x] **Deploy (@devops):** https://dudia-finance-v2-hvwxpx0a6-dudiafinances-projects.vercel.app
+- [x] Rate Limiting no middleware
+- [x] Optimistic Updates nos hooks
+- [x] Paginação cursor-based
 
 ### Médio Prazo: Semana 4
 - [ ] Component Tests com Vitest

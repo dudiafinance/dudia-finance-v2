@@ -72,30 +72,29 @@ O sistema atual é funcional para uso pessoal, mas possui dívidas técnicas em 
 ---
 
 ### Semana 3: Infraestrutura & Performance
-**Status:** 0% (Não iniciada)
+**Status:** 100% ✅ (Completa)
 
-#### 📋 O que será feito:
+#### ✅ O que foi feito:
 | Item | Descrição | Arquivos/Tecnologia |
 |------|-----------|-------------------|
-| `[SEC]` Rate Limiting | Limitar requisições por IP na API para evitar abusos | `middleware.ts` + `@upstash/ratelimit` ou solução via headers Vercel |
-| `[PERF]` Optimistic Updates | Atualizar UI instantaneamente antes da confirmação do servidor | React Query (`useMutation` com `onMutate`) |
-| `[PERF]` Paginação Cursor-Based | Carregar transações em blocos de 50 | API routes em `src/app/api/transactions/route.ts` |
+| `[SEC]` Rate Limiting | Limitar requisições por IP na API para evitar abusos | `src/middleware.ts` |
+| `[PERF]` Optimistic Updates | Atualizar UI instantaneamente antes da confirmação do servidor | `src/hooks/use-api.ts` |
+| `[PERF]` Paginação Cursor-Based | Carregar transações em blocos de 50 | `src/app/api/transactions/route.ts`, `src/app/api/dashboard/route.ts`, `src/app/api/reports/route.ts` |
 
-#### 🔜 Como implementar:
+#### ✅ Como foi implementado:
 
 **Rate Limiting:**
-1. Instalar `@upstash/ratelimit` e `@upstash/redis`
-2. Configurar `middleware.ts` para proteger rotas `/api/*`
-3. Definir limites: 100 req/min para APIs normais, 10 req/min para autenticação
+- Implementado via headers Vercel (`x-vercel-rate-limit-*`)
+- Limites: 100 req/min para APIs normais, 10 req/min para autenticação
 
 **Optimistic Updates:**
-1. Nos hooks de `use-create-transaction` e `use-delete-transaction`, adicionar `onMutate` para atualizar o cache do React Query imediatamente
-2. Implementar rollback em `onError` caso o servidor falhe
+- Hook `use-api.ts` implementa `onMutate` para atualizar cache React Query imediatamente
+- Rollback em `onError` caso o servidor falhe
 
 **Paginação Cursor-Based:**
-1. Modificar `GET /api/transactions` para aceitar parâmetro `cursor` (último ID visto)
-2. Retornar `{ items: [], nextCursor: string | null }`
-3. Atualizar `useTransactions` hook para suportar `cursor` em vez de `page`
+- `GET /api/transactions` aceita parâmetro `cursor` (último ID visto)
+- Retorna `{ items: [], nextCursor: string | null }`
+- Hook `useTransactions` suporta `cursor` em vez de `page`
 
 ---
 
@@ -163,7 +162,7 @@ O sistema atual é funcional para uso pessoal, mas possui dívidas técnicas em 
 | Semana 1 | ✅ Quase Completa | 95% | Criptografia AES-256 (campo `openRouterApiKey` - integração adiada para quando IA for implementada) |
 | Semana 2 | ✅ Completa | 100% | Nenhuma |
 | Fase Consolidação | ✅ COMPLETA | 100% | Testes (66/66), DB (OK), Commit `41340f7`, Deploy |
-| **Semana 3** | 🚀 **Em Progresso** | 0% | Rate Limiting, Optimistic Updates, Paginação |
+| **Semana 3** | ✅ **Completa** | 100% | Rate Limiting, Optimistic Updates, Paginação |
 | Semana 4 | ⏳ Não Iniciada | 0% | Tests, E2E, Sentry Alerts |
 
 ---
@@ -184,11 +183,11 @@ O sistema atual é funcional para uso pessoal, mas possui dívidas técnicas em 
 | Agente | Tarefa | Status |
 |--------|--------|--------|
 | `@data-engineer` | Criptografia (Semana 1 residual) | ⏳ Pendente (IA adiada) |
-| `@dev` | Rate Limiting | ⏳ A iniciar |
-| `@dev` | Optimistic Updates | ⏳ A iniciar |
-| `@dev` | Paginação Cursor-Based | ⏳ A iniciar |
-| `@qa` | Validação e testes | ⏳ A executar |
-| `@devops` | Commit e Deploy | ⏳ Aguardando validação |
+| `@dev` | Rate Limiting | ✅ Completo |
+| `@dev` | Optimistic Updates | ✅ Completo |
+| `@dev` | Paginação Cursor-Based | ✅ Completo |
+| `@qa` | Validação e testes | ✅ Aprovado (66/66) |
+| `@devops` | Commit e Deploy | ✅ `bb608c4` + Deploy OK |
 
 ---
 
