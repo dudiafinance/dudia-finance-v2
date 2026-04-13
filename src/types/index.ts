@@ -158,14 +158,17 @@ export type DashboardSummary = {
 };
 
 export type ReportSummary = {
-  stats: {
+  summary: {
     income: number;
     expense: number;
     net: number;
   };
-  incomeByCat: { name: string; value: number }[];
-  expenseByCat: { name: string; value: number; color?: string }[];
-  history: { label: string; income: number; expense: number }[];
+  categories: {
+    income: { name: string; value: number }[];
+    expense: { name: string; value: number; color?: string }[];
+  };
+  history: { month: string; income: number; expense: number; net: number }[];
+  period?: string;
 };
 
 export type TransferPayload = {

@@ -32,7 +32,9 @@ export default function ReportsPage() {
     );
   }
 
-  const { stats, incomeByCat, expenseByCat, history } = data;
+  const { summary: stats, categories, history } = data;
+  const incomeByCat = categories.income;
+  const expenseByCat = categories.expense;
   const maxVal = Math.max(...history.map((h) => Math.max(h.income, h.expense)), 1);
 
   return (
@@ -186,7 +188,7 @@ export default function ReportsPage() {
                       className="w-full max-w-[20px] rounded-t bg-error-subtle border-t border-x border-error-subtle transition-all group-hover:bg-error/40"
                     />
                   </div>
-                  <span className="mt-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</span>
+                  <span className="mt-4 text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{item.month}</span>
                 </div>
               ))}
             </div>
