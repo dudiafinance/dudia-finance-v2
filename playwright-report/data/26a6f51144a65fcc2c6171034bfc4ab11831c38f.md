@@ -1,0 +1,467 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: system-debug.spec.ts >> Deep System Debug & Interaction >> Cleanup All Debug Data
+- Location: tests\e2e\system-debug.spec.ts:123:7
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]: D.
+        - generic [ref=e8]:
+          - generic [ref=e9]: Dudia
+          - generic [ref=e10]: Finance
+      - navigation [ref=e11]:
+        - link "Dashboard" [ref=e12] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e13]
+          - generic [ref=e18]: Dashboard
+        - link "Transações" [ref=e19] [cursor=pointer]:
+          - /url: /transactions
+          - img [ref=e20]
+          - generic [ref=e23]: Transações
+        - link "Cartões" [ref=e24] [cursor=pointer]:
+          - /url: /credit-cards
+          - img [ref=e25]
+          - generic [ref=e27]: Cartões
+        - link "Metas" [ref=e28] [cursor=pointer]:
+          - /url: /goals
+          - img [ref=e29]
+          - generic [ref=e33]: Metas
+        - link "Orçamentos" [ref=e34] [cursor=pointer]:
+          - /url: /budgets
+          - img [ref=e35]
+          - generic [ref=e38]: Orçamentos
+        - link "Contas" [ref=e39] [cursor=pointer]:
+          - /url: /accounts
+          - img [ref=e40]
+          - generic [ref=e43]: Contas
+        - link "Categorias" [ref=e45] [cursor=pointer]:
+          - /url: /categories
+          - img [ref=e46]
+          - generic [ref=e50]: Categorias
+        - link "Tags" [ref=e51] [cursor=pointer]:
+          - /url: /tags
+          - img [ref=e52]
+          - generic [ref=e55]: Tags
+        - link "Previsão" [ref=e56] [cursor=pointer]:
+          - /url: /forecast
+          - img [ref=e57]
+          - generic [ref=e60]: Previsão
+        - link "Relatórios" [ref=e61] [cursor=pointer]:
+          - /url: /reports
+          - img [ref=e62]
+          - generic [ref=e64]: Relatórios
+        - link "Configurações" [ref=e65] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e66]
+          - generic [ref=e69]: Configurações
+      - button "Recolher Menu" [ref=e71]:
+        - img [ref=e72]
+        - generic [ref=e74]: Recolher Menu
+    - generic [ref=e75]:
+      - banner [ref=e76]:
+        - generic [ref=e78]:
+          - img [ref=e79]
+          - textbox "Buscar..." [ref=e82]
+        - generic [ref=e83]:
+          - button [ref=e84]:
+            - img [ref=e85]
+          - generic [ref=e90] [cursor=pointer]:
+            - paragraph [ref=e91]: Usuário
+            - paragraph [ref=e92]: Terminal
+      - main [ref=e93]:
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]:
+                - text: Visão Patrimonial
+                - heading "Minhas Contas" [level=1] [ref=e98]
+              - generic [ref=e99]:
+                - button "Ocultar" [ref=e100]:
+                  - img [ref=e101]
+                  - generic [ref=e106]: Ocultar
+                - button "Transferir" [ref=e107]:
+                  - img [ref=e108]
+                  - generic [ref=e111]: Transferir
+                - button "Nova Conta" [ref=e112]:
+                  - img [ref=e113]
+                  - generic [ref=e114]: Nova Conta
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - paragraph [ref=e117]:
+                  - img [ref=e118]
+                  - text: Saldo Disponível
+                - paragraph [ref=e121]: "-R$ 3.072,55"
+              - generic [ref=e122]:
+                - paragraph [ref=e123]:
+                  - img [ref=e124]
+                  - text: Investimentos
+                - paragraph [ref=e127]: R$ 0,00
+              - generic [ref=e128]:
+                - paragraph [ref=e129]:
+                  - img [ref=e130]
+                  - text: Pendências Cartão
+                - paragraph [ref=e132]: R$ 0,00
+          - generic [ref=e133]:
+            - generic [ref=e135]:
+              - img [ref=e136]
+              - textbox "Buscar por nome ou banco..." [ref=e139]
+            - generic [ref=e141]:
+              - generic [ref=e142]:
+                - heading "Conta Corrente" [level=2] [ref=e143]
+                - generic [ref=e145]: "18"
+              - generic [ref=e146]:
+                - generic [ref=e147] [cursor=pointer]:
+                  - generic [ref=e148]:
+                    - img [ref=e150]
+                    - generic [ref=e153]:
+                      - button [ref=e154]:
+                        - img [ref=e155]
+                      - button [ref=e158]:
+                        - img [ref=e159]
+                  - generic [ref=e162]:
+                    - heading "ITAÚ" [level=3] [ref=e163]
+                    - paragraph [ref=e164]: ITAÚ
+                  - generic [ref=e165]:
+                    - generic [ref=e167]: Saldo Atual
+                    - paragraph [ref=e168]: "-R$ 2.822,55"
+                - generic [ref=e170] [cursor=pointer]:
+                  - generic [ref=e171]:
+                    - img [ref=e173]
+                    - generic [ref=e176]:
+                      - button [ref=e177]:
+                        - img [ref=e178]
+                      - button [ref=e181]:
+                        - img [ref=e182]
+                  - generic [ref=e185]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e186]
+                    - paragraph [ref=e187]: BANCO_PAYMENT
+                  - generic [ref=e188]:
+                    - generic [ref=e190]: Saldo Atual
+                    - paragraph [ref=e191]: R$ 0,00
+                - generic [ref=e193] [cursor=pointer]:
+                  - generic [ref=e194]:
+                    - img [ref=e196]
+                    - generic [ref=e199]:
+                      - button [ref=e200]:
+                        - img [ref=e201]
+                      - button [ref=e204]:
+                        - img [ref=e205]
+                  - generic [ref=e208]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e209]
+                    - paragraph [ref=e210]: BANCO_RECUR
+                  - generic [ref=e211]:
+                    - generic [ref=e213]: Saldo Atual
+                    - paragraph [ref=e214]: R$ 0,00
+                - generic [ref=e216] [cursor=pointer]:
+                  - generic [ref=e217]:
+                    - img [ref=e219]
+                    - generic [ref=e222]:
+                      - button [ref=e223]:
+                        - img [ref=e224]
+                      - button [ref=e227]:
+                        - img [ref=e228]
+                  - generic [ref=e231]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e232]
+                    - paragraph [ref=e233]: BANCO_PAYMENT
+                  - generic [ref=e234]:
+                    - generic [ref=e236]: Saldo Atual
+                    - paragraph [ref=e237]: R$ 0,00
+                - generic [ref=e239] [cursor=pointer]:
+                  - generic [ref=e240]:
+                    - img [ref=e242]
+                    - generic [ref=e245]:
+                      - button [ref=e246]:
+                        - img [ref=e247]
+                      - button [ref=e250]:
+                        - img [ref=e251]
+                  - generic [ref=e254]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e255]
+                    - paragraph [ref=e256]: BANCO_RECUR
+                  - generic [ref=e257]:
+                    - generic [ref=e259]: Saldo Atual
+                    - paragraph [ref=e260]: R$ 0,00
+                - generic [ref=e262] [cursor=pointer]:
+                  - generic [ref=e263]:
+                    - img [ref=e265]
+                    - generic [ref=e268]:
+                      - button [ref=e269]:
+                        - img [ref=e270]
+                      - button [ref=e273]:
+                        - img [ref=e274]
+                  - generic [ref=e277]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e278]
+                    - paragraph [ref=e279]: BANCO_PAYMENT
+                  - generic [ref=e280]:
+                    - generic [ref=e282]: Saldo Atual
+                    - paragraph [ref=e283]: R$ 0,00
+                - generic [ref=e285] [cursor=pointer]:
+                  - generic [ref=e286]:
+                    - img [ref=e288]
+                    - generic [ref=e291]:
+                      - button [ref=e292]:
+                        - img [ref=e293]
+                      - button [ref=e296]:
+                        - img [ref=e297]
+                  - generic [ref=e300]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e301]
+                    - paragraph [ref=e302]: BANCO_RECUR
+                  - generic [ref=e303]:
+                    - generic [ref=e305]: Saldo Atual
+                    - paragraph [ref=e306]: R$ 0,00
+                - generic [ref=e308] [cursor=pointer]:
+                  - generic [ref=e309]:
+                    - img [ref=e311]
+                    - generic [ref=e314]:
+                      - button [ref=e315]:
+                        - img [ref=e316]
+                      - button [ref=e319]:
+                        - img [ref=e320]
+                  - generic [ref=e323]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e324]
+                    - paragraph [ref=e325]: BANCO_PAYMENT
+                  - generic [ref=e326]:
+                    - generic [ref=e328]: Saldo Atual
+                    - paragraph [ref=e329]: R$ 0,00
+                - generic [ref=e331] [cursor=pointer]:
+                  - generic [ref=e332]:
+                    - img [ref=e334]
+                    - generic [ref=e337]:
+                      - button [ref=e338]:
+                        - img [ref=e339]
+                      - button [ref=e342]:
+                        - img [ref=e343]
+                  - generic [ref=e346]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e347]
+                    - paragraph [ref=e348]: BANCO_RECUR
+                  - generic [ref=e349]:
+                    - generic [ref=e351]: Saldo Atual
+                    - paragraph [ref=e352]: R$ 0,00
+                - generic [ref=e354] [cursor=pointer]:
+                  - generic [ref=e355]:
+                    - img [ref=e357]
+                    - generic [ref=e360]:
+                      - button [ref=e361]:
+                        - img [ref=e362]
+                      - button [ref=e365]:
+                        - img [ref=e366]
+                  - generic [ref=e369]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e370]
+                    - paragraph [ref=e371]: BANCO_PAYMENT
+                  - generic [ref=e372]:
+                    - generic [ref=e374]: Saldo Atual
+                    - paragraph [ref=e375]: R$ 0,00
+                - generic [ref=e377] [cursor=pointer]:
+                  - generic [ref=e378]:
+                    - img [ref=e380]
+                    - generic [ref=e383]:
+                      - button [ref=e384]:
+                        - img [ref=e385]
+                      - button [ref=e388]:
+                        - img [ref=e389]
+                  - generic [ref=e392]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e393]
+                    - paragraph [ref=e394]: BANCO_RECUR
+                  - generic [ref=e395]:
+                    - generic [ref=e397]: Saldo Atual
+                    - paragraph [ref=e398]: R$ 0,00
+                - generic [ref=e400] [cursor=pointer]:
+                  - generic [ref=e401]:
+                    - img [ref=e403]
+                    - generic [ref=e406]:
+                      - button [ref=e407]:
+                        - img [ref=e408]
+                      - button [ref=e411]:
+                        - img [ref=e412]
+                  - generic [ref=e415]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e416]
+                    - paragraph [ref=e417]: BANCO_PAYMENT
+                  - generic [ref=e418]:
+                    - generic [ref=e420]: Saldo Atual
+                    - paragraph [ref=e421]: R$ 0,00
+                - generic [ref=e423] [cursor=pointer]:
+                  - generic [ref=e424]:
+                    - img [ref=e426]
+                    - generic [ref=e429]:
+                      - button [ref=e430]:
+                        - img [ref=e431]
+                      - button [ref=e434]:
+                        - img [ref=e435]
+                  - generic [ref=e438]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e439]
+                    - paragraph [ref=e440]: BANCO_RECUR
+                  - generic [ref=e441]:
+                    - generic [ref=e443]: Saldo Atual
+                    - paragraph [ref=e444]: R$ 0,00
+                - generic [ref=e446] [cursor=pointer]:
+                  - generic [ref=e447]:
+                    - img [ref=e449]
+                    - generic [ref=e452]:
+                      - button [ref=e453]:
+                        - img [ref=e454]
+                      - button [ref=e457]:
+                        - img [ref=e458]
+                  - generic [ref=e461]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e462]
+                    - paragraph [ref=e463]: BANCO_PAYMENT
+                  - generic [ref=e464]:
+                    - generic [ref=e466]: Saldo Atual
+                    - paragraph [ref=e467]: R$ 0,00
+                - generic [ref=e469] [cursor=pointer]:
+                  - generic [ref=e470]:
+                    - img [ref=e472]
+                    - generic [ref=e475]:
+                      - button [ref=e476]:
+                        - img [ref=e477]
+                      - button [ref=e480]:
+                        - img [ref=e481]
+                  - generic [ref=e484]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e485]
+                    - paragraph [ref=e486]: BANCO_RECUR
+                  - generic [ref=e487]:
+                    - generic [ref=e489]: Saldo Atual
+                    - paragraph [ref=e490]: R$ 0,00
+                - generic [ref=e492] [cursor=pointer]:
+                  - generic [ref=e493]:
+                    - img [ref=e495]
+                    - generic [ref=e498]:
+                      - button [ref=e499]:
+                        - img [ref=e500]
+                      - button [ref=e503]:
+                        - img [ref=e504]
+                  - generic [ref=e507]:
+                    - heading "TEST_PAYMENT_ACC" [level=3] [ref=e508]
+                    - paragraph [ref=e509]: BANCO_PAYMENT
+                  - generic [ref=e510]:
+                    - generic [ref=e512]: Saldo Atual
+                    - paragraph [ref=e513]: "-R$ 250,00"
+                - generic [ref=e515] [cursor=pointer]:
+                  - generic [ref=e516]:
+                    - img [ref=e518]
+                    - generic [ref=e521]:
+                      - button [ref=e522]:
+                        - img [ref=e523]
+                      - button [ref=e526]:
+                        - img [ref=e527]
+                  - generic [ref=e530]:
+                    - heading "TEST_RECUR_ACC" [level=3] [ref=e531]
+                    - paragraph [ref=e532]: BANCO_RECUR
+                  - generic [ref=e533]:
+                    - generic [ref=e535]: Saldo Atual
+                    - paragraph [ref=e536]: R$ 0,00
+                - generic [ref=e538] [cursor=pointer]:
+                  - generic [ref=e539]:
+                    - img [ref=e541]
+                    - generic [ref=e544]:
+                      - button [ref=e545]:
+                        - img [ref=e546]
+                      - button [ref=e549]:
+                        - img [ref=e550]
+                  - generic [ref=e553]:
+                    - heading "TEST_DEBUG_ACC" [level=3] [ref=e554]
+                    - paragraph [ref=e555]: BANCO_TEST
+                  - generic [ref=e556]:
+                    - generic [ref=e558]: Saldo Atual
+                    - paragraph [ref=e559]: R$ 0,00
+          - generic [ref=e563]:
+            - generic [ref=e564]:
+              - heading "Editar Conta" [level=2] [ref=e566]
+              - button [ref=e567]:
+                - img [ref=e568]
+            - generic [ref=e572]:
+              - generic [ref=e573]:
+                - generic [ref=e574]: Arquitetura da Conta
+                - generic [ref=e575]:
+                  - button "Conta Corrente" [ref=e576]:
+                    - img [ref=e578]
+                    - generic [ref=e581]: Conta Corrente
+                  - button "Poupança" [ref=e582]:
+                    - img [ref=e584]
+                    - generic [ref=e587]: Poupança
+                  - button "Cartão de Crédito" [ref=e588]:
+                    - img [ref=e590]
+                    - generic [ref=e592]: Cartão de Crédito
+                  - button "Investimento" [ref=e593]:
+                    - img [ref=e595]
+                    - generic [ref=e598]: Investimento
+              - generic [ref=e599]:
+                - generic [ref=e600]:
+                  - generic [ref=e601]:
+                    - generic [ref=e602]: Identificação da Conta*
+                    - 'textbox "Ex: Conta Principal" [ref=e604]': TEST_DEBUG_ACC
+                  - generic [ref=e605]:
+                    - generic [ref=e606]: Instituição Financeira
+                    - 'textbox "Ex: Nubank" [ref=e608]': BANCO_TEST
+                - generic [ref=e609]:
+                  - generic [ref=e610]:
+                    - generic [ref=e611]: Saldo Inicial (Ajuste)
+                    - generic [ref=e613]:
+                      - generic [ref=e614]: R$
+                      - spinbutton [ref=e615]: "0"
+                  - generic [ref=e616]:
+                    - generic [ref=e617]: Moeda de Operação
+                    - generic [ref=e619]:
+                      - combobox [ref=e620] [cursor=pointer]:
+                        - option "BRL - Real" [selected]
+                        - option "USD - Dólar"
+                        - option "EUR - Euro"
+                      - generic:
+                        - img
+              - generic [ref=e623]: Customização & Visibilidade
+              - generic [ref=e625]:
+                - generic [ref=e626]:
+                  - generic [ref=e627]: Assinatura Visual (Cor)
+                  - generic [ref=e629]:
+                    - generic [ref=e630]:
+                      - button [ref=e631]:
+                        - img [ref=e632]
+                      - button [ref=e634]
+                      - button [ref=e635]
+                      - button [ref=e636]
+                      - button [ref=e637]
+                      - button [ref=e638]
+                      - button [ref=e639]
+                      - button [ref=e640]
+                      - button [ref=e641]
+                      - button [ref=e642]
+                      - button [ref=e643]
+                      - button [ref=e644]
+                      - button [ref=e645]
+                      - button [ref=e646]
+                      - button [ref=e647]
+                      - button [ref=e648]
+                      - button [ref=e649]
+                      - button [ref=e650]
+                      - button [ref=e651]
+                      - button [ref=e652]
+                    - generic [ref=e655]:
+                      - textbox [ref=e656] [cursor=pointer]: "#10b981"
+                      - generic [ref=e657]: "#10B981"
+                - generic [ref=e658] [cursor=pointer]:
+                  - checkbox "Consolidar no Patrimônio Os valores desta conta serão somados ao seu saldo total global." [checked] [ref=e659]
+                  - generic [ref=e660]:
+                    - paragraph [ref=e661]: Consolidar no Patrimônio
+                    - paragraph [ref=e662]: Os valores desta conta serão somados ao seu saldo total global.
+              - generic [ref=e663]:
+                - button "Cancelar" [ref=e664]
+                - button "Confirmar Alterações" [ref=e665]
+  - button "Open Next.js Dev Tools" [ref=e671] [cursor=pointer]:
+    - img [ref=e672]
+  - alert [ref=e675]
+```
