@@ -121,27 +121,25 @@ test.describe('Deep System Debug & Interaction', () => {
   });
 
   test('Cleanup All Debug Data', async ({ page }) => {
-    // This is a best-effort cleanup
     const modules = [
-        { url: '/transactions', text: TEST_TRANSACTION_DESC, delBtn: 'svg.lucide-trash2' },
-        { url: '/accounts', text: TEST_ACCOUNT_NAME, delBtn: 'svg.lucide-trash2' },
-        { url: '/budgets', text: TEST_BUDGET_NAME, delBtn: 'svg.lucide-trash2' },
-        { url: '/credit-cards', text: TEST_CARD_NAME, delBtn: 'svg.lucide-pencil' }, // Pencil to open edit, then find trash
-        { url: '/goals', text: TEST_GOAL_NAME, delBtn: 'svg.lucide-trash2' }
+        { url: '/transactions', text: TEST_TRANSACTION_DESC },
+        { url: '/accounts', text: TEST_ACCOUNT_NAME },
+        { url: '/budgets', text: TEST_BUDGET_NAME },
+        { url: '/credit-cards', text: TEST_CARD_NAME },
+        { url: '/goals', text: TEST_GOAL_NAME }
     ];
 
     for (const mod of modules) {
-        await page.goto(mod.url, { waitUntil: 'load' });
-        await waitForLoading(page);
+        await page.goto(mod.url, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(500);
         const item = page.getByText(mod.text).first();
-        if (await item.isVisible()) {
-            await item.click();
-            // Finding the trash icon inside the modal or page
-            const trash = page.locator('button').filter({ has: page.locator('svg.lucide-trash2') }).first();
-            if (await trash.isVisible()) {
-                await trash.click();
-                const confirm = page.locator('button:has-text("Excluir"), button:has-text("Remover")').first();
-                if (await confirm.isVisible()) {
+        if (await item.isVisible({ timeout: 5000 })) {
+            const row = item.locator('..').locator('..');
+            const deleteBtn = row.locator('button').filter({ has: page.locator('svg.lucide-trash2, svg.lucide-more-horizontal') }).first();
+            if (await deleteBtn.isVisible({ timeout: 3000 })) {
+                await deleteBtn.click();
+                const confirm = page.getByRole('button', { name: /excluir|remover/i }).first();
+                if (await confirm.isVisible({ timeout: 3000 })) {
                     await confirm.click();
                     await page.waitForTimeout(1000);
                 }

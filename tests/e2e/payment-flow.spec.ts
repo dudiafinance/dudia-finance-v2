@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
-const TEST_CARD_NAME = 'TEST_PAYMENT_CARD';
-const TEST_ACCOUNT_NAME = 'TEST_PAYMENT_ACC';
+const TEST_CARD_NAME = `TEST_PMT_${Date.now()}`;
+const TEST_ACCOUNT_NAME = `TEST_ACC_${Date.now()}`;
 const TEST_TX_DESC = 'TEST_PURCHASE_E2E';
 
-test.describe('Payment Flow E2E', () => {
+test.describe('Payment Flow E2E', { mode: 'serial' }, () => {
 
   test.beforeEach(async ({ page }) => {
     await page.route('**/*', async route => {
@@ -23,7 +23,7 @@ test.describe('Payment Flow E2E', () => {
     });
   });
 
-  async function waitabit(page: Page, ms = 1500) {
+  async function waitabit(page: Page, ms = 500) {
     await page.waitForTimeout(ms);
   }
 
@@ -59,17 +59,17 @@ test.describe('Payment Flow E2E', () => {
     await expect(page.getByText(/Cartão criado/i)).toBeVisible({ timeout: 15000 });
     console.log('✅ Credit Card created');
 
-    await waitabit(page, 2000);
+    await waitabit(page, 800);
 
     // Step 3: Reload page to ensure fresh state after card creation
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await waitabit(page, 2000);
+    await waitabit(page, 800);
 
     // Select the card by clicking on it
     const cardElement = page.locator(`text=${TEST_CARD_NAME}`).first();
     await cardElement.waitFor({ state: 'visible', timeout: 10000 });
     await cardElement.click();
-    await waitabit(page, 1500);
+    await waitabit(page, 500);
 
     // Find the "Lançar Compra" button that opens the launch modal
     const launchBtn = page.locator('button').filter({ hasText: /Lançar Compra/ }).first();
@@ -93,9 +93,15 @@ test.describe('Payment Flow E2E', () => {
     }
 
     await page.click('button:has-text("Efetivar Lançamento")');
-    // Wait for modal to close (onSuccess calls onClose)
-    await expect(page.getByText('Novo Lançamento')).not.toBeVisible({ timeout: 15000 });
-    console.log('✅ Card purchase launched');
+    // Wait for success toast or modal to close
+    try {
+      await expect(page.getByText(/Lançamento criado|Transação criada/i)).toBeVisible({ timeout: 10000 });
+      console.log('✅ Card purchase launched');
+    } catch {
+      // If no toast, check if modal closed (alternative success indicator)
+      await expect(page.getByText('Novo Lançamento')).not.toBeVisible({ timeout: 5000 });
+      console.log('✅ Card purchase launched (modal closed)');
+    }
 
     console.log('✅ Payment flow completed successfully');
   });

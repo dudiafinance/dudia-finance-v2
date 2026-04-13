@@ -32,7 +32,9 @@ test.describe('Debug: Edit Card Color', () => {
     }
 
     console.log('Opening Edit Modal...');
-    await editButton.click({ force: true });
+    const card = page.getByText('COLOR TEST CARD').first().locator('..').locator('..').locator('..');
+    await card.locator('button').click();
+    await expect(page.getByText(/Editar Cartão/i)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(/Editar Cartão/i)).toBeVisible();
 
     console.log('Changing Color...');
