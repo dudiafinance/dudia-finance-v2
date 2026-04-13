@@ -20,7 +20,32 @@ export default function ReportsPage() {
   const { data, isLoading } = useReports(period);
 
   const handleExport = () => {
-    // Logic for CSV export
+    if (!data) return;
+    const { summary: stats, categories, history } = data;
+
+    const rows: string[] = ["Secao,Categoria,Receitas,Despesas,Saldo"];
+    rows.push(`Resumo,Total,,${stats.income},${stats.expense},${stats.net}`);
+
+    for (const c of categories.income) {
+      rows.push(`Receitas por Categoria,${c.name},${c.value},,`);
+    }
+    for (const c of categories.expense) {
+      rows.push(`Despesas por Categoria,${c.name},,${c.value},`);
+    }
+    for (const h of history) {
+      rows.push(`Historico,${h.month},${h.income},${h.expense},`);
+    }
+
+    const csv = rows.join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `dudia-finance-relatorio-${period}-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (isLoading || !data) {

@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
-import { recurringTransactions } from "@/lib/db/schema";
+import { recurringTransactions, budgets, notifications, transactions } from "@/lib/db/schema";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { cleanupOldIdempotencyKeys } from "@/lib/idempotency";
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, lte, gte, isNull, sum } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 /**
@@ -94,6 +94,75 @@ export async function GET(req: Request) {
       }
     }
 
+    // ==========================================
+    // Budget Alert Processing
+    // ==========================================
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
+
+    const activeBudgets = await db
+      .select()
+      .from(budgets)
+      .where(and(eq(budgets.isActive, true), eq(budgets.alertsEnabled, true)));
+
+    let alertsCreated = 0;
+
+    for (const budget of activeBudgets) {
+      try {
+        const conditions = [
+          eq(transactions.userId, budget.userId),
+          eq(transactions.type, "expense"),
+          isNull(transactions.deletedAt),
+          gte(transactions.date, startOfMonth),
+          lte(transactions.date, endOfMonth),
+        ] as Parameters<typeof and>;
+
+        if (budget.categoryId) {
+          conditions.push(eq(transactions.categoryId, budget.categoryId));
+        }
+
+        const [spending] = await db
+          .select({ total: sum(transactions.amount) })
+          .from(transactions)
+          .where(and(...conditions));
+
+        const totalSpent = Number(spending?.total || 0);
+        const budgetAmount = Number(budget.amount);
+        const threshold = Number(budget.alertThreshold ?? 80);
+        const spentPercent = budgetAmount > 0 ? (totalSpent / budgetAmount) * 100 : 0;
+
+        if (spentPercent >= threshold) {
+          const notifTitle = `Alerta de Budget: ${budget.name}`;
+
+          // Avoid duplicate alerts for the same budget in the same month
+          const [existing] = await db
+            .select({ id: notifications.id })
+            .from(notifications)
+            .where(and(
+              eq(notifications.userId, budget.userId),
+              eq(notifications.title, notifTitle),
+              gte(notifications.createdAt, new Date(startOfMonth + "T00:00:00Z")),
+            ))
+            .limit(1);
+
+          if (!existing) {
+            await db.insert(notifications).values({
+              userId: budget.userId,
+              title: notifTitle,
+              message: `Você utilizou ${spentPercent.toFixed(0)}% do budget "${budget.name}" (R$ ${totalSpent.toFixed(2)} de R$ ${budgetAmount.toFixed(2)}).`,
+              type: spentPercent >= 100 ? "error" : "warning",
+              isRead: false,
+            });
+            alertsCreated++;
+          }
+        }
+      } catch (err) {
+        console.error(`[CRON] Erro ao verificar budget ${budget.id}:`, err);
+      }
+    }
+
+    console.log(`[CRON] Budget alerts gerados: ${alertsCreated}`);
+
     // Limpeza periódica de idempotency keys antigas (> 7 dias)
     const deletedKeys = await cleanupOldIdempotencyKeys();
     console.log(`[CRON] Limpeza de idempotency_keys: ${deletedKeys} registros removidos.`);
@@ -101,6 +170,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       processed: pendingRecurrences.length,
       results,
+      budgetAlertsCreated: alertsCreated,
       cleanedIdempotencyKeys: deletedKeys,
     });
   } catch (error) {

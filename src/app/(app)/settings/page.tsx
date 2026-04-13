@@ -2,27 +2,29 @@
 
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { User, Bell, Shield, Palette, Globe, Save, Loader2, Camera, Check, Eye, EyeOff } from "lucide-react";
+import { User, Bell, Shield, Palette, Globe, Save, Loader2, Camera, Eye, EyeOff } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form-field";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 export default function SettingsPage() {
   const { user } = useUser();
   const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("profile");
-  
+
   // States for each section
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [profileData, setProfileData] = useState({
     name: "",
     email: "",
@@ -58,6 +60,7 @@ export default function SettingsPage() {
       });
       fetchSettings();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchSettings = async () => {
@@ -90,17 +93,17 @@ export default function SettingsPage() {
         method: 'POST',
         body: file,
       });
-      
+
       if (res.ok) {
         const blob = await res.json();
         setProfileData(prev => ({ ...prev, avatar: blob.url }));
-        await user?.reload(); // Update session
-        alert("Foto atualizada com sucesso!");
+        await user?.reload();
+        toast("Foto atualizada com sucesso!", "success");
       } else {
-        alert("Falha ao atualizar foto");
+        toast("Falha ao atualizar foto", "error");
       }
     } catch (_e) {
-      alert("Erro ao fazer upload da foto");
+      toast("Erro ao fazer upload da foto", "error");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -114,48 +117,50 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
       });
-      
+
       if (res.ok) {
         await user?.reload();
-        alert("Perfil atualizado!");
+        toast("Perfil atualizado!", "success");
       } else {
         const data = await res.json();
-        alert(data.error || "Erro ao salvar perfil");
+        toast(data.error || "Erro ao salvar perfil", "error");
       }
     } catch (_err) {
-      alert("Erro de conexão");
+      toast("Erro de conexão", "error");
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  // Security functions
+  // Security functions — uses Clerk client-side password update (no custom endpoint needed)
   const handleSecuritySave = async () => {
     if (securityData.newPassword !== securityData.confirmPassword) {
-      alert("A nova senha e a confirmação não coincidem.");
+      toast("A nova senha e a confirmação não coincidem.", "error");
+      return;
+    }
+
+    if (!securityData.currentPassword || !securityData.newPassword) {
+      toast("Preencha todos os campos de senha.", "error");
+      return;
+    }
+
+    if (!user) {
+      toast("Usuário não autenticado.", "error");
       return;
     }
 
     setIsSavingSecurity(true);
     try {
-      const res = await fetch("/api/user/change-password", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          currentPassword: securityData.currentPassword,
-          newPassword: securityData.newPassword,
-        }),
+      await user.updatePassword({
+        currentPassword: securityData.currentPassword,
+        newPassword: securityData.newPassword,
+        signOutOfOtherSessions: false,
       });
-      
-      if (res.ok) {
-        alert("Senha alterada com sucesso!");
-        setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      } else {
-        const data = await res.json();
-        alert(data.error || "Erro ao alterar senha");
-      }
-    } catch (_err) {
-      alert("Erro de conexão");
+      toast("Senha alterada com sucesso!", "success");
+      setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erro ao alterar senha";
+      toast(msg, "error");
     } finally {
       setIsSavingSecurity(false);
     }
@@ -170,14 +175,14 @@ export default function SettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settingsData),
       });
-      
+
       if (res.ok) {
-        alert("Configurações atualizadas!");
+        toast("Configurações atualizadas!", "success");
       } else {
-        alert("Erro ao salvar configurações");
+        toast("Erro ao salvar configurações", "error");
       }
     } catch (_err) {
-      alert("Erro de conexão");
+      toast("Erro de conexão", "error");
     } finally {
       setIsSavingSettings(false);
     }
@@ -233,7 +238,7 @@ export default function SettingsPage() {
                   <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Perfil do Usuário</h2>
                   <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Gerenciamento de identidade e presença</p>
                 </div>
-                
+
                 <div className="space-y-10">
                   <div className="flex items-center gap-8">
                     <div className="relative">
@@ -241,9 +246,9 @@ export default function SettingsPage() {
                         {isUploadingAvatar ? (
                           <Loader2 className="h-6 w-6 animate-spin text-foreground" />
                         ) : profileData.avatar ? (
-                          <Image 
-                            src={profileData.avatar} 
-                            alt={profileData.name} 
+                          <Image
+                            src={profileData.avatar}
+                            alt={profileData.name}
                             width={96}
                             height={96}
                             className="h-full w-full object-cover"
@@ -253,17 +258,17 @@ export default function SettingsPage() {
                           profileData.name.charAt(0).toUpperCase()
                         )}
                       </div>
-                      <button 
+                      <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploadingAvatar}
                         className="absolute -bottom-2 -right-2 p-2 bg-foreground text-background rounded border border-background hover:scale-110 transition-all shadow-precision disabled:opacity-50"
                       >
                         <Camera className="h-3.5 w-3.5" />
                       </button>
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         ref={fileInputRef}
-                        className="hidden" 
+                        className="hidden"
                         accept="image/*"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
@@ -274,8 +279,8 @@ export default function SettingsPage() {
                     <div className="space-y-1.5">
                       <h3 className="text-[11px] font-bold text-foreground uppercase tracking-wider">Foto de Identificação</h3>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">PNG, JPG ou WEBP. Máx 2MB.</p>
-                      <Button 
-                        variant="secondary" 
+                      <Button
+                        variant="secondary"
                         size="sm"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploadingAvatar}
@@ -305,7 +310,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="pt-4">
-                    <Button 
+                    <Button
                       className="h-11 px-10 font-bold uppercase text-[10px] tracking-widest shadow-precision"
                       disabled={isSavingProfile}
                       onClick={handleProfileSave}
@@ -328,7 +333,7 @@ export default function SettingsPage() {
                   <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Alertas & Notificações</h2>
                   <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Configuração de canais e gatilhos</p>
                 </div>
-                
+
                 <div className="space-y-4">
                   {[
                     { key: "budgetAlerts", label: "Controle de Budget", desc: "Avisos proativos ao atingir 80% do teto definido nas categorias." },
@@ -342,23 +347,23 @@ export default function SettingsPage() {
                         <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={settingsData.notificationPreferences[item.key as keyof typeof settingsData.notificationPreferences]}
                           onChange={(e) => setSettingsData(prev => ({
-                            ...prev, 
+                            ...prev,
                             notificationPreferences: { ...prev.notificationPreferences, [item.key]: e.target.checked }
                           }))}
-                          className="sr-only peer" 
+                          className="sr-only peer"
                         />
                         <div className="w-10 h-5 bg-secondary border border-border rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-background after:content-[''] after:absolute after:top-[3px] after:left-[3px] after:bg-muted-foreground after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-foreground peer-checked:after:bg-background"></div>
                       </label>
                     </div>
                   ))}
-                  
+
                   <div className="pt-8">
-                    <Button 
-                      onClick={handleSettingsSave} 
+                    <Button
+                      onClick={handleSettingsSave}
                       disabled={isSavingSettings}
                       className="h-11 px-10 font-bold uppercase text-[10px] tracking-widest shadow-precision"
                     >
@@ -376,7 +381,7 @@ export default function SettingsPage() {
                   <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Segurança & Autenticação</h2>
                   <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Proteção de acesso e integridade de dados</p>
                 </div>
-                
+
                 <div className="space-y-8 max-w-lg">
                   <Field label="Senha Vigente">
                     <div className="relative">
@@ -387,7 +392,7 @@ export default function SettingsPage() {
                         value={securityData.currentPassword}
                         onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-0 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -419,7 +424,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="pt-4">
-                    <Button 
+                    <Button
                       onClick={handleSecuritySave}
                       disabled={isSavingSecurity}
                       className="h-11 px-10 font-bold uppercase text-[10px] tracking-widest shadow-precision"
@@ -438,7 +443,7 @@ export default function SettingsPage() {
                   <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Interface Visual</h2>
                   <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Customização de tema e modo de exibição</p>
                 </div>
-                
+
                 <div className="mt-6">
                   <div className="flex gap-4 max-w-lg">
                     {(["light", "dark", "system"] as const).map((t) => (
@@ -481,10 +486,10 @@ export default function SettingsPage() {
                   <h2 className="text-sm font-bold text-foreground uppercase tracking-widest">Localização & Moeda</h2>
                   <p className="mt-1 text-[10px] font-bold text-muted-foreground uppercase">Parâmetros de formatação e adequação temporal</p>
                 </div>
-                
+
                 <div className="mt-6 space-y-8 max-w-lg">
                   <Field label="Moeda de Referência">
-                    <Select 
+                    <Select
                       className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground font-bold tracking-widest"
                       value={settingsData.currency}
                       onChange={(e) => setSettingsData(prev => ({ ...prev, currency: e.target.value }))}
@@ -495,7 +500,7 @@ export default function SettingsPage() {
                     </Select>
                   </Field>
                   <Field label="Padronização de Idioma">
-                    <Select 
+                    <Select
                       className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
                       value={settingsData.locale}
                       onChange={(e) => setSettingsData(prev => ({ ...prev, locale: e.target.value }))}
@@ -505,7 +510,7 @@ export default function SettingsPage() {
                     </Select>
                   </Field>
                   <Field label="Fuso Horário Operacional">
-                    <Select 
+                    <Select
                       className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
                       value={settingsData.timezone}
                       onChange={(e) => setSettingsData(prev => ({ ...prev, timezone: e.target.value }))}
@@ -515,9 +520,9 @@ export default function SettingsPage() {
                       <option value="Europe/London">London (GMT+0)</option>
                     </Select>
                   </Field>
-                  
+
                   <div className="pt-4">
-                    <Button 
+                    <Button
                       onClick={handleSettingsSave}
                       disabled={isSavingSettings}
                       className="h-11 px-10 font-bold uppercase text-[10px] tracking-widest shadow-precision"
