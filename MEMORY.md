@@ -94,11 +94,11 @@
 
 ## 🎯 Próximos Passos (Ordem de Execução)
 
-### Fase de Consolidação (2026-04-13)
-1. [ ] **Correção de Testes (@qa):** `tx.select is not a function` em `system-coverage.test.ts`
-2. [ ] **Verificação DB (@data-engineer):** migrations pendentes, `npm run db:studio`
-3. [ ] **Commit (@devops):** Semanas 1+2 consolidadas
-4. [ ] **Deploy (@devops):** Push e verificar em produção
+### Fase de Consolidação (2026-04-13) — ✅ COMPLETA
+1. [x] **Correção de Testes (@qa):** `tx.select is not a function` corrigido (66/66 passando)
+2. [x] **Verificação DB (@data-engineer):** 15 tabelas, database OK
+3. [x] **Commit (@devops):** `41340f7` — 24 arquivos, +2757/-1533
+4. [x] **Deploy (@devops):** https://dudia-finance-v2-cimbam6a2-dudiafinances-projects.vercel.app
 
 ### Curto Prazo: Semana 3
 - [ ] Rate Limiting no middleware

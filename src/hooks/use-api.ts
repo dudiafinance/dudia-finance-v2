@@ -44,8 +44,31 @@ export function useCreateAccount() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Account>) => apiFetch<Account>("/api/accounts", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar conta", "error"),
+    onMutate: async (newAccount) => {
+      await qc.cancelQueries({ queryKey: ["accounts"] });
+      const previous = qc.getQueryData<Account[]>(["accounts"]);
+      const optimisticAccount: Account = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newAccount.name ?? "",
+        type: newAccount.type ?? "checking",
+        balance: newAccount.balance ?? 0,
+        currency: newAccount.currency ?? "BRL",
+        icon: newAccount.icon,
+        color: newAccount.color ?? "#3B82F6",
+        isActive: true,
+        includeInTotal: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      qc.setQueryData<Account[]>(["accounts"], (old) => old ? [...old, optimisticAccount] : [optimisticAccount]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["accounts"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar conta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }
 export function useUpdateAccount() {
@@ -53,8 +76,17 @@ export function useUpdateAccount() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Account> & { id: string }) => apiFetch<Account>(`/api/accounts/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar conta", "error"),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["accounts"] });
+      const previous = qc.getQueryData<Account[]>(["accounts"]);
+      qc.setQueryData<Account[]>(["accounts"], (old) => old?.map((a) => a.id === id ? { ...a, ...updatedFields, updatedAt: new Date() } : a));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["accounts"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar conta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }
 export function useDeleteAccount() {
@@ -62,8 +94,17 @@ export function useDeleteAccount() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/accounts/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir conta", "error"),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["accounts"] });
+      const previous = qc.getQueryData<Account[]>(["accounts"]);
+      qc.setQueryData<Account[]>(["accounts"], (old) => old?.filter((a) => a.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["accounts"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir conta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["accounts"] }),
   });
 }
 
@@ -90,8 +131,30 @@ export function useCreateCategory() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Category>) => apiFetch<Category>("/api/categories", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar categoria", "error"),
+    onMutate: async (newCategory) => {
+      await qc.cancelQueries({ queryKey: ["categories"] });
+      const previous = qc.getQueryData<Category[]>(["categories"]);
+      const optimisticCategory: Category = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newCategory.name ?? "",
+        type: newCategory.type ?? "expense",
+        icon: newCategory.icon,
+        color: newCategory.color ?? "#6B7280",
+        isActive: true,
+        order: 0,
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      qc.setQueryData<Category[]>(["categories"], (old) => old ? [...old, optimisticCategory] : [optimisticCategory]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["categories"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar categoria", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
 export function useUpdateCategory() {
@@ -99,8 +162,17 @@ export function useUpdateCategory() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Category> & { id: string }) => apiFetch<Category>(`/api/categories/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar categoria", "error"),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["categories"] });
+      const previous = qc.getQueryData<Category[]>(["categories"]);
+      qc.setQueryData<Category[]>(["categories"], (old) => old?.map((c) => c.id === id ? { ...c, ...updatedFields, updatedAt: new Date() } : c));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["categories"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar categoria", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
 export function useDeleteCategory() {
@@ -108,8 +180,17 @@ export function useDeleteCategory() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir categoria", "error"),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["categories"] });
+      const previous = qc.getQueryData<Category[]>(["categories"]);
+      qc.setQueryData<Category[]>(["categories"], (old) => old?.filter((c) => c.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["categories"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir categoria", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
 
@@ -131,8 +212,25 @@ export function useCreateTag() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Tag>) => apiFetch<Tag>("/api/tags", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar etiqueta", "error"),
+    onMutate: async (newTag) => {
+      await qc.cancelQueries({ queryKey: ["tags"] });
+      const previous = qc.getQueryData<Tag[]>(["tags"]);
+      const optimisticTag: Tag = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newTag.name ?? "",
+        color: newTag.color,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      qc.setQueryData<Tag[]>(["tags"], (old) => old ? [...old, optimisticTag] : [optimisticTag]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["tags"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar etiqueta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
 export function useUpdateTag() {
@@ -140,8 +238,17 @@ export function useUpdateTag() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Tag> & { id: string }) => apiFetch<Tag>(`/api/tags/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar etiqueta", "error"),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["tags"] });
+      const previous = qc.getQueryData<Tag[]>(["tags"]);
+      qc.setQueryData<Tag[]>(["tags"], (old) => old?.map((t) => t.id === id ? { ...t, ...updatedFields } : t));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["tags"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar etiqueta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
 export function useDeleteTag() {
@@ -149,8 +256,17 @@ export function useDeleteTag() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{success: boolean}>(`/api/tags/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tags"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir etiqueta", "error"),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["tags"] });
+      const previous = qc.getQueryData<Tag[]>(["tags"]);
+      qc.setQueryData<Tag[]>(["tags"], (old) => old?.filter((t) => t.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["tags"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir etiqueta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tags"] }),
   });
 }
 
@@ -158,7 +274,7 @@ export function useDeleteTag() {
 export type TransactionFilters = {
   month?: number;
   year?: number;
-  page?: number;
+  cursor?: string;
   limit?: number;
   search?: string;
   type?: string;
@@ -169,13 +285,12 @@ export type TransactionFilters = {
 
 export type PaginatedTransactions = {
   items: Transaction[];
+  nextCursor: string | null;
   metadata: {
     total: number;
     totalIncome: number;
     totalExpense: number;
-    page: number;
     limit: number;
-    totalPages: number;
     hasMore: boolean;
   };
 };
@@ -201,8 +316,54 @@ export function useCreateTransaction() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Transaction>) => apiFetch<Transaction>("/api/transactions", { method: "POST", body: JSON.stringify(data) }),
+    onMutate: async (newTransaction) => {
+      await qc.cancelQueries({ queryKey: ["transactions"] });
+      const previousData = qc.getQueryData<PaginatedTransactions>(["transactions"]);
+      
+      const optimisticTransaction: Transaction = {
+        id: crypto.randomUUID(),
+        userId: "",
+        accountId: newTransaction.accountId ?? "",
+        categoryId: newTransaction.categoryId,
+        amount: typeof newTransaction.amount === "number" ? newTransaction.amount : Number(newTransaction.amount) || 0,
+        type: newTransaction.type ?? "expense",
+        description: newTransaction.description ?? "",
+        date: newTransaction.date ? new Date(newTransaction.date) : new Date(),
+        isPaid: newTransaction.isPaid ?? false,
+        notes: newTransaction.notes,
+        tags: newTransaction.tags ?? [],
+        location: newTransaction.location,
+        isRecurring: false,
+        recurringId: undefined,
+        dueDate: newTransaction.dueDate,
+        receiveDate: newTransaction.receiveDate,
+        attachments: undefined,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      qc.setQueryData<PaginatedTransactions>(["transactions"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: [optimisticTransaction, ...old.items],
+          metadata: {
+            ...old.metadata,
+            total: old.metadata.total + 1,
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(["transactions"], context.previousData);
+      }
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast(err instanceof Error ? err.message : "Erro ao criar transação", "error");
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar transação", "error"),
   });
 }
 export function useUpdateTransaction() {
@@ -210,8 +371,30 @@ export function useUpdateTransaction() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Transaction> & { id: string }) => apiFetch<Transaction>(`/api/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["transactions"] });
+      const previousData = qc.getQueryData<PaginatedTransactions>(["transactions"]);
+
+      qc.setQueryData<PaginatedTransactions>(["transactions"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.id === id ? { ...item, ...updatedFields, updatedAt: new Date() } : item
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(["transactions"], context.previousData);
+      }
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast(err instanceof Error ? err.message : "Erro ao atualizar transação", "error");
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar transação", "error"),
   });
 }
 export function useDeleteTransaction() {
@@ -222,8 +405,32 @@ export function useDeleteTransaction() {
       const url = mode ? `/api/transactions/${id}?mode=${mode}` : `/api/transactions/${id}`;
       return apiFetch<{ success: boolean }>(url, { method: "DELETE" });
     },
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ["transactions"] });
+      const previousData = qc.getQueryData<PaginatedTransactions>(["transactions"]);
+
+      qc.setQueryData<PaginatedTransactions>(["transactions"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.filter((item) => item.id !== id),
+          metadata: {
+            ...old.metadata,
+            total: Math.max(0, old.metadata.total - 1),
+          },
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, _vars, context) => {
+      if (context?.previousData) {
+        qc.setQueryData(["transactions"], context.previousData);
+      }
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      toast(err instanceof Error ? err.message : "Erro ao excluir transação", "error");
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["transactions"] }); qc.invalidateQueries({ queryKey: ["dashboard"] }); },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir transação", "error"),
   });
 }
 
@@ -239,11 +446,34 @@ export function useCreateBudget() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Budget>) => apiFetch<Budget>("/api/budgets", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onMutate: async (newBudget) => {
+      await qc.cancelQueries({ queryKey: ["budgets"] });
+      const previous = qc.getQueryData<Budget[]>(["budgets"]);
+      const optimisticBudget: Budget = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newBudget.name ?? "",
+        categoryId: newBudget.categoryId ?? "",
+        amount: newBudget.amount ?? 0,
+        period: newBudget.period ?? "monthly",
+        startDate: newBudget.startDate ?? new Date(),
+        isActive: true,
+        alertsEnabled: true,
+        alertThreshold: 80,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      qc.setQueryData<Budget[]>(["budgets"], (old) => old ? [...old, optimisticBudget] : [optimisticBudget]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["budgets"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar orçamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["budgets"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar orçamento", "error"),
   });
 }
 export function useUpdateBudget() {
@@ -251,11 +481,20 @@ export function useUpdateBudget() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Budget> & { id: string }) => apiFetch<Budget>(`/api/budgets/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["budgets"] });
+      const previous = qc.getQueryData<Budget[]>(["budgets"]);
+      qc.setQueryData<Budget[]>(["budgets"], (old) => old?.map((b) => b.id === id ? { ...b, ...updatedFields, updatedAt: new Date() } : b));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["budgets"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar orçamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["budgets"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar orçamento", "error"),
   });
 }
 export function useDeleteBudget() {
@@ -263,11 +502,20 @@ export function useDeleteBudget() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/budgets/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["budgets"] });
+      const previous = qc.getQueryData<Budget[]>(["budgets"]);
+      qc.setQueryData<Budget[]>(["budgets"], (old) => old?.filter((b) => b.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["budgets"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir orçamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["budgets"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir orçamento", "error"),
   });
 }
 
@@ -280,8 +528,30 @@ export function useCreateGoal() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<Goal>) => apiFetch<Goal>("/api/goals", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar meta", "error"),
+    onMutate: async (newGoal) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      const optimisticGoal: Goal = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newGoal.name ?? "",
+        targetAmount: newGoal.targetAmount ?? 0,
+        currentAmount: 0,
+        startDate: new Date(),
+        status: "active",
+        priority: "medium",
+        goalType: newGoal.goalType ?? "target",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      qc.setQueryData<Goal[]>(["goals"], (old) => old ? [...old, optimisticGoal] : [optimisticGoal]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["goals"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar meta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["goals"] }),
   });
 }
 export function useUpdateGoal() {
@@ -289,8 +559,17 @@ export function useUpdateGoal() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<Goal> & { id: string }) => apiFetch<Goal>(`/api/goals/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar meta", "error"),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      qc.setQueryData<Goal[]>(["goals"], (old) => old?.map((g) => g.id === id ? { ...g, ...updatedFields, updatedAt: new Date() } : g));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["goals"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar meta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["goals"] }),
   });
 }
 export function useDeleteGoal() {
@@ -298,8 +577,17 @@ export function useDeleteGoal() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/goals/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["goals"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir meta", "error"),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      qc.setQueryData<Goal[]>(["goals"], (old) => old?.filter((g) => g.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["goals"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir meta", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["goals"] }),
   });
 }
 
@@ -308,13 +596,28 @@ export function useGoalDeposit() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: GoalDepositPayload) => apiFetch<{ success: boolean }>("/api/goals/deposit", { method: "POST", body: JSON.stringify(data) }),
+    onMutate: async ({ goalId, amount }) => {
+      await qc.cancelQueries({ queryKey: ["goals"] });
+      const previous = qc.getQueryData<Goal[]>(["goals"]);
+      qc.setQueryData<Goal[]>(["goals"], (old) => old?.map((g) => g.id === goalId ? { ...g, currentAmount: g.currentAmount + amount, updatedAt: new Date() } : g));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["goals"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao realizar depósito", "error");
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["goals"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao realizar depósito", "error"),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["goals"] });
+      qc.invalidateQueries({ queryKey: ["accounts"] });
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
   });
 }
 
@@ -380,8 +683,32 @@ export function useCreateCreditCard() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<CreditCard>) => apiFetch<CreditCard>("/api/credit-cards", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar cartão", "error"),
+    onMutate: async (newCard) => {
+      await qc.cancelQueries({ queryKey: ["credit-cards"] });
+      const previous = qc.getQueryData<CreditCard[]>(["credit-cards"]);
+      const optimisticCard: CreditCard = {
+        id: crypto.randomUUID(),
+        userId: "",
+        name: newCard.name ?? "",
+        bank: newCard.bank ?? "",
+        lastDigits: newCard.lastDigits ?? "****",
+        limit: newCard.limit ?? 0,
+        usedAmount: 0,
+        dueDay: newCard.dueDay ?? 1,
+        closingDay: newCard.closingDay ?? 15,
+        color: newCard.color ?? "#3B82F6",
+        gradient: newCard.gradient ?? "from-blue-500 to-blue-600",
+        network: newCard.network ?? "visa",
+        isActive: true,
+      };
+      qc.setQueryData<CreditCard[]>(["credit-cards"], (old) => old ? [...old, optimisticCard] : [optimisticCard]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["credit-cards"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar cartão", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
   });
 }
 
@@ -390,8 +717,17 @@ export function useUpdateCreditCard() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<CreditCard> & { id: string }) => apiFetch<CreditCard>(`/api/credit-cards/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar cartão", "error"),
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["credit-cards"] });
+      const previous = qc.getQueryData<CreditCard[]>(["credit-cards"]);
+      qc.setQueryData<CreditCard[]>(["credit-cards"], (old) => old?.map((c) => c.id === id ? { ...c, ...updatedFields, updatedAt: new Date() } : c));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["credit-cards"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar cartão", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
   });
 }
 
@@ -400,8 +736,17 @@ export function useDeleteCreditCard() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/credit-cards/${id}`, { method: "DELETE" }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir cartão", "error"),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["credit-cards"] });
+      const previous = qc.getQueryData<CreditCard[]>(["credit-cards"]);
+      qc.setQueryData<CreditCard[]>(["credit-cards"], (old) => old?.filter((c) => c.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["credit-cards"], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir cartão", "error");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["credit-cards"] }),
   });
 }
 
@@ -424,12 +769,30 @@ export function useCreateCardTransaction(cardId: string) {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Partial<CardTransaction>) => apiFetch<CardTransaction>(`/api/credit-cards/${cardId}/transactions`, { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onMutate: async (newTx) => {
+      await qc.cancelQueries({ queryKey: ["card-transactions", cardId] });
+      const previous = qc.getQueryData<CardTransaction[]>(["card-transactions", cardId]);
+      const optimisticTx: CardTransaction = {
+        id: crypto.randomUUID(),
+        cardId,
+        description: newTx.description ?? "",
+        categoryId: newTx.categoryId ?? "",
+        amount: typeof newTx.amount === "number" ? newTx.amount : Number(newTx.amount) || 0,
+        date: newTx.date ?? new Date(),
+        isPending: true,
+      };
+      qc.setQueryData<CardTransaction[]>(["card-transactions", cardId], (old) => old ? [optimisticTx, ...old] : [optimisticTx]);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["card-transactions", cardId], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao criar lançamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao criar lançamento", "error"),
   });
 }
 
@@ -438,12 +801,21 @@ export function useUpdateCardTransaction(cardId: string) {
   const { toast } = useToast();
   return useMutation({
     mutationFn: ({ id, ...data }: Partial<CardTransaction> & { id: string }) => apiFetch<CardTransaction>(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onMutate: async ({ id, ...updatedFields }) => {
+      await qc.cancelQueries({ queryKey: ["card-transactions", cardId] });
+      const previous = qc.getQueryData<CardTransaction[]>(["card-transactions", cardId]);
+      qc.setQueryData<CardTransaction[]>(["card-transactions", cardId], (old) => old?.map((t) => t.id === id ? { ...t, ...updatedFields, updatedAt: new Date() } : t));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["card-transactions", cardId], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao atualizar lançamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar lançamento", "error"),
   });
 }
 
@@ -452,12 +824,21 @@ export function useDeleteCardTransaction(cardId: string) {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (id: string) => apiFetch<{ success: boolean }>(`/api/credit-cards/${cardId}/transactions/${id}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["card-transactions", cardId] });
+      const previous = qc.getQueryData<CardTransaction[]>(["card-transactions", cardId]);
+      qc.setQueryData<CardTransaction[]>(["card-transactions", cardId], (old) => old?.filter((t) => t.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["card-transactions", cardId], context.previous);
+      toast(_err instanceof Error ? _err.message : "Erro ao excluir lançamento", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["card-transactions", cardId] });
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
       qc.invalidateQueries({ queryKey: ["budget-stats"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao excluir lançamento", "error"),
   });
 }
 
@@ -466,7 +847,16 @@ export function usePayCardInvoice() {
   const { toast } = useToast();
   return useMutation({
     mutationFn: (data: Record<string, unknown>) => apiFetch<{ success: boolean }>("/api/credit-cards/pay-invoice", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => {
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["credit-cards"] });
+      await qc.cancelQueries({ queryKey: ["accounts"] });
+      await qc.cancelQueries({ queryKey: ["transactions"] });
+      await qc.cancelQueries({ queryKey: ["card-transactions"] });
+    },
+    onError: () => {
+      toast("Erro ao liquidar fatura", "error");
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["credit-cards"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
@@ -474,7 +864,6 @@ export function usePayCardInvoice() {
       qc.invalidateQueries({ queryKey: ["card-transactions"] });
       qc.invalidateQueries({ queryKey: ["invoice-status"] });
     },
-    onError: (err) => toast(err instanceof Error ? err.message : "Erro ao liquidar fatura", "error"),
   });
 }
 

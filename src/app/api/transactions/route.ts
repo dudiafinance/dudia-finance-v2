@@ -16,15 +16,26 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const month = searchParams.get("month");
   const year = searchParams.get("year");
-  const page = Math.max(1, Number(searchParams.get("page") || 1));
   const limit = Math.max(1, Math.min(100, Number(searchParams.get("limit") || 50)));
   const search = searchParams.get("search");
   const type = searchParams.get("type");
   const isPaid = searchParams.get("isPaid");
   const accountId = searchParams.get("accountId");
   const categoryId = searchParams.get("categoryId");
+  const cursor = searchParams.get("cursor");
 
-  const offset = (page - 1) * limit;
+  let cursorDate: string | null = null;
+  let cursorId: string | null = null;
+  if (cursor) {
+    try {
+      const decoded = Buffer.from(cursor, "base64").toString("utf-8");
+      const [d, i] = decoded.split(":");
+      cursorDate = d;
+      cursorId = i;
+    } catch {
+      return NextResponse.json({ error: "Cursor inválido" }, { status: 400 });
+    }
+  }
 
   const where: SQL[] = [eq(transactions.userId, userId), isNull(transactions.deletedAt)];
 
@@ -58,6 +69,18 @@ export async function GET(req: NextRequest) {
     where.push(eq(transactions.categoryId, categoryId));
   }
 
+  if (cursorDate && cursorId) {
+    where.push(
+      or(
+        sql`(${transactions.date}, ${transactions.id}) < (${cursorDate}, ${cursorId})`,
+        and(
+          eq(transactions.date, cursorDate),
+          sql`${transactions.id} < ${cursorId}`
+        )
+      ) as SQL
+    );
+  }
+
   try {
     const [counts] = await db
       .select({ 
@@ -73,21 +96,26 @@ export async function GET(req: NextRequest) {
       .from(transactions)
       .where(and(...where))
       .orderBy(desc(transactions.date), desc(transactions.createdAt))
-      .limit(limit)
-      .offset(offset);
+      .limit(limit + 1);
 
-    const total = Number(counts?.total || 0);
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    
+    let nextCursor: string | null = null;
+    if (hasMore && items.length > 0) {
+      const lastItem = items[items.length - 1];
+      nextCursor = Buffer.from(`${lastItem.date}:${lastItem.id}`).toString("base64");
+    }
 
     return NextResponse.json({
-      items: rows,
+      items,
+      nextCursor,
       metadata: {
-        total,
+        total: Number(counts?.total || 0),
         totalIncome: Number(counts?.totalIncome || 0),
         totalExpense: Number(counts?.totalExpense || 0),
-        page,
         limit,
-        totalPages: Math.ceil(total / limit),
-        hasMore: offset + rows.length < total
+        hasMore
       }
     });
   } catch (error) {

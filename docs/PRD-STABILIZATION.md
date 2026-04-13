@@ -160,45 +160,43 @@ O sistema atual é funcional para uso pessoal, mas possui dívidas técnicas em 
 
 | Semana | Status | % Completo | Pendências |
 |--------|--------|------------|------------|
-| Semana 1 | ✅ Quase Completa | 95% | Criptografia AES-256 ativa |
+| Semana 1 | ✅ Quase Completa | 95% | Criptografia AES-256 (campo `openRouterApiKey` - integração adiada para quando IA for implementada) |
 | Semana 2 | ✅ Completa | 100% | Nenhuma |
-| Semana 3 | ⏳ Não Iniciada | 0% | Rate Limiting, Optimistic Updates, Paginação |
+| Fase Consolidação | ✅ COMPLETA | 100% | Testes (66/66), DB (OK), Commit `41340f7`, Deploy |
+| **Semana 3** | 🚀 **Em Progresso** | 0% | Rate Limiting, Optimistic Updates, Paginação |
 | Semana 4 | ⏳ Não Iniciada | 0% | Tests, E2E, Sentry Alerts |
 
 ---
 
-## 8. Plano de Execução Atual (2026-04-13)
+## 8. Histórico de Consolidação (2026-04-13)
 
-### Fase de Consolidação Semana 2 → Deploy
+### ✅ Fase de Consolidação Semana 2 → Deploy (COMPLETA)
 
-#### Passo 1: Correção de Testes (@qa)
-- **Arquivo:** `src/__tests__/system-coverage.test.ts`
-- **Erro:** `tx.select is not a function` — mock do Drizzle quebrado
-- **Ação:** Corrigir mock do Drizzle para suportar `.select()` corretamente
+| Passo | Status | Detalhes |
+|-------|--------|----------|
+| Correção de Testes | ✅ 66/66 | Corrigido `tx.select` em `system-coverage.test.ts` (mock necesitaba 2 argumentos) |
+| Verificação de Banco | ✅ OK | 15 tabelas, database sincronizado via `drizzle-kit check` |
+| Commit | ✅ `41340f7` | 24 arquivos, +2757/-1533 linhas |
+| Deploy | ✅ Sucesso | https://dudia-finance-v2-cimbam6a2-dudiafinances-projects.vercel.app |
 
-#### Passo 2: Verificação de Banco (@data-engineer)
-- Executar `npm run db:studio` ou verificar migrations pendentes
-- Garantir que schema e migrations estão em dia
+### 🔄 Semana 3: Em Execução via Agentes Especializados
 
-#### Passo 3: Commit (@devops)
-- Criar commit com todas as alterações da Semana 2
-- Mensagem: `feat(week2): refactor transactions and credit-cards pages, add skeletons and error boundary`
-
-#### Passo 4: Deploy (@devops)
-- Push para branch principal
-- Verificar deploy em staging/produção
-- Monitorar logs de erro
-
-#### Passo 5: Iniciar Semana 3 (@dev)
-- Rate Limiting: `middleware.ts` + `@upstash/ratelimit`
-- Optimistic Updates: React Query `onMutate`
-- Paginação Cursor-Based: API com `cursor` parameter
+| Agente | Tarefa | Status |
+|--------|--------|--------|
+| `@data-engineer` | Criptografia (Semana 1 residual) | ⏳ Pendente (IA adiada) |
+| `@dev` | Rate Limiting | ⏳ A iniciar |
+| `@dev` | Optimistic Updates | ⏳ A iniciar |
+| `@dev` | Paginação Cursor-Based | ⏳ A iniciar |
+| `@qa` | Validação e testes | ⏳ A executar |
+| `@devops` | Commit e Deploy | ⏳ Aguardando validação |
 
 ---
 
-## 8. Próximos Passos (Ordem de Execução)
+## 9. Próximos Passos (Ordem de Execução)
 
-1. **Imediato:** Consolidação (Testes → Commit → Deploy)
-2. **Curto Prazo:** Executar Semana 3 (infraestrutura)
-3. **Médio Prazo:** Executar Semana 4 (testes e monitoramento)
-4. **Validação:** Auditoria final e medição de métricas de sucesso
+1. **Agora:** Executar Semana 3 via agentes especializados
+   - Rate Limiting no middleware (`@dev`)
+   - Optimistic Updates nos hooks (`@dev`)
+   - Paginação cursor-based (`@dev`)
+2. **Validação:** `@qa` valida e `@devops` faz deploy
+3. **Médio Prazo:** Semana 4 (testes e monitoramento)

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useReports } from "@/hooks/use-api";
 import { Button } from "@/components/ui/button";
+import { ReportsSkeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
@@ -49,12 +50,7 @@ export default function ReportsPage() {
   };
 
   if (isLoading || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Processando dados...</p>
-      </div>
-    );
+    return <ReportsSkeleton />;
   }
 
   const { summary: stats, categories, history } = data;

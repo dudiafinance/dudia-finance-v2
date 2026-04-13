@@ -10,6 +10,7 @@ import { useDashboard } from "@/hooks/use-api";
 import { cn, formatCurrency } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { useUser } from "@clerk/nextjs";
 
 const MONTH_NAMES = [
@@ -44,12 +45,7 @@ export default function DashboardPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-        <div className="h-6 w-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground animate-pulse">Sincronizando...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   type ActivityItem = { id: string; source: string; type: string; description: string; date: string; amount: number };

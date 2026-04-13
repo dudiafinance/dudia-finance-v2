@@ -223,6 +223,8 @@ export async function GET(req: NextRequest) {
       recentActivity,
       goals: queries[10],
       topExpenses
+    }, {
+      headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
     });
   } catch (error) {
     console.error("Dashboard error:", error);

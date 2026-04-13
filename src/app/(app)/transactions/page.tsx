@@ -55,7 +55,7 @@ export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterPaid, setFilterPaid] = useState("all");
-  const [page, setPage] = useState(1);
+  const [cursor, setCursor] = useState<string | undefined>(undefined);
   const [accumulatedItems, setAccumulatedItems] = useState<Transaction[]>([]);
 
   const [showBalances, setShowBalances] = useState(true);
@@ -66,7 +66,7 @@ export default function TransactionsPage() {
     search: searchTerm,
     type: filterType,
     isPaid: filterPaid === "paid" ? "true" : filterPaid === "pending" ? "false" : undefined,
-    page: page,
+    cursor: cursor,
     limit: 50
   });
 
@@ -79,7 +79,7 @@ export default function TransactionsPage() {
   const typedAccounts = (accountsData ?? []) as unknown as AccountItem[];
 
   const resetPagination = () => {
-    setPage(1);
+    setCursor(undefined);
     setAccumulatedItems([]);
   };
 
@@ -92,20 +92,20 @@ export default function TransactionsPage() {
 
   const updateAccumulatedItems = useCallback((newItems: Transaction[]) => {
     setAccumulatedItems(prev => {
-      if (page === 1) return newItems;
+      if (!cursor) return newItems;
       const ids = new Set(prev.map(i => i.id));
       const uniqueNewItems = newItems.filter(i => !ids.has(i.id));
       return [...prev, ...uniqueNewItems];
     });
-  }, [page]);
+  }, [cursor]);
 
   useEffect(() => {
     updateAccumulatedItems(items);
-  }, [itemsKey, page, updateAccumulatedItems]);
+  }, [itemsKey, cursor, updateAccumulatedItems]);
 
   const handleLoadMore = () => {
-    if (metadata?.hasMore) {
-      setPage(prev => prev + 1);
+    if (metadata?.hasMore && txData?.nextCursor) {
+      setCursor(txData.nextCursor);
     }
   };
 
