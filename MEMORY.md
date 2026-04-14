@@ -2,10 +2,54 @@
 
 ## 📌 Status Atual
 - **Data:** 14/04/2026
-- **Versão:** 1.0.x (PRIMARY RELEASE)
+- **Versão:** 1.1.x (HOTFIX - User Auth Issues)
 - **Fase:** Produção — Live em https://dudia-finance-v2.vercel.app
-- **Último Commit:** `3816aed` — "fix: remove db:setup from vercel build command"
+- **Último Commit:** `daa3a47` — "fix: improve user fallback with better logging and email handling"
 - **Branch:** main
+
+## 🚨 Bugs Críticos Corrigidos (14/04/2026)
+
+### 1. MIDDLEWARE_INVOCATION_FAILED (500 Error)
+- **Causa:** Redis era inicializado no topo do módulo `rate-limit.ts` com `!` (non-null assertion), crashando quando `UPSTASH_REDIS_REST_URL/TOKEN` não estavam definidos
+- **Solução:** Inicialização preguiçosa (lazy init) - Redis só é criado quando `checkRateLimit()` é chamado e apenas se variáveis existirem
+- **Arquivo:** `src/lib/rate-limit.ts`
+- **Commit:** `a9f20b5`
+
+### 2. 401 Unauthorized para Novos Usuários
+- **Causa:** Webhook do Clerk pode não sincronizar a tempo, ou falhar. Usuários autenticados no Clerk mas não no DB retornavam 401
+- **Solução:** Fallback automático em `getUserId()` que cria usuário no DB se não existir
+- **Melhorias:**
+  - Tenta buscar por `clerkId` primeiro
+  - Fallback por email (tenta lowercase e original)
+  - Criação automática do usuário com name e avatar do Clerk
+  - Logs detalhados para debugging
+- **Arquivo:** `src/lib/auth-utils.ts`
+- **Commit:** `daa3a47`
+
+### 3. 500 ao Criar Cartão (Novo Usuário)
+- **Causa:** Relacionada ao bug #2 - `getUserId()` retornava `null` para usuários novos
+- **Solução:** Mesmo fix do bug #2
+
+### 4. Novos Usuários Não Podiam Acessar Nenhuma Tela
+- **Sintomas:** 401 em `/api/notifications`, `/api/forecast`, `/api/reports`, `/api/credit-cards`
+- **Causa Raiz:** Usuários autenticados no Clerk mas sem registro no banco de dados Neon
+- **Solução:** Auto-criação de usuário via fallback em `getUserId()`
+
+## 🔴 Fluxo Crítico de Autenticação
+
+```
+Novo usuário faz login no Clerk
+    ↓
+Clerk envia webhook user.created → /api/webhooks/clerk
+    ↓
+Webhook cria usuário no Neon com clerkId
+    ↓
+Usuário acessa API → getUserId() busca por clerkId
+    ↓
+Se clerkId não encontrado → tenta por email → cria usuário se não existir
+```
+
+**Nota:** O fallback automático (criação de usuário via `getUserId()`) agora funciona como backup se o webhook falhar ou ainda não tiver processado.
 
 ## ✅ Melhorias Implementadas (14/04/2026)
 
@@ -141,13 +185,12 @@
 - `PROJECT_ID`
 - `DATABASE_URL`
 
-### Vercel Environment (Production)
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-- `NEXT_PUBLIC_SENTRY_DSN`
-- `SENTRY_AUTH_TOKEN`
-- `CLERK_SECRET_KEY`
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-- `CLERK_WEBHOOK_SECRET`
-- `CRON_SECRET`
-- `OPENROUTER_API_KEY`
+### Vercel Environment (Production) - CRÍTICO
+- `UPSTASH_REDIS_REST_URL` - Rate limiting (pode falhar graceful se ausente)
+- `UPSTASH_REDIS_REST_TOKEN` - Rate limiting (pode falhar graceful se ausente)
+- `CLERK_SECRET_KEY` - Autenticação (OBRIGATÓRIO)
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Autenticação client-side (OBRIGATÓRIO)
+- `CLERK_WEBHOOK_SECRET` - Sincronização usuário Clerk→DB (CRÍTICO para novos usuários)
+- `DATABASE_URL` - Conexão Neon (OBRIGATÓRIO)
+- `CRON_SECRET` - Endpoint de cron
+- `OPENROUTER_API_KEY` - IA (opcional)
