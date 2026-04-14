@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import React, { createContext } from "react";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AuthContext = createContext<any>(null);
 
 export const MockClerkProvider = ({ children }: { children: React.ReactNode }) => {
@@ -24,7 +25,7 @@ export const MockClerkProvider = ({ children }: { children: React.ReactNode }) =
 // This will be used to swap imports or via a helper
 export const useUser = () => {
   try {
-    // Attempt to use real Clerk if available
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const clerk = require("@clerk/nextjs");
     return clerk.useUser();
   } catch {

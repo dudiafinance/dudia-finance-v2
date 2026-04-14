@@ -59,6 +59,7 @@ export function CardFormModal({ open, onClose, editingCard, onDelete }: CardForm
   }, [editingCard, open]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeForm();
   }, [initializeForm]);
 

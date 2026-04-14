@@ -28,7 +28,7 @@ const typeColors = {
 };
 
 export function NotificationBell() {
-  const { data: notifications = [], isLoading, isError } = useNotifications();
+  const { data: notifications = [], isLoading } = useNotifications();
   const { mutate: updateNotifications } = useUpdateNotifications();
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;

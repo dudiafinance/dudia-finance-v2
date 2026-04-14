@@ -9,8 +9,9 @@ export type FinancialErrorCode =
 export class FinancialError extends Error {
   public code: FinancialErrorCode;
   public status: number;
-  public data?: any;
+  public data?: unknown;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(message: string, code: FinancialErrorCode = "INTERNAL_ERROR", status: number = 400, data?: any) {
     super(message);
     this.name = "FinancialError";

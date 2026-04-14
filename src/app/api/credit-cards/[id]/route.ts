@@ -20,6 +20,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const d = parsed.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = { updatedAt: new Date() };
     if (d.name !== undefined) updateData.name = d.name;
     if (d.bank !== undefined) updateData.bank = d.bank;

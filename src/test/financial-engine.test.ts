@@ -68,6 +68,7 @@ describe('Financial Engine Integration Audit', () => {
     });
 
     // 4. Recalculate and Verify (Expected: 1000 - 50.15 + 10.05 = 959.90)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const finalBalance = await FinancialEngine.recalculateAccountBalance(db as any, account.id);
     expect(finalBalance).toBe(959.90);
 

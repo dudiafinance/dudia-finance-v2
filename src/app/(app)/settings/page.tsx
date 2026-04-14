@@ -60,7 +60,7 @@ export default function SettingsPage() {
       });
       fetchSettings();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [user]);
 
   const fetchSettings = async () => {

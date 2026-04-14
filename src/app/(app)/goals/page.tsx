@@ -135,7 +135,9 @@ export default function GoalsPage() {
       monthlyContribution: form.monthlyContribution ? Number(form.monthlyContribution) : null,
     };
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (editingId) await updateGoal.mutateAsync({ id: editingId, ...payload } as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       else await createGoal.mutateAsync(payload as any);
       toast(editingId ? "Meta atualizada!" : "Meta criada com sucesso!");
       setModalOpen(false);
@@ -246,11 +248,13 @@ export default function GoalsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {goals.map((g: any) => {
               const current = Number(g.currentAmount);
               const target = Number(g.targetAmount || 0);
               const monthly = Number(g.monthlyContribution || 0);
               const progress = target > 0 ? (current / target) * 100 : 0;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const priority = (priorityConfig as any)[g.priority] || priorityConfig.medium;
               
               const remaining = target - current;

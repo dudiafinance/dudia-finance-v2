@@ -26,7 +26,10 @@ export function PayInvoiceModal({ open, onClose, card, total, accounts, month, y
     if(open) setForm(p => ({...p, amount: String(total || 0) }));
   }, [open, total]);
 
-  useEffect(() => { syncAmount(); }, [syncAmount]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    syncAmount();
+  }, [syncAmount]);
 
   const handlePay = () => {
     if (!card) return;

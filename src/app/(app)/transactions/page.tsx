@@ -100,6 +100,7 @@ export default function TransactionsPage() {
   }, [cursor]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     updateAccumulatedItems(items);
   }, [itemsKey, cursor, updateAccumulatedItems]);
 

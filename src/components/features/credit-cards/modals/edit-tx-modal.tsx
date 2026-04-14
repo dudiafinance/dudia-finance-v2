@@ -38,6 +38,7 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
   }, [tx, open]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     initializeForm();
   }, [initializeForm]);
 

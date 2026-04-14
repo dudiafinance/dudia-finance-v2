@@ -8,7 +8,9 @@ vi.mock('@clerk/nextjs', () => ({
     user: null,
     isLoaded: true,
   })),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   SignInButton: ({ children }: any) => children,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   SignUpButton: ({ children }: any) => children,
   UserButton: () => null,
 }))

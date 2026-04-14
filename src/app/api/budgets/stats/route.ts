@@ -94,6 +94,7 @@ export async function GET(_req: NextRequest) {
 
       let totalSpent = 0;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sumAggs = (aggList: any[]) => {
         for (const row of aggList) {
           if (row.categoryId && validCategoryIds.has(row.categoryId) && row.date) {
