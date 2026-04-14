@@ -2,22 +2,28 @@ import dotenv from "dotenv";
 import path from "path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { FinancialEngine } from '@/lib/services/financial-engine';
 import { db } from '@/lib/db';
 import { accounts, transactions, creditCards, users } from '@/lib/db/schema';
 import { eq, isNull, and } from 'drizzle-orm';
+import { createTestUser, cleanupTestData } from './fixtures';
 
 /**
  * Testes de Integração do Motor Financeiro (Real DB)
  */
 describe('Financial Engine Integration Audit', () => {
   let userId: string;
+  let cleanupUserId: string;
 
   beforeAll(async () => {
-    // Get a test user
-    const [user] = await db.select().from(users).limit(1);
+    const user = await createTestUser();
     userId = user.id;
+    cleanupUserId = user.id;
+  });
+
+  afterAll(async () => {
+    await cleanupTestData(cleanupUserId);
   });
 
   it('should maintain balance integrity across multiple operations', async () => {

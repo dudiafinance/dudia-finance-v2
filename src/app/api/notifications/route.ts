@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
 import { eq, desc, and } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET() {
   const userId = await getUserId();
@@ -20,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("Fetch notifications error:", error);
+    logger.error("Fetch notifications error:", error);
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
   }
 }
@@ -58,7 +59,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Update notification error:", error);
+    logger.error("Update notification error:", error);
     return NextResponse.json({ error: "Failed to update notification" }, { status: 500 });
   }
 }

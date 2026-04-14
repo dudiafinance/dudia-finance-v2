@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { logger } from "@/lib/utils/logger";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string, txId: string }> }) {
   const userId = await getUserId();
@@ -13,7 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const result = await FinancialEngine.updateCardTransaction(txId, userId, data, updateGroup);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error updating card transaction:", error);
+    logger.error("Error updating card transaction:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao atualizar" }, { status: 500 });
   }
 }
@@ -28,7 +29,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await FinancialEngine.deleteCardTransaction(txId, userId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting card transaction:", error);
+    logger.error("Error deleting card transaction:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao excluir" }, { status: 500 });
   }
 }

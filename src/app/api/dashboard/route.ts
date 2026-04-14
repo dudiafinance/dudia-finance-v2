@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, accounts, goals, cardTransactions, categories } from "@/lib/db/schema";
 import { eq, and, gte, lte, desc, sum, sql, isNull } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -227,7 +228,7 @@ export async function GET(req: NextRequest) {
       headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
     });
   } catch (error) {
-    console.error("Dashboard error:", error);
+    logger.error("Dashboard error:", error);
     return NextResponse.json({ error: "Failed to fetch dashboard data" }, { status: 500 });
   }
 }

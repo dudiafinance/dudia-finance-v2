@@ -16,6 +16,17 @@ type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 export type FinancialAction = "create" | "update" | "delete" | "delete_all" | "transfer";
 
+type CardTransactionUpdate = {
+  description?: string;
+  categoryId?: string | null;
+  amount?: string;
+  invoiceMonth?: number;
+  invoiceYear?: number;
+  isPending?: boolean;
+  notes?: string;
+  date?: string;
+};
+
 export class FinancialEngine {
   /**
    * Registra um log de auditoria para cada operação financeira
@@ -347,13 +358,13 @@ export class FinancialEngine {
       if (!oldTx) throw new Error("Lançamento não encontrado");
 
       // Higienização rigorosa dos dados para evitar update de colunas restritas
-      const { id: _, userId: __, createdAt: ___, groupId: ____, ...rawUpdateData } = data as any;
+      const { id: _, userId: __, createdAt: ___, groupId: ____, ...rawUpdateData } = data as Partial<CardTransactionUpdate>;
       
-      // Filtra apenas campos que não sejam undefined
-      const updateData: any = {};
+      // Filtra apenas campos válidos que não sejam undefined
+      const updateData: Partial<CardTransactionUpdate> = {};
       Object.keys(rawUpdateData).forEach(key => {
-        if (rawUpdateData[key] !== undefined) {
-          updateData[key] = rawUpdateData[key];
+        if (rawUpdateData[key as keyof CardTransactionUpdate] !== undefined) {
+          (updateData as Record<string, unknown>)[key] = rawUpdateData[key as keyof CardTransactionUpdate];
         }
       });
 
@@ -372,26 +383,16 @@ export class FinancialEngine {
           ));
 
         if (allGroup.length > 0) {
-          // Batch update: um UPDATE por parcela afetada usando ids coletados, sem loop individual
+          // Parallel update: execu��o paralela para cada parcela afetada quando h�� mudan��a de m��s
           const ids = allGroup.map(item => item.id);
 
           if (monthDelta !== 0 && !isNaN(monthDelta)) {
-            // Quando há mudança de mês, precisamos calcular o offset por parcela — fazemos em um único UPDATE com SQL CASE
-            const invoiceMonthCase = sql.join(
-              allGroup.map(item => {
-                const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
-                const newM = (totalMonths % 12) + 1;
-                const newY = Math.floor(totalMonths / 12);
-                return sql`WHEN ${cardTransactions.id} = ${item.id} THEN ROW(${newM}::int, ${newY}::int)`;
-              }),
-              sql` `
-            );
-
-            for (const item of allGroup) {
+            // Quando h�� mudan��a de m��s, cada parcela precisa de c��lculo individual — atualiza��o paralela
+            await Promise.all(allGroup.map(item => {
               const totalMonths = (item.invoiceYear * 12 + item.invoiceMonth - 1) + monthDelta;
               const newM = (totalMonths % 12) + 1;
               const newY = Math.floor(totalMonths / 12);
-              await tx.update(cardTransactions)
+              return tx.update(cardTransactions)
                 .set({
                   description: updateData.description !== undefined ? String(updateData.description) : item.description,
                   categoryId: updateData.categoryId !== undefined ? (updateData.categoryId as string | null) : item.categoryId,
@@ -401,8 +402,7 @@ export class FinancialEngine {
                   updatedAt: new Date(),
                 })
                 .where(eq(cardTransactions.id, item.id));
-            }
-            void invoiceMonthCase; // evita warning de unused variable
+            }));
           } else {
             // Sem mudança de mês: um único UPDATE em batch para todos os ids afetados
             await tx.update(cardTransactions)

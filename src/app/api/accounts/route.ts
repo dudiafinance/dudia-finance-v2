@@ -5,6 +5,7 @@ import { accounts } from "@/lib/db/schema";
 import { eq, asc, and, isNull } from "drizzle-orm";
 import { accountSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { logger } from "@/lib/utils/logger";
 
 
 export async function GET() {
@@ -20,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json(rows);
   } catch (error) {
-    console.error("Error fetching accounts:", error);
+    logger.error("Error fetching accounts:", error);
     return NextResponse.json({ error: "Erro ao buscar contas" }, { status: 500 });
   }
 }
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
-    console.error("Error creating account:", error);
+    logger.error("Error creating account:", error);
     return NextResponse.json({ error: "Erro ao criar conta" }, { status: 500 });
   }
 }

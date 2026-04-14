@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { goalDepositSchema } from "@/lib/validations";
 import { checkIdempotencyKey, storeIdempotencyKey, getIdempotencyKey } from "@/lib/idempotency";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId();
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (idempotencyKey) await storeIdempotencyKey(idempotencyKey, userId, { body: result, status: 200 });
     return NextResponse.json(result);
   } catch (error) {
-    console.error(error);
+    logger.error("Error depositing to goal:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Error" }, { status: 500 });
   }
 }

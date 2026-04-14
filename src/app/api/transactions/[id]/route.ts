@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { transactionSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { sanitizeText, sanitizeOptionalText } from "@/lib/sanitize";
+import { logger } from "@/lib/utils/logger";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -36,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(row);
   } catch (error) {
-    console.error("Error updating transaction:", error);
+    logger.error("Error updating transaction:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao atualizar transação" }, { status: 500 });
   }
 }
@@ -53,7 +54,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     await FinancialEngine.deleteTransaction(id, userId, deleteMode);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting transaction:", error);
+    logger.error("Error deleting transaction:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao deletar transação" }, { status: 500 });
   }
 }

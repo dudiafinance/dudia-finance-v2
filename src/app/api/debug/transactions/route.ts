@@ -1,8 +1,10 @@
+// DEPRECATED — to be removed after stabilization. Only available in development.
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { cardTransactions } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {
@@ -25,7 +27,7 @@ export async function GET() {
       count: recent.length,
     });
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    logger.error("Error fetching transactions:", error);
     return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 });
   }
 }

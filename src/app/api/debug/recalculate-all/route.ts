@@ -1,6 +1,8 @@
+// DEPRECATED — to be removed after stabilization. Only available in development.
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST() {
   if (process.env.NODE_ENV === "production") {
@@ -17,7 +19,7 @@ export async function POST() {
       summary
     });
   } catch (error) {
-    console.error("Sync error:", error);
+    logger.error("Sync error:", error);
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { goalBaseSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json();
     const parsed = goalBaseSchema.partial().safeParse(body);
     if (!parsed.success) {
-      console.error("Validation error:", parsed.error.issues);
+      logger.error("Validation error:", parsed.error.issues);
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
     }
 
@@ -41,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(row);
   } catch (error) {
-    console.error("Error updating goal:", error);
+    logger.error("Error updating goal:", error);
     return NextResponse.json({ error: "Erro ao atualizar meta" }, { status: 500 });
   }
 }
@@ -59,7 +60,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting goal:", error);
+    logger.error("Error deleting goal:", error);
     return NextResponse.json({ error: "Erro ao excluir meta" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { getUserId } from '@/lib/auth-utils';
 import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
+import { logger } from '@/lib/utils/logger';
 
 export async function POST(request: Request): Promise<NextResponse> {
   const userId = await getUserId();
@@ -34,7 +35,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json(blob);
   } catch (error) {
-    console.error("Error uploading avatar:", error);
+    logger.error("Error uploading avatar:", error);
     return NextResponse.json(
       { error: "Erro ao fazer upload do avatar", details: error instanceof Error ? error.message : "Desconhecido" },
       { status: 500 }

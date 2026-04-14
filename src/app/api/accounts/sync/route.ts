@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { accounts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST(_req: NextRequest) {
   const userId = await getUserId();
@@ -30,7 +31,7 @@ export async function POST(_req: NextRequest) {
 
     return NextResponse.json({ success: true, updatedBalances });
   } catch (error) {
-    console.error("Error syncing accounts:", error);
+    logger.error("Error syncing accounts:", error);
     return NextResponse.json({ error: "Erro ao sincronizar contas" }, { status: 500 });
   }
 }

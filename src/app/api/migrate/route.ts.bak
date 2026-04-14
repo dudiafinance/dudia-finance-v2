@@ -3,13 +3,10 @@ import { db } from "@/lib/db";
 import { sql } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
-  // Este endpoint foi desativado. Migrações devem rodar via `drizzle-kit migrate` no processo de deploy.
-  // Manter este endpoint ativo em produção é uma superfície de ataque desnecessária.
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Migration endpoint disabled in production. Use drizzle-kit migrate during deploy." }, { status: 403 });
   }
 
-  // Em desenvolvimento, ainda requer autenticação básica
   const authHeader = req.headers.get("authorization");
   const expectedAuth = process.env.MIGRATION_SECRET;
 
@@ -21,35 +18,30 @@ export async function POST(req: NextRequest) {
   try {
     console.log("[MIGRATE] Starting automatic migration...");
 
-    // 1. Make targetAmount nullable
     console.log("📝 Tornando target_amount nullable...");
     await db.execute(sql`
       ALTER TABLE goals 
       ALTER COLUMN target_amount DROP NOT NULL
     `);
 
-    // 2. Add goalType column
     console.log("📝 Adicionando coluna goal_type...");
     await db.execute(sql`
       ALTER TABLE goals 
       ADD COLUMN IF NOT EXISTS goal_type varchar(20) DEFAULT 'target'
     `);
 
-    // 3. Add startDate column
     console.log("📝 Adicionando coluna start_date...");
     await db.execute(sql`
       ALTER TABLE goals 
       ADD COLUMN IF NOT EXISTS start_date date
     `);
 
-    // 4. Add endDate column
     console.log("📝 Adicionando coluna end_date...");
     await db.execute(sql`
       ALTER TABLE goals 
       ADD COLUMN IF NOT EXISTS end_date date
     `);
 
-    // 5. Update existing goals with default values
     console.log("📝 Atualizando metas existentes...");
     await db.execute(sql`
       UPDATE goals 
@@ -62,14 +54,12 @@ export async function POST(req: NextRequest) {
       WHERE goal_type IS NULL OR start_date IS NULL
     `);
 
-    // 6. Make startDate NOT NULL
     console.log("📝 Tornando start_date obrigatório...");
     await db.execute(sql`
       ALTER TABLE goals 
       ALTER COLUMN start_date SET NOT NULL
     `);
 
-    // 7. Create goal_contributions table
     console.log("📝 Criando tabela goal_contributions...");
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS goal_contributions (
@@ -87,7 +77,6 @@ export async function POST(req: NextRequest) {
       )
     `);
 
-    // 8. Create indexes
     console.log("📝 Criando índices...");
     await db.execute(sql`
       CREATE INDEX IF NOT EXISTS goal_contributions_goal_id_idx ON goal_contributions(goal_id)

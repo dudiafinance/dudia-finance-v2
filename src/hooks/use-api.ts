@@ -33,6 +33,8 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 const FIVE_MINUTES = 5 * 60 * 1000;
+const THREE_MINUTES = 3 * 60 * 1000;
+const TWO_MINUTES = 2 * 60 * 1000;
 const ONE_MINUTE = 60 * 1000;
 
 // Accounts
@@ -124,7 +126,7 @@ export function useCreateTransfer() {
 
 // Categories
 export function useCategories() {
-  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<Category[]>("/api/categories"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["categories"], queryFn: () => apiFetch<Category[]>("/api/categories"), staleTime: 10 * 60 * 1000 });
 }
 export function useCreateCategory() {
   const qc = useQueryClient();
@@ -205,7 +207,7 @@ export function useCategoryStats(month?: number, year?: number) {
 
 // Global Tags
 export function useTags() {
-  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<Tag[]>("/api/tags"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["tags"], queryFn: () => apiFetch<Tag[]>("/api/tags"), staleTime: 10 * 60 * 1000 });
 }
 export function useCreateTag() {
   const qc = useQueryClient();
@@ -308,7 +310,7 @@ export function useTransactions(filters: TransactionFilters = {}) {
   return useQuery({
     queryKey: ["transactions", filters],
     queryFn: () => apiFetch<PaginatedTransactions>(url),
-    staleTime: ONE_MINUTE
+    staleTime: TWO_MINUTES
   });
 }
 export function useCreateTransaction() {
@@ -436,7 +438,7 @@ export function useDeleteTransaction() {
 
 // Budgets
 export function useBudgets() {
-  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<Budget[]>("/api/budgets"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["budgets"], queryFn: () => apiFetch<Budget[]>("/api/budgets"), staleTime: THREE_MINUTES });
 }
 export function useBudgetStats() {
   return useQuery({ queryKey: ["budget-stats"], queryFn: () => apiFetch<Record<string, unknown>[]>("/api/budgets/stats") });
@@ -521,7 +523,7 @@ export function useDeleteBudget() {
 
 // Goals
 export function useGoals() {
-  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<Goal[]>("/api/goals"), staleTime: FIVE_MINUTES });
+  return useQuery({ queryKey: ["goals"], queryFn: () => apiFetch<Goal[]>("/api/goals"), staleTime: THREE_MINUTES });
 }
 export function useCreateGoal() {
   const qc = useQueryClient();
@@ -632,7 +634,7 @@ export function useDashboard(month?: number, year?: number) {
   return useQuery({
     queryKey: ["dashboard", month ?? null, year ?? null],
     queryFn: () => apiFetch<DashboardSummary>(url),
-    staleTime: ONE_MINUTE,
+    staleTime: FIVE_MINUTES,
   });
 }
 
@@ -641,19 +643,17 @@ export function useReports(period: "week" | "month" | "year") {
   return useQuery({
     queryKey: ["reports", period],
     queryFn: () => apiFetch<ReportSummary>(`/api/reports?period=${period}`),
-    staleTime: ONE_MINUTE
+    staleTime: FIVE_MINUTES
   });
 }
-
-const TWO_MINUTES = 2 * 60 * 1000;
 
 // Notifications — polling pausado quando a aba está em background (visibilitychange)
 export function useNotifications() {
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => apiFetch<Notification[]>("/api/notifications"),
-    staleTime: ONE_MINUTE,
-    refetchInterval: TWO_MINUTES,
+    staleTime: THREE_MINUTES,
+    refetchInterval: FIVE_MINUTES,
     // Pausa o polling quando a aba está oculta — reduz requests desnecessários em background
     refetchIntervalInBackground: false,
   });
@@ -674,7 +674,7 @@ export function useCreditCards() {
   return useQuery({
     queryKey: ["credit-cards"],
     queryFn: () => apiFetch<CreditCard[]>("/api/credit-cards"),
-    staleTime: FIVE_MINUTES
+    staleTime: THREE_MINUTES
   });
 }
 

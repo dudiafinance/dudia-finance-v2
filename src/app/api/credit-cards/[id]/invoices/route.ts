@@ -4,6 +4,7 @@ import { creditCardInvoices } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserId } from "@/lib/auth-utils";
 import { invoiceStatusSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(
   req: NextRequest,
@@ -37,7 +38,7 @@ export async function GET(
 
     return NextResponse.json(invoice || { status: "ABERTA" });
   } catch (error) {
-    console.error("Error fetching invoice status:", error);
+    logger.error("Error fetching invoice status:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
@@ -100,7 +101,7 @@ export async function PATCH(
       return NextResponse.json(inserted);
     }
   } catch (error) {
-    console.error("Error updating invoice status:", error);
+    logger.error("Error updating invoice status:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '@/lib/db';
 import { categories, transactions, users, accounts } from '@/lib/db/schema';
 import { eq, and, isNull } from 'drizzle-orm';
@@ -6,12 +6,27 @@ import { eq, and, isNull } from 'drizzle-orm';
 describe('Budget & Category Hierarchy Audit', () => {
   let userId: string;
   let accountId: string;
+  const testUserEmail = `audit-test-${Date.now()}@example.com`;
 
   beforeAll(async () => {
-    const [user] = await db.select().from(users).limit(1);
+    const [user] = await db.insert(users).values({
+      email: testUserEmail,
+      name: 'Audit Test User',
+    }).returning();
     userId = user.id;
-    const [acc] = await db.select().from(accounts).where(and(eq(accounts.userId, userId), isNull(accounts.deletedAt))).limit(1);
+
+    const [acc] = await db.insert(accounts).values({
+      userId,
+      name: 'Test Account',
+      type: 'checking',
+      balance: '1000.00',
+    }).returning();
     accountId = acc.id;
+  });
+
+  afterAll(async () => {
+    await db.delete(accounts).where(eq(accounts.id, accountId));
+    await db.delete(users).where(eq(users.id, userId));
   });
 
   it('should correctly sum expenses from child categories into parent category context', async () => {

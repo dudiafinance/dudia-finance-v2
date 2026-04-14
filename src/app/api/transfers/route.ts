@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { transferSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { checkIdempotencyKey, storeIdempotencyKey, getIdempotencyKey } from "@/lib/idempotency";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId();
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: 201 });
 
   } catch (error) {
-    console.error("Error creating transfer:", error);
+    logger.error("Error creating transfer:", error);
     return NextResponse.json({
       error: error instanceof Error ? error.message : "Erro ao processar transferência"
     }, { status: 500 });

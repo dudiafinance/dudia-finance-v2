@@ -5,6 +5,7 @@ import { cardTransactions } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { cardTransactionSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json(rows);
   } catch (error) {
-    console.error("Error fetching card transactions:", error);
+    logger.error("Error fetching card transactions:", error);
     return NextResponse.json({ error: "Erro ao buscar transações do cartão" }, { status: 500 });
   }
 }
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     return NextResponse.json(results, { status: 201 });
   } catch (error) {
-    console.error("Error saving card transactions:", error);
+    logger.error("Error saving card transactions:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao salvar transações" }, { status: 500 });
   }
 }

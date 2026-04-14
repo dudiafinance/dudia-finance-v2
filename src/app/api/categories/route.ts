@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { categories } from "@/lib/db/schema";
 import { eq, asc, count } from "drizzle-orm";
 import { categorySchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 
 export async function GET() {
@@ -17,9 +18,11 @@ export async function GET() {
       .where(eq(categories.userId, userId))
       .orderBy(asc(categories.order), asc(categories.name));
 
-    return NextResponse.json(rows);
+    return NextResponse.json(rows, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (error) {
-    console.error("Error fetching categories:", error);
+    logger.error("Error fetching categories:", error);
     return NextResponse.json({ error: "Erro ao buscar categorias" }, { status: 500 });
   }
 }

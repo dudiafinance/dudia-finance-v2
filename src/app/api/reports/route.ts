@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, categories as categoriesTable } from "@/lib/db/schema";
 import { eq, and, gte, lte, sql, isNull } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -180,11 +181,11 @@ export async function GET(req: NextRequest) {
       history,
       period,
     }, {
-      headers: { "Cache-Control": "private, max-age=60, stale-while-revalidate=120" },
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     });
 
   } catch (error) {
-    console.error(error);
+    logger.error("Error generating reports:", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

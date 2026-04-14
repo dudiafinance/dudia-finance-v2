@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { goals } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { goalSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 
 
@@ -18,9 +19,11 @@ export async function GET() {
       .where(eq(goals.userId, userId))
       .orderBy(asc(goals.createdAt));
 
-    return NextResponse.json(rows);
+    return NextResponse.json(rows, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (error) {
-    console.error("Error fetching goals:", error);
+    logger.error("Error fetching goals:", error);
     return NextResponse.json({ error: "Erro ao buscar metas" }, { status: 500 });
   }
 }
@@ -33,7 +36,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const parsed = goalSchema.safeParse(body);
     if (!parsed.success) {
-      console.error("Validation error:", parsed.error.issues);
+      logger.error("Validation error:", parsed.error.issues);
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
     }
 
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
-    console.error("Error creating goal:", error);
+    logger.error("Error creating goal:", error);
     return NextResponse.json({ error: "Erro ao criar meta" }, { status: 500 });
   }
 }

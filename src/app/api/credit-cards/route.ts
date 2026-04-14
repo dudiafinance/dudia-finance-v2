@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { creditCardSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET() {
   const userId = await getUserId();
@@ -18,7 +19,7 @@ export async function GET() {
 
     return NextResponse.json(rows);
   } catch (error) {
-    console.error("Error fetching credit cards:", error);
+    logger.error("Error fetching credit cards:", error);
     return NextResponse.json({ error: "Erro ao buscar cartões" }, { status: 500 });
   }
 }
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
-    console.error("Error creating credit card:", error);
+    logger.error("Error creating credit card:", error);
     return NextResponse.json({ error: "Erro ao criar cartão" }, { status: 500 });
   }
 }

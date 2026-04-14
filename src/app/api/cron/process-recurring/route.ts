@@ -4,6 +4,7 @@ import { FinancialEngine } from "@/lib/services/financial-engine";
 import { cleanupOldIdempotencyKeys } from "@/lib/idempotency";
 import { and, eq, lte, gte, isNull, sum } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * Endpoint acionado pelo Vercel Cron para processar transações recorrentes.
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
     // Max 3 missed periods per recurrence to prevent bulk inserts after long outages
     const MAX_CATCH_UP = 3;
 
-    console.log(`[CRON] Processando ${pendingRecurrences.length} recorrências.`);
+    logger.info(`[CRON] Processando ${pendingRecurrences.length} recorrências.`);
 
     const results = [];
 
@@ -68,7 +69,7 @@ export async function GET(req: Request) {
         }
 
         if (catchUpCount >= MAX_CATCH_UP && currentDueDate <= todayStr) {
-          console.warn(`[CRON] Recorrência ${rec.id} atingiu o limite de catch-up (${MAX_CATCH_UP}). nextDue atualizado para ${currentDueDate}.`);
+          logger.warn(`[CRON] Recorrência ${rec.id} atingiu o limite de catch-up (${MAX_CATCH_UP}). nextDue atualizado para ${currentDueDate}.`);
         }
 
         // 5. Verificar se a recorrência deve ser desativada (endDate)
@@ -88,7 +89,7 @@ export async function GET(req: Request) {
           .where(eq(recurringTransactions.id, rec.id));
 
       } catch (error) {
-        console.error(`[CRON] Erro ao processar recorrência ${rec.id}:`, error);
+        logger.error(`[CRON] Erro ao processar recorrência ${rec.id}:`, error);
         const message = error instanceof Error ? error.message : "Erro desconhecido";
         results.push({ id: rec.id, status: "error", message });
       }
@@ -157,15 +158,15 @@ export async function GET(req: Request) {
           }
         }
       } catch (err) {
-        console.error(`[CRON] Erro ao verificar budget ${budget.id}:`, err);
+        logger.error(`[CRON] Erro ao verificar budget ${budget.id}:`, err);
       }
     }
 
-    console.log(`[CRON] Budget alerts gerados: ${alertsCreated}`);
+    logger.info(`[CRON] Budget alerts gerados: ${alertsCreated}`);
 
     // Limpeza periódica de idempotency keys antigas (> 7 dias)
     const deletedKeys = await cleanupOldIdempotencyKeys();
-    console.log(`[CRON] Limpeza de idempotency_keys: ${deletedKeys} registros removidos.`);
+    logger.info(`[CRON] Limpeza de idempotency_keys: ${deletedKeys} registros removidos.`);
 
     return NextResponse.json({
       processed: pendingRecurrences.length,
@@ -174,7 +175,7 @@ export async function GET(req: Request) {
       cleanedIdempotencyKeys: deletedKeys,
     });
   } catch (error) {
-    console.error("[CRON] Erro crítico no worker:", error);
+    logger.error("[CRON] Erro crítico no worker:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

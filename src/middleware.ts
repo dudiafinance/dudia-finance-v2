@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -10,23 +11,11 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks(.*)",
 ]);
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-interface RateLimitConfig {
-  windowMs: number;
-  maxRequests: number;
-}
-
-const RATE_LIMITS: Record<string, RateLimitConfig> = {
+const RATE_LIMITS = {
   auth: { windowMs: 60_000, maxRequests: 10 },
   write: { windowMs: 60_000, maxRequests: 100 },
   read: { windowMs: 60_000, maxRequests: 100 },
-};
-
-const rateLimitStore = new Map<string, RateLimitEntry>();
+} as const;
 
 const AUTH_PATHS = /^\/api\/webhooks(.*)/;
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -40,25 +29,9 @@ function getClientIP(request: Request): string {
   );
 }
 
-function checkRateLimit(ip: string, limitType: string): boolean {
-  const config = RATE_LIMITS[limitType] ?? RATE_LIMITS.read;
-  const now = Date.now();
-  const key = `${ip}:${limitType}`;
-  const entry = rateLimitStore.get(key);
+type RateLimitType = keyof typeof RATE_LIMITS;
 
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
-    return true;
-  }
-
-  entry.count++;
-  if (entry.count > config.maxRequests) {
-    return false;
-  }
-  return true;
-}
-
-function getRateLimitType(pathname: string, method: string): string {
+function getRateLimitType(pathname: string, method: string): RateLimitType {
   if (AUTH_PATHS.test(pathname) || pathname.startsWith("/api/auth")) {
     return "auth";
   }
@@ -77,7 +50,8 @@ export default clerkMiddleware(async (auth, request) => {
 
   if (limitType !== "read" || WRITE_METHODS.has(method)) {
     const ip = getClientIP(request);
-    if (!checkRateLimit(ip, limitType)) {
+    const allowed = await checkRateLimit(ip, limitType);
+    if (!allowed) {
       return NextResponse.json(
         { error: "Muitas requisições. Aguarde um momento e tente novamente." },
         { 

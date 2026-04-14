@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function PUT(req: Request) {
   const userId = await getUserId();
@@ -43,7 +44,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true, message: "Perfil atualizado com sucesso" });
   } catch (error) {
-    console.error("Profile update error:", error);
+    logger.error("Profile update error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar perfil", details: error instanceof Error ? error.message : "Desconhecido" },
       { status: 500 }

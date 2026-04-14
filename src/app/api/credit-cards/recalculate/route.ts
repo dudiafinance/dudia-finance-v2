@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { recalculateUsedAmount } from "@/lib/credit-card-utils";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST() {
   const userId = await getUserId();
@@ -33,7 +34,7 @@ export async function POST() {
       cards: updatedCards.map(c => ({ id: c.id, name: c.name, usedAmount: c.usedAmount }))
     });
   } catch (error) {
-    console.error("Error recalculating cards:", error);
+    logger.error("Error recalculating cards:", error);
     return NextResponse.json({ error: "Erro ao recalcular cartões" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { budgets } from "@/lib/db/schema";
 import { eq, asc, and, lte, gte, or, isNull } from "drizzle-orm";
 import { budgetSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 
 export async function GET() {
@@ -28,9 +29,11 @@ export async function GET() {
       )
       .orderBy(asc(budgets.createdAt));
 
-    return NextResponse.json(rows);
+    return NextResponse.json(rows, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (error) {
-    console.error("Error fetching budgets:", error);
+    logger.error("Error fetching budgets:", error);
     return NextResponse.json({ error: "Erro ao buscar orçamentos" }, { status: 500 });
   }
 }

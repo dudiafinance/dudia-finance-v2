@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, budgets, goals, accounts, recurringTransactions } from "@/lib/db/schema";
 import { eq, and, sum, isNull, gte, sql } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 function monthName(year: number, month: number): string {
   const d = new Date(year, month - 1, 1);
@@ -264,9 +265,11 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (error) {
-    console.error("Error generating forecast:", error);
+    logger.error("Error generating forecast:", error);
     return NextResponse.json({ error: "Erro ao gerar projeção" }, { status: 500 });
   }
 }

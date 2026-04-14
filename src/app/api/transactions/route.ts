@@ -8,6 +8,7 @@ import { randomUUID } from "crypto";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { sanitizeText, sanitizeOptionalText } from "@/lib/sanitize";
 import { checkIdempotencyKey, storeIdempotencyKey, getIdempotencyKey } from "@/lib/idempotency";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -119,7 +120,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (error) {
-    console.error("Error fetching transactions:", error);
+    logger.error("Error fetching transactions:", error);
     return NextResponse.json({ error: "Erro ao buscar transações" }, { status: 500 });
   }
 }
@@ -248,7 +249,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(firstRow, { status: 201 });
 
   } catch (error) {
-    console.error("Error creating transaction:", error);
+    logger.error("Error creating transaction:", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Erro ao criar transação" }, { status: 500 });
   }
 }

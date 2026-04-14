@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { transactions, cardTransactions, categories } from "@/lib/db/schema";
 import { eq, and, gte, lte, isNull } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(req: NextRequest) {
   const userId = await getUserId();
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(stats);
   } catch (error) {
-    console.error("Error fetching category stats:", error);
+    logger.error("Error fetching category stats:", error);
     return NextResponse.json({ error: "Erro ao buscar estatísticas" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { creditCards } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { creditCardBaseSchema } from "@/lib/validations";
+import { logger } from "@/lib/utils/logger";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const userId = await getUserId();
@@ -30,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (d.gradient !== undefined) updateData.gradient = d.gradient;
     if (d.network !== undefined) updateData.network = d.network;
 
-    console.log(`[API] Tentando atualizar cartão ${id} para usuário ${userId}`);
+    logger.info(`[API] Tentando atualizar cartão ${id} para usuário ${userId}`);
 
     const [row] = await db
       .update(creditCards)
@@ -41,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(row);
   } catch (error) {
-    console.error("DEBUG - Error updating credit card:", error);
+    logger.error("Error updating credit card:", error);
     return NextResponse.json({ 
       error: "Erro ao atualizar cartão", 
       details: error instanceof Error ? error.message : String(error) 
@@ -64,7 +65,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting credit card:", error);
+    logger.error("Error deleting credit card:", error);
     return NextResponse.json({ error: "Erro ao excluir cartão" }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { tags } from "@/lib/db/schema";
 import { eq, asc, and } from "drizzle-orm";
 import { z } from "zod";
+import { logger } from "@/lib/utils/logger";
 
 const tagSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(50),
@@ -23,7 +24,7 @@ export async function GET() {
 
     return NextResponse.json(userTags);
   } catch (error) {
-    console.error("Error fetching tags:", error);
+    logger.error("Error fetching tags:", error);
     return NextResponse.json({ error: "Erro ao buscar tags" }, { status: 500 });
   }
 }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
-    console.error("Error creating tag:", error);
+    logger.error("Error creating tag:", error);
     return NextResponse.json({ error: "Erro ao criar tag" }, { status: 500 });
   }
 }

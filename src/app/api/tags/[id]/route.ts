@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { tags } from "@/lib/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { z } from "zod";
+import { logger } from "@/lib/utils/logger";
 
 const tagSchema = z.object({
   name: z.string().min(1, "Nome obrigatório").max(50),
@@ -49,7 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json(row);
   } catch (error) {
-    console.error("Error updating tag:", error);
+    logger.error("Error updating tag:", error);
     return NextResponse.json({ error: "Erro ao atualizar tag" }, { status: 500 });
   }
 }
@@ -70,7 +71,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting tag:", error);
+    logger.error("Error deleting tag:", error);
     return NextResponse.json({ error: "Erro ao excluir tag" }, { status: 500 });
   }
 }

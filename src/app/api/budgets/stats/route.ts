@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { budgets, transactions, cardTransactions, categories } from "@/lib/db/schema";
 import { eq, and, gte, sql, isNull } from "drizzle-orm";
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(_req: NextRequest) {
   const userId = await getUserId();
@@ -116,7 +117,7 @@ export async function GET(_req: NextRequest) {
 
     return NextResponse.json(results);
   } catch (error) {
-    console.error("Budget Stats Error:", error);
+    logger.error("Budget Stats Error:", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

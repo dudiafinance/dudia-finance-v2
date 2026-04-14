@@ -10,8 +10,24 @@ import {
   date,
   jsonb,
   index,
+  customType,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { encrypt, decrypt } from '../../crypto';
+
+// Custom Type para campos criptografados
+const encryptedText = customType<{ data: string }>({
+  dataType() {
+    return 'text';
+  },
+  toDriver(value: string) {
+    return encrypt(value);
+  },
+  fromDriver(value: unknown) {
+    if (typeof value !== 'string') return '';
+    return decrypt(value);
+  },
+});
 
 // Usuários
 export const users = pgTable('users', {
@@ -36,7 +52,7 @@ export const users = pgTable('users', {
     monthlyReports: true,
     promotions: true
   }),
-  openRouterApiKey: text('open_router_api_key'),
+  openRouterApiKey: encryptedText('open_router_api_key'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

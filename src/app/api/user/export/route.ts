@@ -16,6 +16,7 @@ import {
   notifications,
 } from "@/lib/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * GET /api/user/export
@@ -98,7 +99,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Export error:", error);
+    logger.error("Export error:", error);
     return NextResponse.json({ error: "Erro ao exportar dados" }, { status: 500 });
   }
 }

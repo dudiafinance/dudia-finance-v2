@@ -3,6 +3,7 @@ import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
 
 export async function PUT(req: Request) {
   const userId = await getUserId();
@@ -40,7 +41,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({ success: true, message: "Configurações atualizadas com sucesso" });
   } catch (error) {
-    console.error("Settings update error:", error);
+    logger.error("Settings update error:", error);
     return NextResponse.json(
       { error: "Erro ao atualizar configurações", details: error instanceof Error ? error.message : "Desconhecido" },
       { status: 500 }
@@ -72,7 +73,7 @@ export async function GET() {
 
     return NextResponse.json(user);
   } catch (error) {
-    console.error("Fetch settings error:", error);
+    logger.error("Fetch settings error:", error);
     return NextResponse.json({ error: "Failed to fetch settings" }, { status: 500 });
   }
 }
