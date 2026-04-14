@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run db:setup && next build",
+  "buildCommand": "next build",
   "crons": [
     {
       "path": "/api/cron/process-recurring",
