@@ -72,3 +72,7 @@ Thumbs.db
 .aiox-core/local/
 .claude/settings.local.json
 .aiox/install-log.txt
+
+# Test Artifacts
+playwright-report/
+test-results/

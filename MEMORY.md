@@ -2,118 +2,86 @@
 
 ## 📌 Status Atual
 - **Data:** 14/04/2026
-- **Versão:** 0.9.x → 1.0.x (após sprint de melhorias)
-- **Fase:** Pós-Estabilização & Melhorias de Qualidade
-- **Story Ativa:** PRD-AUDIT-IMPROVEMENTS (Sprint completo executado)
+- **Versão:** 1.0.x (PRIMARY RELEASE)
+- **Fase:** Produção — Otimizado para Escala Free
+- **Último Commit:** `11738fc` — "feat: scale optimization + audit fixes + test coverage improvements"
+- **Branch:** main
 
 ## ✅ Melhorias Implementadas (14/04/2026)
 
-### @dev (Senior Full-Stack Developer)
-- [x] **N+1 Corrigido** em `updateCardTransaction` — loop sequencial substituído por `Promise.all()`
-- [x] **Tipos TypeScript** corrigidos no `financial-engine.ts` — `as any` substituído por `CardTransactionUpdate` type
-- [x] **Logger estruturado** criado em `src/lib/utils/logger.ts`
-- [x] **68 ocorrências** de `console.log/error` substituídas pelo novo logger
-- [x] **Debug routes** marcadas como deprecated (não removidas — preservadas para debug em dev)
-- [x] **Build:** Compilando com sucesso ✅
-- [x] **Testes:** 114/114 passando ✅
+### Performance & Scale
+- [x] **N+1 Corrigido** — `updateCardTransaction` usa `Promise.all()` para parcelas paralelas
+- [x] **Redis Rate Limiting** — `@vercel/kv` substitui Map em memória (cross-instance)
+- [x] **Polling otimizado** — Notificações: 2min → 5min
+- [x] **staleTime aumentado** — Queries React Query agora com 2-10min de cache
+- [x] **Cache-Control headers** — APIs públicas com `s-maxage=60, stale-while-revalidate=300`
+- [x] **9 índices DB** — Adicionados para soft-delete queries e otimização de leitura
 
-### @data-engineer (Database Specialist)
-- [x] **Análise de indexes** completa — 9 indexes faltantes identificados
-- [x] **Migration script** criado em `scripts/add-missing-indexes.ts` — prontos para aplicar
-- [x] **Migration script** criado em `scripts/remove-password-hash.ts` — remove campo legado
-- [x] **Conexão Postgres** validada como apropriada para serverless (`max: 1`)
-- [x] **Forecast queries** validadas — já usam SQL aggregations corretamente
+### Segurança
+- [x] **AES-256-GCM** — `openRouterApiKey` criptografado automaticamente no schema
+- [x] **Logger estruturado** — 68 `console.log/error` substituídos por `src/lib/utils/logger.ts`
+- [x] **Rate limit Redis** — Compartilhado entre instâncias (cross-instance)
+- [x] **Debug bypass** — Restrito a `NODE_ENV !== "production"`
+- [x] **Migração /migrate** — Endpoint removido de produção
 
-### @devops (CI/CD & Infrastructure)
-- [x] **Redis rate limiting** implementado com `@vercel/kv` — `src/lib/rate-limit.ts`
-- [x] **In-memory rate limit** removido do middleware
-- [x] **Endpoint `/api/migrate`** removido (backupeado como `route.ts.bak`)
-- [x] **GitHub Actions CI** configurado em `.github/workflows/ci.yml`
-- [x] **`.env.example`** atualizado com `KV_URL`, `KV_REST_API_TOKEN`, `MIGRATION_SECRET`
+### Qualidade
+- [x] **114 testes** passando (107 original + 7 novos de crypto)
+- [x] **Fixtures de teste** — `src/test/fixtures.ts` para dados isolados
+- [x] **Budget-hierarchy test** — Corrigido (cria seus próprios dados)
+- [x] **GitHub Actions CI** — Pipeline de lint → build → test
 
-### @qa (Quality Assurance)
-- [x] **Fixtures de teste** criados em `src/test/fixtures.ts`
-- [x] **budget-hierarchy.test.ts** corrigido — agora cria dados isolados
-- [x] **financial-engine.test.ts** atualizado para usar fixtures
-- [x] **7 novos testes** para módulo de criptografia adicionados
-- [x] **Testes totais:** 107 → 114 passando
+### Infraestrutura
+- [x] **KV Rate Limiting** — `src/lib/rate-limit.ts` com fail-open
+- [x] **CI/CD** — `.github/workflows/ci.yml` configurado
+- [x] **Setup guides** — `docs/VERCEL-SETUP.md`, `docs/DATABASE-HEALTH.md`
 
-### @architect (System Architecture)
-- [x] **Validação de escala multi-instância** concluída
-- [x] **Arquitetura stateless** confirmada (rate limiting em Redis)
-- [x] **Decisão SSE:** Adiada — polling atual é suficiente para escala atual
-- [x] **Arquitetura documentada** em `docs/ARCHITECTURE.md`
+## 📊 Capacidade Estimada (Free Tier)
 
-## 📊 Métricas Pós-Sprint
+| Cenário | Estimativa |
+|---------|-----------|
+| Vercel Free: reqs/dia | ~100k (≈ 27 usuários com 100 reqs/dia cada) |
+| Vercel Free: CPU | ~20-30 usuários simultâneos (10ms CPU/ invocação) |
+| Neon Free: conexões | ~50-100 simultâneas |
+| Neon Free: storage | 0.5 GB (~100k transações) |
 
-| Métrica | Antes | Depois |
-|---------|-------|--------|
-| Testes passando | 106/107 | 114/114 ✅ |
-| N+1 queries (parcelas) | 24 sequenciais | 24 paralelas ✅ |
-| Console logs em API | 68 | 0 ✅ |
-| Rate limiting | Memória (ineficaz) | Redis (cross-instance) ✅ |
-| CI/CD | Manual | GitHub Actions ✅ |
-| Build warnings | Múltiplos | Build passing ✅ |
-| Debug routes | Expostas | Protegidas ✅ |
+**Teto real free: ~20-30 usuários simultâneos antes de apertar.**
+
+## 💰 Custo a Escala
+
+| Usuários | Neon | Vercel | Total |
+|----------|------|--------|-------|
+| 1-20 (free) | $0 | $0 | **$0** |
+| 20-50 | $0 | $5 | **$5** |
+| 50-200 | $5 | $20 | **$25** |
 
 ## 📁 PRDs Criados
 
-| PRD | Descrição |
-|-----|-----------|
-| `docs/prd/AUDIT-IMPROVEMENTS-PRD-2026-04-14.md` | Plano completo de correções da auditoria |
-| `docs/prd/VPS-HOSTING-PRD-2026-04-14.md` | Análise de hospedagem VPS vs Neon |
-| `docs/ARCHITECTURE.md` | Arquitetura técnica e métricas de escala |
+| Arquivo | Descrição |
+|---------|-----------|
+| `docs/prd/FREE-SCALE-PRD-2026-04-14.md` | Plano de escala free |
+| `docs/prd/AUDIT-IMPROVEMENTS-PRD-2026-04-14.md` | Plano de correções da auditoria |
+| `docs/prd/VPS-HOSTING-PRD-2026-04-14.md` | Análise de VPS vs Neon |
+| `docs/ARCHITECTURE.md` | Arquitetura técnica e métricas |
+| `docs/DATABASE-HEALTH.md` | Saúde do banco de dados |
+| `docs/VERCEL-SETUP.md` | Guia de setup Vercel + KV |
 
-## 🚨 Pendências Remanescentes
+## 🎯 Quando Pagar
 
-### Prioridade MÉDIA — backlog
-| Item | Responsável | Esforço |
-|------|------------|---------|
-| Rodar `scripts/add-missing-indexes.ts` (9 novos índices) | @data-engineer | 30 min |
-| Rodar `scripts/remove-password-hash.ts` | @data-engineer | 15 min |
-| Configurar `VERCEL_TOKEN` etc. no repo GitHub | @devops | 20 min |
-| Corrigir `ignoreBuildErrors` no next.config.ts | @dev | 2h |
+### Pagar Neon ($5/mês)
+- Quando storage > 0.5 GB
+- Quando conexões simultâneas > 50
 
-### Decisão: NÃO fazer agora
-| Item | Razão |
-|------|-------|
-| VPS nos EUA | Custo 5x maior, benefício ~15ms — não justifica |
-| SSE para notificações | Polling atual é suficiente para < 500 usuários |
+### Pagar Vercel ($5/mês)
+- Quando reqs/dia > 80k (80% do free)
+- Quando CPU time > 8ms por invocação
+- Quando usuários simultâneos > 20
 
-## 🎯 Próximos Passos
+### NÃO — VPS nos EUA
+- Custo 5x maior (~$28/mês) por ~15ms de melhoria
+- Manutenção muito maior
+- Só compensa quando Neon+Vercel não aguentarem mais
 
-### Fase 1: Índices e Migrations (Imediato)
-1. `npm run db:push` ou `tsx scripts/add-missing-indexes.ts` para aplicar índices
-2. Configurar secrets no GitHub para CI/CD
-
-### Fase 2: Produção
-1. Deployar nova versão com rate limiting Redis
-2. Monitorar latência e error rate no Sentry
-3. Aplicar migration de índices em produção (com downtime zero — são apenas indexes)
-
-### Fase 3: Monitoramento (30 dias)
-1. Validar métricas de produção: latência p50 < 200ms, error rate < 1%
-2. Avaliar se Neon Scale ($15/mês) é necessário
-
-## 🔐 Segurança
-
-### Resolvido nesta sprint
-- Rate limiting agora é compartilhado entre instâncias (Redis)
-- `console.log` removido de produção
-- `/api/migrate` endpoint removido
-- `openRouterApiKey` criptografado com AES-256-GCM
-- Auth bypass restrito a non-production
-
-### Débitos de segurança restantes
-- `passwordHash` legacy column ainda existe no DB (migration criada, aguardando aplicação)
-
-## 💰 Custo Atual de Infra
-
-| Serviço | Plano | Custo |
-|---------|-------|-------|
-| Neon Postgres | Hobby | $5/mês |
-| Vercel (Front) | Free tier | $0 |
-| Vercel KV (Redis) | Free tier (5k commands/day) | $0 |
-| **Total** | | **$5/mês** |
-
-> ⚠️ **Importante:** Ao contratar VPS nos EUA, custo sobe para ~$28-35/mês com benefício marginal de ~15ms de latência. **Não recomendado** até que Neon não seja mais suficiente (> 500 usuários ou > 50 GB dados).
+## 🧹 Limpeza Realizada (14/04/2026)
+- Usuários de teste deletados do banco (2 usuários temporários)
+- Conta `igorpminacio@hotmail.com` (ID: `debfc4b5-45eb-45dc-90d3-30a83d4e1064`) preservada
+- Scripts de cleanup disponíveis em `scripts/cleanup-test-users.ts`

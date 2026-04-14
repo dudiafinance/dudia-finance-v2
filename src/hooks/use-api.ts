@@ -647,17 +647,60 @@ export function useReports(period: "week" | "month" | "year") {
   });
 }
 
-// Notifications — polling pausado quando a aba está em background (visibilitychange)
 export function useNotifications() {
+  const qc = useQueryClient();
+  const toast = useToast();
+
   return useQuery({
     queryKey: ["notifications"],
     queryFn: () => apiFetch<Notification[]>("/api/notifications"),
     staleTime: THREE_MINUTES,
     refetchInterval: FIVE_MINUTES,
-    // Pausa o polling quando a aba está oculta — reduz requests desnecessários em background
     refetchIntervalInBackground: false,
   });
 }
+
+export function useNotificationsSSE() {
+  const qc = useQueryClient();
+
+  return useQuery({
+    queryKey: ["notifications-sse"],
+    queryFn: async () => {
+      return new Promise<Notification[]>((resolve, reject) => {
+        let resolved = false;
+        const timeout = setTimeout(() => {
+          if (!resolved) {
+            eventSource.close();
+            reject(new Error("SSE timeout"));
+          }
+        }, 20000);
+
+        const eventSource = new EventSource("/api/notifications/stream");
+
+        eventSource.addEventListener("notifications", (e) => {
+          resolved = true;
+          clearTimeout(timeout);
+          const data = JSON.parse(e.data) as Notification[];
+          qc.setQueryData(["notifications"], data);
+          resolve(data);
+          eventSource.close();
+        });
+
+        eventSource.onerror = () => {
+          if (!resolved) {
+            clearTimeout(timeout);
+            eventSource.close();
+            reject(new Error("SSE connection failed"));
+          }
+        };
+      });
+    },
+    staleTime: THREE_MINUTES,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useUpdateNotifications() {
   const qc = useQueryClient();
   const { toast } = useToast();
