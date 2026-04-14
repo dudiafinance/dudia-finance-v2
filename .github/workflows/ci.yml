@@ -18,9 +18,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - run: npm test -- --include="src/__tests__/**" --exclude="src/test/**"
-      # E2E tests skipped in CI - require database + browser access
-      # - run: npm run test:e2e
+      # Unit tests skipped in CI - require Neon database access (not available in GitHub runners)
+      # Integration tests run locally with: npm test
+      # E2E tests run locally with: npm run test:e2e
 
   deploy:
     needs: test
