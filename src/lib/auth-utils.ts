@@ -75,6 +75,10 @@ export async function getUserId(): Promise<string | null> {
         return newUser.id;
       } catch (createErr) {
         console.error("[Auth] Erro ao criar usuário via fallback:", createErr);
+        console.error("[Auth] clerkId:", clerkId);
+        console.error("[Auth] email:", email);
+        console.error("[Auth] firstName:", firstName);
+        console.error("[Auth] lastName:", lastName);
       }
     }
 

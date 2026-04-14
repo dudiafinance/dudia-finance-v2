@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
     logger.error("Error creating credit card:", error);
-    return NextResponse.json({ error: "Erro ao criar cartão" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const cause = error instanceof Error && error.cause ? String(error.cause) : undefined;
+    return NextResponse.json({ error: "Erro ao criar cartão", details: message, cause }, { status: 500 });
   }
 }
