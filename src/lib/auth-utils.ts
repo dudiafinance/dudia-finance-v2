@@ -35,25 +35,46 @@ export async function getUserId(): Promise<string | null> {
     // 2. Fallback: Se não encontrou o ID, tenta sincronizar pelo e-mail da sessão atual
     const clerkUser = await currentUser();
     const email = clerkUser?.emailAddresses[0]?.emailAddress;
+    const firstName = clerkUser?.firstName;
+    const lastName = clerkUser?.lastName;
+    const imageUrl = clerkUser?.imageUrl;
 
     if (email) {
       const existingUser = await db.query.users.findFirst({
         where: eq(users.email, email),
-        columns: { id: true }
+        columns: { id: true, clerkId: true }
       });
 
       if (existingUser) {
-        // Tenta atualizar, mas não trava o fluxo se falhar (ex: concorrência)
-        try {
-          await db.update(users)
-            .set({ clerkId, updatedAt: new Date() })
-            .where(eq(users.id, existingUser.id));
-          console.log(`[Auth] Sincronizado Clerk ID para usuário: ${email}`);
-        } catch (updateErr) {
-          console.warn("[Auth] Erro não-crítico ao atualizar clerkId:", updateErr);
+        // Atualiza o clerkId se não estiver definido
+        if (!existingUser.clerkId) {
+          try {
+            await db.update(users)
+              .set({ clerkId, updatedAt: new Date() })
+              .where(eq(users.id, existingUser.id));
+            console.log(`[Auth] Sincronizado Clerk ID para usuário: ${email}`);
+          } catch (updateErr) {
+            console.warn("[Auth] Erro não-crítico ao atualizar clerkId:", updateErr);
+          }
         }
-        
         return existingUser.id;
+      }
+
+      // 3. CRÍTICO: Se o usuário não existe no DB mas está autenticado no Clerk,
+      // cria o usuário automaticamente. Isso resolve casos onde o webhook falhou
+      // ou ainda não foi processado.
+      try {
+        const [newUser] = await db.insert(users).values({
+          email,
+          clerkId,
+          name: `${firstName ?? ''} ${lastName ?? ''}`.trim() || 'Usuário',
+          avatar: imageUrl ?? null,
+        }).returning({ id: users.id });
+        
+        console.log(`[Auth] Criado novo usuário via fallback: ${email}`);
+        return newUser.id;
+      } catch (createErr) {
+        console.error("[Auth] Erro ao criar usuário via fallback:", createErr);
       }
     }
 
