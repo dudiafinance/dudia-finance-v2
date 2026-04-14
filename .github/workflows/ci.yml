@@ -18,7 +18,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - run: npm test -- --exclude="**/transactions-integration.test.ts" --exclude="**/budget-hierarchy.test.ts" --exclude="**/financial-engine.test.ts"
+      - run: npm test -- --include="src/__tests__/**" --exclude="src/test/**"
       # E2E tests skipped in CI - require database + browser access
       # - run: npm run test:e2e
 
