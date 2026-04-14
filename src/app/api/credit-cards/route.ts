@@ -26,16 +26,22 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) {
+    logger.error("Credit card creation failed: userId is null");
+    return NextResponse.json({ error: "Unauthorized - user not found", userId }, { status: 401 });
+  }
 
   try {
     const body = await req.json();
     const parsed = creditCardSchema.safeParse(body);
     if (!parsed.success) {
+      logger.error("Credit card validation failed:", parsed.error.issues);
       return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Dados inválidos" }, { status: 400 });
     }
 
     const { name, bank, lastDigits, limit, dueDay, closingDay, color, gradient, network } = parsed.data;
+
+    logger.info(`Creating credit card for userId: ${userId}, name: ${name}, bank: ${bank}`);
 
     const [row] = await db
       .insert(creditCards)
@@ -53,6 +59,7 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
+    logger.info(`Credit card created successfully: ${row.id}`);
     return NextResponse.json(row, { status: 201 });
   } catch (error) {
     logger.error("Error creating credit card:", error);
