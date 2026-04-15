@@ -14,6 +14,8 @@
 **Emissão:** 2026-04-15 16:15 UTC
 **Commit:** `79e718b`
 **Deploy:** https://dudia-finance-v2.vercel.app
+**Latest Deployment:** https://dudia-finance-v2-egcyfhfsl-dudiafinances-projects.vercel.app
+**Commit:** `e604106`
 
 ---
 
