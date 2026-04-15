@@ -7,7 +7,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
 import { TagInput } from "@/components/ui/tag-input";
 import { motion } from "framer-motion";
-import { useCategories, useCreateCardTransaction } from "@/hooks/use-api";
+import { useCategories, useCreateCardTransaction, useTags } from "@/hooks/use-api";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CreditCard, CategoryItem, getSuggestedInvoice } from "@/types/finance";
@@ -31,6 +31,7 @@ export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, curre
   });
 
   const { data: categories = [] } = useCategories();
+  const { data: allTags = [] } = useTags();
   const createTx = useCreateCardTransaction(selectedCard?.id || "");
 
   const handleDateChange = (date: string) => {
@@ -205,7 +206,7 @@ export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, curre
               <TagInput
                 value={form.tags}
                 onChange={(tags) => setForm(p => ({ ...p, tags }))}
-                suggestions={expenseCategories.flatMap((c) => c.tags ?? [] as string[])}
+                suggestions={allTags.map((t: { name: string }) => t.name)}
                 className="text-xs"
                 placeholder="Pressione Enter..."
               />

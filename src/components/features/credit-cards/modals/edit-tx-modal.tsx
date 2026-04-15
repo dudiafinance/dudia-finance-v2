@@ -5,7 +5,8 @@ import { Trash2, Info } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
-import { useCategories, useUpdateCardTransaction } from "@/hooks/use-api";
+import { TagInput } from "@/components/ui/tag-input";
+import { useCategories, useUpdateCardTransaction, useTags } from "@/hooks/use-api";
 import { CreditCard, CardTransaction, CategoryItem } from "@/types/finance";
 
 interface EditTxModalProps {
@@ -16,14 +17,15 @@ interface EditTxModalProps {
   onDeleteTx?: () => void;
 }
 
-type EditTxForm = { description: string; amount: string; categoryId: string; invoiceMonth: number; invoiceYear: number; };
+type EditTxForm = { description: string; amount: string; categoryId: string; invoiceMonth: number; invoiceYear: number; tags: string[]; };
 
 export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModalProps) {
-  const [form, setForm] = useState<EditTxForm>({ description: "", amount: "", categoryId: "", invoiceMonth: 1, invoiceYear: 2024 });
+  const [form, setForm] = useState<EditTxForm>({ description: "", amount: "", categoryId: "", invoiceMonth: 1, invoiceYear: 2024, tags: [] });
   const [updateGroup, setUpdateGroup] = useState(false);
   const originalRef = useRef({ month: 0, year: 0 });
   const updateTx = useUpdateCardTransaction(card?.id || "");
   const { data: categories = [] } = useCategories();
+  const { data: allTags = [] } = useTags();
 
   useEffect(() => {
     if (tx && open) {
@@ -33,7 +35,8 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
         amount: String(Math.abs(Number(tx.amount))),
         categoryId: tx.categoryId || "",
         invoiceMonth: tx.invoiceMonth,
-        invoiceYear: tx.invoiceYear
+        invoiceYear: tx.invoiceYear,
+        tags: tx.tags || []
       });
       originalRef.current = { month: tx.invoiceMonth, year: tx.invoiceYear };
       setUpdateGroup(false);
@@ -124,6 +127,16 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
                   onChange={e => handleMonthYearChange(form.invoiceMonth, Number(e.target.value))}
                   className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
               </div>
+            </Field>
+
+            <Field label="Tags de Identificação">
+              <TagInput
+                value={form.tags}
+                onChange={(tags) => setForm(p => ({ ...p, tags }))}
+                suggestions={allTags.map((t: { name: string }) => t.name)}
+                className="text-xs"
+                placeholder="Pressione Enter..."
+              />
             </Field>
           </div>
         </div>
