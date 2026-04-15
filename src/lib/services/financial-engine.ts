@@ -306,41 +306,57 @@ export class FinancialEngine {
   }
 
   static async recalculateCardLimit(tx: DbTransaction, cardId: string) {
-    // BUG-009: Only include current and past months to avoid inflating limit with future installments
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth() + 1;
 
-    const result = await tx
-      .select({
-        total: sql<string>`COALESCE(SUM(CAST(${cardTransactions.amount} AS DECIMAL(15,2))), 0)`,
-      })
-      .from(cardTransactions)
-      .leftJoin(
-        creditCardInvoices,
-        and(
-          eq(creditCardInvoices.cardId, cardTransactions.cardId),
-          eq(creditCardInvoices.month, cardTransactions.invoiceMonth),
-          eq(creditCardInvoices.year, cardTransactions.invoiceYear)
-        )
-      )
-      .where(
-        and(
-          eq(cardTransactions.cardId, cardId),
-          isNull(cardTransactions.deletedAt),
-          sql`( ${creditCardInvoices.status} IS NULL OR ${creditCardInvoices.status} != 'PAGA' )`,
-          // Only include transactions from current and past months
-          sql`(
-            ${cardTransactions.invoiceYear} < ${currentYear}
-            OR (
-              ${cardTransactions.invoiceYear} = ${currentYear}
-              AND ${cardTransactions.invoiceMonth} <= ${currentMonth}
-            )
-          )`
-        )
-      );
+    const installmentSubquery = sql`
+      SELECT SUM(total_amount) FROM (
+        SELECT DISTINCT group_id, total_amount
+        FROM card_transactions ct_distinct
+        WHERE ct_distinct.card_id = ${cardId}
+          AND ct_distinct.group_id IS NOT NULL
+          AND ct_distinct.deleted_at IS NULL
+          AND (ct_distinct.invoice_year < ${currentYear} OR (ct_distinct.invoice_year = ${currentYear} AND ct_distinct.invoice_month <= ${currentMonth}))
+          AND NOT EXISTS (
+            SELECT 1 FROM credit_card_invoices ci
+            WHERE ci.card_id = ct_distinct.card_id
+              AND ci.month = ct_distinct.invoice_month
+              AND ci.year = ct_distinct.invoice_year
+              AND ci.status = 'PAGA'
+          )
+      ) AS installment_groups
+    `;
 
-    const usedAmount = result[0]?.total ?? "0";
+    const singleSubquery = sql`
+      SELECT SUM(amount::DECIMAL(15,2))
+      FROM card_transactions ct_single
+      WHERE ct_single.card_id = ${cardId}
+        AND ct_single.group_id IS NULL
+        AND ct_single.deleted_at IS NULL
+        AND (ct_single.invoice_year < ${currentYear} OR (ct_single.invoice_year = ${currentYear} AND ct_single.invoice_month <= ${currentMonth}))
+        AND NOT EXISTS (
+          SELECT 1 FROM credit_card_invoices ci
+          WHERE ci.card_id = ct_single.card_id
+            AND ci.month = ct_single.invoice_month
+            AND ci.year = ct_single.invoice_year
+            AND ci.status = 'PAGA'
+        )
+    `;
+
+    const installmentResult = await tx
+      .select({ total: sql<string>`COALESCE((${installmentSubquery}), 0)` })
+      .from(cardTransactions)
+      .limit(1);
+
+    const singleResult = await tx
+      .select({ total: sql<string>`COALESCE((${singleSubquery}), 0)` })
+      .from(cardTransactions)
+      .limit(1);
+
+    const usedAmount = String(
+      Number(installmentResult[0]?.total ?? 0) + Number(singleResult[0]?.total ?? 0)
+    );
 
     await tx
       .update(creditCards)
