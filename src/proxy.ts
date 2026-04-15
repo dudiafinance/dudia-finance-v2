@@ -46,6 +46,10 @@ export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  if (pathname.startsWith("/api/health")) {
+    return NextResponse.next();
+  }
+
   const limitType = getRateLimitType(pathname, method);
   const config = RATE_LIMITS[limitType];
 
