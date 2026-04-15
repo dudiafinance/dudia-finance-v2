@@ -274,9 +274,8 @@ describe('Validation Schemas', () => {
   })
 
   describe('payInvoiceSchema', () => {
-    it('should validate invoice payment', () => {
+    it('should validate invoice payment without userId in payload', () => {
       const result = payInvoiceSchema.safeParse({
-        userId: '123e4567-e89b-12d3-a456-426614174000',
         cardId: '223e4567-e89b-12d3-a456-426614174001',
         accountId: '323e4567-e89b-12d3-a456-426614174002',
         amount: 1500,

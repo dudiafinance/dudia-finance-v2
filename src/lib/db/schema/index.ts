@@ -32,7 +32,7 @@ const encryptedText = customType<{ data: string }>({
 // Usuários
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
-  clerkId: text('clerk_id'),
+  clerkId: text('clerk_id').unique(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   avatar: text('avatar'),

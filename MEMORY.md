@@ -9,6 +9,34 @@
 
 ## 🚨 Bugs Críticos Corrigidos (14/04/2026)
 
+## 🆕 Atualização desta sessão (14/04/2026)
+- PRD criado: `docs/prd/USER-ONBOARDING-AUTH-LINK-PRD-2026-04-14.md`
+- Hardening de vínculo de usuário em `src/lib/auth-utils.ts`:
+  - Normalização de email (`trim + lowercase`)
+  - Busca unificada por `clerkId` ou email normalizado
+  - Update de `clerkId` quando ausente ou divergente
+  - Recuperação de corrida em criação (releitura após erro de insert)
+- Webhook Clerk reforçado em `src/app/api/webhooks/clerk/route.ts`:
+  - Prioriza busca por `clerkId`
+  - Fallback por email normalizado com comparação case-insensitive
+  - Persistência de email normalizado no update/insert
+- Contrato de API ajustado:
+  - `payInvoiceSchema` não exige mais `userId` do cliente
+  - Rota `pay-invoice` valida payload sem injetar `userId` externo
+- Migração adicionada: `drizzle/0020_restore_users_clerk_id_uniqueness.sql`
+  - Deduplica `clerk_id` legados mantendo o primeiro registro
+  - Recria unicidade via índice parcial (`clerk_id IS NOT NULL`)
+- Isolamento por usuário reforçado no motor financeiro (`src/lib/services/financial-engine.ts`):
+  - `addTransaction` valida ownership de conta e categoria antes de inserir
+  - `addCardTransaction` valida ownership de cartão e categoria antes de inserir
+  - `depositToGoal` valida ownership de conta/categoria além da meta
+  - `payCardInvoice` considera soft-delete em conta/cartão e valida categoria
+- Migração aplicada com sucesso via `npm run db:migrate`.
+- Testes executados com sucesso:
+  - `npx vitest run src/test/validations.test.ts` (24/24)
+  - `npm test` (114/114)
+  - `npm run build` executado com sucesso (apenas warnings não bloqueantes de config Next.js)
+
 ### 1. MIDDLEWARE_INVOCATION_FAILED (500 Error)
 - **Causa:** Redis era inicializado no topo do módulo `rate-limit.ts` com `!` (non-null assertion), crashando quando `UPSTASH_REDIS_REST_URL/TOKEN` não estavam definidos
 - **Solução:** Inicialização preguiçosa (lazy init) - Redis só é criado quando `checkRateLimit()` é chamado e apenas se variáveis existirem

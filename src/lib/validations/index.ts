@@ -172,7 +172,6 @@ export const goalDepositSchema = z.object({
 });
 
 export const payInvoiceSchema = z.object({
-  userId: z.string().uuid(),
   cardId: z.string().uuid("Cartão inválido"),
   accountId: z.string().uuid("Conta inválida"),
   amount: z.coerce.number().positive("Valor deve ser positivo"),

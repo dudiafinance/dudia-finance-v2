@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import {
   transactions,
   accounts,
+  categories,
   creditCards,
   cardTransactions,
   creditCardInvoices,
@@ -28,6 +29,38 @@ type CardTransactionUpdate = {
 };
 
 export class FinancialEngine {
+  private static async assertAccountOwnership(tx: DbTransaction, userId: string, accountId: string) {
+    const [account] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.id, accountId), eq(accounts.userId, userId), isNull(accounts.deletedAt)))
+      .limit(1);
+
+    if (!account) throw FinancialError.notFound("Conta");
+  }
+
+  private static async assertCategoryOwnership(tx: DbTransaction, userId: string, categoryId?: string | null) {
+    if (!categoryId) return;
+
+    const [category] = await tx
+      .select({ id: categories.id })
+      .from(categories)
+      .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+      .limit(1);
+
+    if (!category) throw FinancialError.notFound("Categoria");
+  }
+
+  private static async assertCardOwnership(tx: DbTransaction, userId: string, cardId: string) {
+    const [card] = await tx
+      .select({ id: creditCards.id })
+      .from(creditCards)
+      .where(and(eq(creditCards.id, cardId), eq(creditCards.userId, userId), isNull(creditCards.deletedAt)))
+      .limit(1);
+
+    if (!card) throw FinancialError.notFound("Cartão de crédito");
+  }
+
   /**
    * Registra um log de auditoria para cada operação financeira
    */
@@ -101,6 +134,9 @@ export class FinancialEngine {
 
   static async addTransaction(data: typeof transactions.$inferInsert) {
     return await db.transaction(async (tx) => {
+      await this.assertAccountOwnership(tx, data.userId, data.accountId);
+      await this.assertCategoryOwnership(tx, data.userId, data.categoryId ?? null);
+
       const [newTx] = await tx.insert(transactions).values(data).returning();
       await this.recalculateAccountBalance(tx, newTx.accountId);
       await this.logAudit(tx, newTx.userId, "transaction", newTx.id, "create", null, newTx);
@@ -331,6 +367,9 @@ export class FinancialEngine {
 
   static async addCardTransaction(data: typeof cardTransactions.$inferInsert, externalTx?: DbTransaction) {
     const execute = async (tx: DbTransaction) => {
+      await this.assertCardOwnership(tx, data.userId, data.cardId);
+      await this.assertCategoryOwnership(tx, data.userId, data.categoryId ?? null);
+
       const [newTx] = await tx.insert(cardTransactions).values(data).returning();
       await this.recalculateCardLimit(tx, newTx.cardId);
       await this.logAudit(tx, newTx.userId, "card_transaction", newTx.id, "create", null, newTx);
@@ -441,11 +480,13 @@ export class FinancialEngine {
     categoryId?: string
   }) {
     return await db.transaction(async (tx) => {
-      const [account] = await tx.select().from(accounts).where(and(eq(accounts.id, data.accountId), eq(accounts.userId, data.userId))).limit(1);
+      const [account] = await tx.select().from(accounts).where(and(eq(accounts.id, data.accountId), eq(accounts.userId, data.userId), isNull(accounts.deletedAt))).limit(1);
       if (!account) throw new Error("Conta bancária não encontrada");
 
-      const [card] = await tx.select().from(creditCards).where(and(eq(creditCards.id, data.cardId), eq(creditCards.userId, data.userId))).limit(1);
+      const [card] = await tx.select().from(creditCards).where(and(eq(creditCards.id, data.cardId), eq(creditCards.userId, data.userId), isNull(creditCards.deletedAt))).limit(1);
       if (!card) throw new Error("Cartão de crédito não encontrado");
+
+      await this.assertCategoryOwnership(tx, data.userId, data.categoryId ?? null);
 
       const paymentAmount = Number(data.amount);
       if (Number(account.balance) < paymentAmount) throw new Error("Saldo insuficiente");
@@ -489,6 +530,9 @@ export class FinancialEngine {
     return await db.transaction(async (tx) => {
       const [goal] = await tx.select().from(goals).where(and(eq(goals.id, data.goalId), eq(goals.userId, data.userId))).limit(1);
       if (!goal) throw new Error("Meta não encontrada");
+
+      await this.assertAccountOwnership(tx, data.userId, data.accountId);
+      await this.assertCategoryOwnership(tx, data.userId, data.categoryId ?? null);
 
       // BUG-004: Cap deposit at target amount
       if (goal.targetAmount) {

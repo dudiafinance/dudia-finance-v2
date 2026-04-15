@@ -1,8 +1,31 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { users } from "./db/schema";
-import { eq, or } from "drizzle-orm";
+import { eq, or, sql } from "drizzle-orm";
 import { headers } from "next/headers";
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+async function findUserByClerkIdOrEmail(clerkId: string, email?: string) {
+  if (email) {
+    const normalizedEmail = normalizeEmail(email);
+    return db.query.users.findFirst({
+      where: or(
+        eq(users.clerkId, clerkId),
+        eq(users.email, normalizedEmail),
+        sql`lower(${users.email}) = ${normalizedEmail}`
+      ),
+      columns: { id: true, clerkId: true }
+    });
+  }
+
+  return db.query.users.findFirst({
+    where: eq(users.clerkId, clerkId),
+    columns: { id: true, clerkId: true }
+  });
+}
 
 /**
  * Centralised helper – extracts the internal UUID from the Clerk session.
@@ -27,10 +50,7 @@ export async function getUserId(): Promise<string | null> {
   }
 
   // 1. Tenta buscar pelo vínculo direto de ID (Rápido)
-  const user = await db.query.users.findFirst({
-    where: eq(users.clerkId, clerkId),
-    columns: { id: true }
-  });
+  const user = await findUserByClerkIdOrEmail(clerkId);
 
   if (user) return user.id;
 
@@ -57,21 +77,12 @@ export async function getUserId(): Promise<string | null> {
       return null;
     }
 
-    // Tenta encontrar usuário pelo email (case-insensitive seria melhor, mas Postgres é case-sensitive por padrão em text)
-    const existingUser = await db.query.users.findFirst({
-      where: eq(users.email, email.toLowerCase()),
-      columns: { id: true, clerkId: true }
-    });
-
-    // Se não encontrou com lowercase, tenta com o email original
-    const userByEmailOriginal = existingUser || await db.query.users.findFirst({
-      where: eq(users.email, email),
-      columns: { id: true, clerkId: true }
-    });
+    const normalizedEmail = normalizeEmail(email);
+    const userByEmailOriginal = await findUserByClerkIdOrEmail(clerkId, normalizedEmail);
 
     if (userByEmailOriginal) {
-      // Atualiza o clerkId se não estiver definido
-      if (!userByEmailOriginal.clerkId) {
+      // Atualiza clerkId quando ausente ou divergente
+      if (!userByEmailOriginal.clerkId || userByEmailOriginal.clerkId !== clerkId) {
         try {
           await db.update(users)
             .set({ clerkId, updatedAt: new Date() })
@@ -90,7 +101,7 @@ export async function getUserId(): Promise<string | null> {
     console.log(`[Auth] Creating new user for email: ${email}`);
     try {
       const [newUser] = await db.insert(users).values({
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         clerkId,
         name: [firstName, lastName].filter(Boolean).join(' ') || 'Usuário',
         avatar: imageUrl ?? null,
@@ -102,6 +113,12 @@ export async function getUserId(): Promise<string | null> {
       console.error("[Auth] Erro ao criar usuário via fallback:", createErr);
       console.error("[Auth] clerkId:", clerkId);
       console.error("[Auth] email:", email);
+
+      // Corrida entre requests: se outro processo criou no intervalo, relê e retorna
+      const recoveredUser = await findUserByClerkIdOrEmail(clerkId, normalizedEmail);
+      if (recoveredUser) {
+        return recoveredUser.id;
+      }
     }
   } catch (error) {
     console.error("[Auth] Erro no fallback de autenticação:", error);

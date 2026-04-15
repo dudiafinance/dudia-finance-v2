@@ -3,8 +3,12 @@ import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { users } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { logger } from '@/lib/utils/logger'
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
@@ -54,13 +58,19 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.created' || eventType === 'user.updated') {
     const { email_addresses, first_name, last_name, image_url } = evt.data
-    const email = email_addresses[0]?.email_address
+    const rawEmail = email_addresses[0]?.email_address
     const name = `${first_name ?? ''} ${last_name ?? ''}`.trim()
+    const email = rawEmail ? normalizeEmail(rawEmail) : undefined
 
     if (email) {
-      // 1. Verificar se o usuário já existe pelo e-mail
-      const existingUser = await db.query.users.findFirst({
-        where: eq(users.email, email),
+      // 1. Prioriza vínculo por clerkId
+      const userByClerkId = await db.query.users.findFirst({
+        where: eq(users.clerkId, id),
+      })
+
+      // 2. Fallback por email normalizado
+      const existingUser = userByClerkId ?? await db.query.users.findFirst({
+        where: sql`lower(${users.email}) = ${email}`,
       })
 
       if (existingUser) {
@@ -68,6 +78,7 @@ export async function POST(req: Request) {
         await db.update(users)
           .set({ 
             clerkId: id,
+            email,
             name: name || existingUser.name,
             avatar: image_url || existingUser.avatar,
             updatedAt: new Date() 
