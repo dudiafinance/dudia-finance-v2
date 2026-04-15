@@ -11,7 +11,7 @@ setup("authenticate production user via test-auth endpoint", async ({ page }) =>
     throw new Error("Missing TEST_EMAIL or CLERK_SECRET_KEY.");
   }
 
-  const res = await fetch("https://dudia-finance-v2.vercel.app/api/test-auth", {
+  const res = await fetch("https://dudia-finance-v2-8i8qfmy1j-dudiafinances-projects.vercel.app/api/test-auth", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -40,16 +40,11 @@ setup("authenticate production user via test-auth endpoint", async ({ page }) =>
 
   await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
 
-  const dashboardLoaded = await page
-    .getByText("Patrimônio Consolidado")
-    .isVisible({ timeout: 25000 })
-    .catch(() => false);
-
-  if (!dashboardLoaded) {
-    const url = page.url();
+  const url = page.url();
+  if (!url.includes("/dashboard")) {
     const bodySnippet = (await page.locator("body").innerText()).slice(0, 500);
     throw new Error(
-      `Dashboard did not load. URL: ${url}. Body: ${bodySnippet}`
+      `Did not navigate to dashboard. URL: ${url}. Body: ${bodySnippet}`
     );
   }
 

@@ -11,7 +11,7 @@ export default defineConfig({
     timeout: 20000,
   },
   use: {
-    baseURL: "https://dudia-finance-v2.vercel.app",
+    baseURL: "https://dudia-finance-v2-8i8qfmy1j-dudiafinances-projects.vercel.app",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
