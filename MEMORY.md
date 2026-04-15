@@ -1,10 +1,10 @@
 # Dudia Finance v2 - Memória de Desenvolvimento
 
 ## 📌 Status Atual
-- **Data:** 15/04/2026
-- **Versão:** 0.1.5 (Release Candidate - GO APROVADO)
+- **Data:** 15/04/2026 (atualizado)
+- **Versão:** 0.1.6 (Bug Fixes Release)
 - **Fase:** Produção — Live em https://dudia-finance-v2.vercel.app
-- **Último Commit:** `f655c36` — "docs: add final deployment URL to PRD"
+- **Último Commit:** `9ae22fe` — "fix: credit card bugs - delete, tags, refund, installment edit, save-and-continue"
 - **Branch:** main
 - **Decisão:** ✅ **GO** — Pronto para produção
 
@@ -34,7 +34,7 @@
 
 ### Documentação
 - **PRD:** `docs/PRD-Launch-Revalidation-GoNoGo.md` — Decision GO formally documented
-- **Deploy:** https://dudia-finance-v2-egcyfhfsl-dudiafinances-projects.vercel.app
+- **Deploy:** https://dudia-finance-v2-crq61a5m1-dudiafinances-projects.vercel.app (atual)
 
 ---
 
@@ -71,10 +71,50 @@ const isE2EBypass =
 
 | Commit | Mensagem |
 |--------|----------|
+| `9ae22fe` | fix: credit card bugs - delete, tags, refund, installment edit, save-and-continue |
 | `f655c36` | docs: add final deployment URL to PRD |
 | `e604106` | docs: update PRD with GO decision and final results |
 | `79e718b` | feat: E2E test suite fully operational with Clerk bypass |
 | `90d283b` | fix: correct E2E test selectors and modal handling for production |
+
+---
+
+## 🐛 Bugs Corrigidos (15/04/2026 - Sessão de Bug Fixes)
+
+### 1. Exclusão de lançamento de cartão não funcionava
+- **Causa:** GET de transações de cartão não filtrava `deletedAt`, retornando itens "deletados"
+- **Solução:** Adicionado `isNull(cardTransactions.deletedAt)` ao WHERE da API
+- **Arquivo:** `src/app/api/credit-cards/[id]/transactions/route.ts`
+
+### 2. Tags não apareciam no lançamento de cartão
+- **Causa:** Campo de tags existia no estado do componente mas não tinha UI para input
+- **Solução:** Adicionado `<TagInput>` ao modal de lançamento de cartão
+- **Arquivo:** `src/components/features/credit-cards/modals/launch-tx-modal.tsx`
+
+### 3. Estorno não funcionava
+- **Causa:** Schema de validação exigia `amount` positivo, mas UI enviava negativo
+- **Solução:** Schema agora aceita valores diferentes de zero; API processa `type: "refund"` e aplica sinal negativo ao `amount`
+- **Arquivo:** `src/lib/validations/index.ts`, `src/app/api/credit-cards/[id]/transactions/route.ts`
+
+### 4. Edição de parcelamento não propaga para parcelas seguintes
+- **Causa:** Checkbox "aplicar nas próximas" era obscuro e não ficava pré-selecionado
+- **Solução:** Info visual mostrando qual parcela está sendo editada; auto-seleciona grupo ao mudar mês/ano; contador de parcelas afetadas
+- **Arquivo:** `src/components/features/credit-cards/modals/edit-tx-modal.tsx`
+
+### 5. Fluxo de lançamentos sequenciais era lento
+- **Causa:** Modal fechava após cada lançamento, forçando reabertura
+- **Solução:** Botão "Salvar + Novo" que mantém modal aberto e reseta campos principais
+- **Arquivos:** `src/components/features/transactions/transaction-form.tsx`, `src/components/features/credit-cards/modals/launch-tx-modal.tsx`, `src/app/(app)/transactions/page.tsx`
+
+### 6. Feedback de seed de categorias era confuso
+- **Causa:** Quando categorias já existiam, mostrava erro genérico em vez de info clara
+- **Solução:** Mensagem informativa indicando quantidade já existente
+- **Arquivo:** `src/app/(app)/categories/page.tsx`
+
+### 7. Warning de cascading render em edit-tx-modal
+- **Causa:** useEffect chamava múltiplos setState sincronamente
+- **Solução:** Refatorado para usar `useRef` para dados que não precisam de re-render; eslint-disable para pattern válido
+- **Arquivo:** `src/components/features/credit-cards/modals/edit-tx-modal.tsx`
 
 ---
 
