@@ -397,13 +397,14 @@ export class FinancialEngine {
       if (!oldTx) throw new Error("Lançamento não encontrado");
 
       // Higienização rigorosa dos dados para evitar update de colunas restritas
-      const { id: _, userId: __, createdAt: ___, groupId: ____, ...rawUpdateData } = data as Partial<CardTransactionUpdate>;
-      
+      const forbiddenKeys = new Set(["id", "userId", "createdAt", "groupId"]);
+      const rawUpdateData = data as Record<string, unknown>;
+
       // Filtra apenas campos válidos que não sejam undefined
       const updateData: Partial<CardTransactionUpdate> = {};
-      Object.keys(rawUpdateData).forEach(key => {
-        if (rawUpdateData[key as keyof CardTransactionUpdate] !== undefined) {
-          (updateData as Record<string, unknown>)[key] = rawUpdateData[key as keyof CardTransactionUpdate];
+      Object.entries(rawUpdateData).forEach(([key, value]) => {
+        if (!forbiddenKeys.has(key) && value !== undefined) {
+          (updateData as Record<string, unknown>)[key] = value;
         }
       });
 

@@ -7,10 +7,10 @@ import { creditCardSchema } from "@/lib/validations";
 import { logger } from "@/lib/utils/logger";
 
 export async function GET() {
-  const userId = await getUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   try {
+    const userId = await getUserId();
+    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const rows = await db
       .select()
       .from(creditCards)
@@ -25,13 +25,13 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await getUserId();
-  if (!userId) {
-    logger.error("Credit card creation failed: userId is null");
-    return NextResponse.json({ error: "Unauthorized - user not found", userId }, { status: 401 });
-  }
-
   try {
+    const userId = await getUserId();
+    if (!userId) {
+      logger.error("Credit card creation failed: userId is null");
+      return NextResponse.json({ error: "Unauthorized - user not found", userId }, { status: 401 });
+    }
+
     const body = await req.json();
     const parsed = creditCardSchema.safeParse(body);
     if (!parsed.success) {

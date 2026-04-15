@@ -54,14 +54,14 @@ export default clerkMiddleware(async (auth, request) => {
     if (!allowed) {
       return NextResponse.json(
         { error: "Muitas requisições. Aguarde um momento e tente novamente." },
-        { 
-          status: 429, 
-          headers: { 
+        {
+          status: 429,
+          headers: {
             "Retry-After": String(Math.ceil(config.windowMs / 1000)),
             "X-RateLimit-Limit": String(config.maxRequests),
             "X-RateLimit-Remaining": "0",
             "X-RateLimit-Reset": String(Date.now() + config.windowMs),
-          } 
+          }
         }
       );
     }

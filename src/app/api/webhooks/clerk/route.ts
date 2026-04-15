@@ -56,6 +56,11 @@ export async function POST(req: Request) {
   const { id } = evt.data
   const eventType = evt.type
 
+  if (!id) {
+    logger.error('Webhook payload missing user id')
+    return new Response('Missing user id', { status: 400 })
+  }
+
   if (eventType === 'user.created' || eventType === 'user.updated') {
     const { email_addresses, first_name, last_name, image_url } = evt.data
     const rawEmail = email_addresses[0]?.email_address

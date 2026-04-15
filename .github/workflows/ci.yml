@@ -17,13 +17,24 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run lint
+      - run: npm run test:ci
       - run: npm run build
-      # Unit tests skipped in CI - require Neon database access (not available in GitHub runners)
-      # Integration tests run locally with: npm test
-      # E2E tests run locally with: npm run test:e2e
+
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:smoke
 
   deploy:
-    needs: test
+    needs: [test, e2e-smoke]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:

@@ -3,14 +3,25 @@ import { Redis } from "@upstash/redis";
 let redis: Redis | null = null;
 
 function getRedis(): Redis | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+  const rawUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const rawToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!rawUrl || !rawToken) {
     return null;
   }
+
+  const url = rawUrl.trim();
+  const token = rawToken.trim();
+  if (!url || !token) {
+    return null;
+  }
+
   if (!redis) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
+    try {
+      redis = new Redis({ url, token });
+    } catch {
+      return null;
+    }
   }
   return redis;
 }
@@ -42,7 +53,7 @@ export async function checkRateLimit(ip: string, limitType: LimitType): Promise<
     const now = Date.now();
 
     if (!current || now > current.resetAt) {
-      await redisClient.set(key, { count: 1, resetAt: now + config.windowMs }, { ex: Math.ceil(config.windowMs / 1000), nx: false });
+      await redisClient.set(key, { count: 1, resetAt: now + config.windowMs }, { ex: Math.ceil(config.windowMs / 1000) });
       return true;
     }
 

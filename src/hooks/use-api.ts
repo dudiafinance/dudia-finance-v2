@@ -20,15 +20,42 @@ import type {
 } from "@/types";
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
+  const headers = new Headers(options?.headers);
+  const isFormDataBody = options?.body instanceof FormData;
+  if (!headers.has("Content-Type") && !isFormDataBody) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const res = await fetch(url, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers,
   });
   
   if (res.status === 204) return {} as T;
-  
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Erro na requisição");
+
+  const contentType = res.headers.get("content-type") ?? "";
+  let data: unknown = null;
+
+  if (contentType.includes("application/json")) {
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+  } else {
+    const text = await res.text();
+    data = text || null;
+  }
+
+  if (!res.ok) {
+    const jsonError =
+      data && typeof data === "object" && "error" in data && typeof (data as { error?: unknown }).error === "string"
+        ? (data as { error: string }).error
+        : null;
+    const textError = typeof data === "string" ? data : null;
+    throw new Error(jsonError ?? textError ?? `Erro na requisição (${res.status})`);
+  }
+
   return data as T;
 }
 
@@ -929,4 +956,3 @@ export function useUpdateInvoiceStatus(cardId: string) {
     onError: (err) => toast(err instanceof Error ? err.message : "Erro ao atualizar status da fatura", "error"),
   });
 }
-

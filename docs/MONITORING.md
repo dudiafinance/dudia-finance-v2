@@ -79,3 +79,35 @@ Sentry.captureMessage("account.balance.negative", "warning");
 - [Sentry Documentation](https://docs.sentry.io)
 - [Alert Configuration](https://docs.sentry.io/product/alerts/)
 - [Sentry SDK Config](https://docs.sentry.io/platforms/javascript/configuration/)
+
+---
+
+## Mandatory Production Alerts
+
+Configure and keep these alerts active before public launch.
+
+### 1) API 5xx Error Rate (Critical)
+- **Source:** Vercel Observability or Sentry metrics
+- **Condition:** `5xx rate > 2%` for `5 minutes`
+- **Scope:** All `/api/*`
+- **Action:** page on-call immediately
+
+### 2) Cron Recurring Failure (High)
+- **Source:** Sentry issue alert
+- **Condition:** `message:"transaction.cron.failed"` at least 1 event in `10 minutes`
+- **Action:** notify engineering channel + assign incident owner
+
+### 3) Availability Drop (Critical)
+- **Source:** External health check + Vercel availability
+- **Condition:** `/api/health` returns `503` for 2 consecutive checks (30s interval)
+- **Action:** page on-call immediately and open incident timeline
+
+---
+
+## Incident Runbook (Fast Path)
+
+1. Confirm impact in Vercel logs and Sentry issues.
+2. Check `/api/health` response and database check status.
+3. If env-related, revalidate production env vars (trim and re-save secrets).
+4. Roll back to last healthy deployment if error budget is exceeded.
+5. Publish short status update with incident owner and ETA.
