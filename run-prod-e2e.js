@@ -11,6 +11,7 @@ dotenv.config({ path: path.resolve(__dirname, ".env.production"), override: true
 const env = {
   ...process.env,
   TEST_EMAIL: process.env.TEST_EMAIL || "igorpminacio1@gmail.com",
+  TEST_PASSWORD: process.env.TEST_PASSWORD || "Massa@2909+++",
 };
 
 const result = execSync(

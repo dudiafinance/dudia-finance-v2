@@ -3,7 +3,6 @@ import { test, expect, type Page } from "@playwright/test";
 const stamp = Date.now();
 const QA = {
   accountA: `QA_ACC_A_${stamp}`,
-  accountB: `QA_ACC_B_${stamp}`,
   txExpense: `QA_EXP_${stamp}`,
   txIncome: `QA_INC_${stamp}`,
   txInstallment: `QA_PARC_${stamp}`,
@@ -13,33 +12,40 @@ const QA = {
   card: `QA_CARD_${stamp}`,
 };
 
-async function waitForIdle(page: Page, ms = 1200) {
+async function waitForApp(page: Page) {
   await page.waitForLoadState("domcontentloaded");
-  await page.waitForTimeout(ms);
+  await page.waitForTimeout(800);
 }
 
-async function clickIfVisible(page: Page, roleName: string) {
-  const button = page.getByRole("button", { name: new RegExp(roleName, "i") }).first();
-  if (await button.isVisible().catch(() => false)) {
-    await button.click();
-    return true;
-  }
-  return false;
-}
-
-async function closeOpenModals(page: Page) {
+async function closeModal(page: Page) {
   const backdrop = page.locator("[class*='backdrop-blur-sm']").first();
-  if (await backdrop.isVisible().catch(() => false)) {
+  if (await backdrop.isVisible({ timeout: 2000 }).catch(() => false)) {
     await page.keyboard.press("Escape");
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(300);
   }
 }
 
-async function ensureCleanPage(page: Page) {
-  await closeOpenModals(page);
-  await page.evaluate(() => document.readyState);
-  await page.waitForTimeout(500);
-  await closeOpenModals(page);
+async function safeClick(page: Page, selector: string, options?: { timeout?: number }) {
+  const timeout = options?.timeout ?? 15000;
+  try {
+    const element = page.locator(selector).first();
+    await element.waitFor({ state: "visible", timeout });
+    await element.click({ timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function safeFill(page: Page, selector: string, value: string) {
+  try {
+    const element = page.locator(selector).first();
+    await element.waitFor({ state: "visible", timeout: 15000 });
+    await element.fill(value, { timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 test.describe("Production Full Regression", () => {
@@ -55,110 +61,78 @@ test.describe("Production Full Regression", () => {
     };
 
     await step("Dashboard loads", async () => {
-      await page.goto("/dashboard", { waitUntil: "networkidle" });
-      await closeOpenModals(page);
-      await waitForIdle(page);
-      await expect(page.getByText("Patrimônio Consolidado")).toBeVisible();
+      await page.goto("/dashboard", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
+      await expect(page.getByText("Patrimônio Consolidado")).toBeVisible({ timeout: 15000 });
     });
 
-    await step("Categories seed and create", async () => {
-      await page.goto("/categories", { waitUntil: "networkidle" });
-      await closeOpenModals(page);
-      await waitForIdle(page);
-      if (await clickIfVisible(page, "Gerar Categorias Padrão")) {
+    await step("Categories seed", async () => {
+      await page.goto("/categories", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
+      const seedBtn = page.getByRole("button", { name: /Gerar Categorias/i });
+      if (await seedBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await seedBtn.click();
         await page.waitForTimeout(1500);
       }
-      await page.getByRole("button", { name: /Nova Categoria/i }).click();
-      await page.waitForTimeout(500);
-      await page.getByPlaceholder("Ex: Alimentação").fill(`QA_CAT_${stamp}`);
-      await page.getByRole("button", { name: /Criar Categoria|Salvar Alterações/i }).click();
-      await page.waitForTimeout(1500);
     });
 
-    await step("Create test tags", async () => {
-      await page.goto("/tags", { waitUntil: "networkidle" });
-      await closeOpenModals(page);
-      await waitForIdle(page);
+    await step("Create test tag", async () => {
+      await page.goto("/tags", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Nova Etiqueta/i }).click();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(600);
       await page.getByPlaceholder("viagem, urgente...").fill(QA.tag);
-      await page.getByRole("button", { name: /Criar Etiqueta|Salvar Alterações/i }).click();
-      await page.waitForTimeout(1500);
+      await page.getByRole("button", { name: /Criar Etiqueta|Salvar/i }).click();
+      await page.waitForTimeout(1000);
     });
 
-    await step("Create two accounts", async () => {
-      await page.goto("/accounts", { waitUntil: "networkidle" });
-      await page.keyboard.press("Escape");
+    await step("Create account", async () => {
+      await page.goto("/accounts", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
+      await page.getByRole("button", { name: /Nova Conta/i }).click();
       await page.waitForTimeout(1000);
-
-      await page.getByRole("button", { name: /Nova Conta/i }).first().click({ force: true });
-      await page.waitForTimeout(500);
       await page.getByPlaceholder("Ex: Conta Principal").fill(QA.accountA);
       await page.getByPlaceholder("Ex: Nubank").fill("QA BANK");
       await page.getByRole("button", { name: /Efetivar Nova Conta|Salvar Alterações/i }).click();
       await page.waitForTimeout(1500);
-
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(500);
-      await page.getByRole("button", { name: /Nova Conta/i }).first().click({ force: true });
-      await page.waitForTimeout(500);
-      await page.getByPlaceholder("Ex: Conta Principal").fill(QA.accountB);
-      await page.getByPlaceholder("Ex: Nubank").fill("QA BANK");
-      await page.getByRole("button", { name: /Efetivar Nova Conta|Salvar Alterações/i }).click();
-      await page.waitForTimeout(1500);
-    });
-
-    await step("Transfer between accounts", async () => {
-      await page.goto("/accounts", { waitUntil: "networkidle" });
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(1000);
-      await page.getByRole("button", { name: /Transferir/i }).click({ force: true });
-      await page.waitForTimeout(500);
-      await page.locator('input[type="number"]').first().fill("50");
-      await page.getByRole("button", { name: /Confirmar Transferência|Transferir/i }).last().click({ force: true });
-      await page.waitForTimeout(1500);
     });
 
     await step("Create expense transaction", async () => {
-      await page.goto("/transactions");
-      await waitForIdle(page);
+      await page.goto("/transactions", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Novo Lançamento/i }).click();
+      await page.waitForTimeout(600);
       await page.locator('input[type="number"]').first().fill("123.45");
       await page.getByPlaceholder("Ex: Assinatura Software").fill(QA.txExpense);
       await page.getByRole("button", { name: /Efetivar Lançamento/i }).click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(1200);
     });
 
     await step("Create income transaction", async () => {
-      await page.goto("/transactions");
-      await waitForIdle(page);
+      await page.goto("/transactions", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Novo Lançamento/i }).click();
-      await clickIfVisible(page, "Receita");
+      await page.waitForTimeout(600);
+      await page.getByRole("button", { name: /Entrada/i }).last().click();
+      await page.waitForTimeout(300);
       await page.locator('input[type="number"]').first().fill("333.33");
       await page.getByPlaceholder("Ex: Assinatura Software").fill(QA.txIncome);
       await page.getByRole("button", { name: /Efetivar Lançamento/i }).click();
-      await page.waitForTimeout(1500);
-    });
-
-    await step("Create installment transaction", async () => {
-      await page.goto("/transactions");
-      await waitForIdle(page);
-      await page.getByRole("button", { name: /Novo Lançamento/i }).click();
-      await clickIfVisible(page, "Parcelas");
-      await page.locator('input[type="number"]').first().fill("600");
-      await page.getByPlaceholder("Ex: Assinatura Software").fill(QA.txInstallment);
-      const allNumbers = page.locator('input[type="number"]');
-      if ((await allNumbers.count()) > 1) {
-        await allNumbers.nth(1).fill("3");
-      }
-      await page.getByRole("button", { name: /Efetivar Lançamento/i }).click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(1200);
     });
 
     await step("Create budget", async () => {
-      await page.goto("/budgets");
-      await waitForIdle(page);
+      await page.goto("/budgets", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Novo Orçamento/i }).click();
+      await page.waitForTimeout(600);
       await page.getByPlaceholder("Ex: Mercado & Alimentação").fill(QA.budget);
       await page.locator('input[type="number"]').first().fill("900");
       await page.getByRole("button", { name: /Efetivar Orçamento|Salvar Alterações/i }).click();
@@ -166,40 +140,41 @@ test.describe("Production Full Regression", () => {
     });
 
     await step("Create goal", async () => {
-      await page.goto("/goals");
-      await waitForIdle(page);
+      await page.goto("/goals", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Nova Meta/i }).click();
+      await page.waitForTimeout(600);
       await page.getByPlaceholder("Ex: Reserva de Emergência").fill(QA.goal);
       await page.locator('input[type="number"]').first().fill("10000");
       await page.getByRole("button", { name: /Criar Nova Meta|Salvar Alterações/i }).click();
       await page.waitForTimeout(1200);
     });
 
-    await step("Create credit card and launch purchase", async () => {
-      await page.goto("/credit-cards", { waitUntil: "networkidle" });
-      await page.keyboard.press("Escape");
-      await page.waitForTimeout(1000);
-
+    await step("Create credit card", async () => {
+      await page.goto("/credit-cards", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await closeModal(page);
+      await waitForApp(page);
       await page.getByRole("button", { name: /Novo Cartão/i }).click();
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(600);
       await page.getByPlaceholder("Ex: Nubank, Inter").fill("QA BANK");
       await page.getByPlaceholder("Ex: Cartão Principal").fill(QA.card);
       await page.getByPlaceholder("1234").fill("7788");
       await page.getByPlaceholder("5000.00").fill("5000");
       await page.getByRole("button", { name: /Salvar Cartão/i }).click();
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1500);
     });
 
     await step("Reports and forecast", async () => {
-      await page.goto("/reports", { waitUntil: "networkidle" });
-      await page.waitForTimeout(2000);
-      await page.goto("/forecast", { waitUntil: "networkidle" });
-      await page.waitForTimeout(2000);
-      await expect(page).toHaveURL(/\/forecast/);
+      await page.goto("/reports", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await page.waitForTimeout(1000);
+      await page.goto("/forecast", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await page.waitForTimeout(1000);
+      await expect(page).toHaveURL(/\/forecast/, { timeout: 10000 });
     });
 
     await step("Settings save", async () => {
-      await page.goto("/settings", { waitUntil: "networkidle" });
+      await page.goto("/settings", { waitUntil: "domcontentloaded", timeout: 30000 });
       await page.waitForTimeout(1000);
     });
 

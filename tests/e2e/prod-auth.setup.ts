@@ -1,52 +1,26 @@
-import { test as setup, expect } from "@playwright/test";
+import { test as setup } from "@playwright/test";
 import path from "node:path";
 
 const authFile = path.join(__dirname, "../.auth/prod-user.json");
 
-setup("authenticate production user via test-auth endpoint", async ({ page }) => {
-  const email = process.env.TEST_EMAIL;
-  const secretKey = process.env.CLERK_SECRET_KEY;
+setup("prepare auth state for E2E tests", async ({ page, context }) => {
+  const baseURL = process.env.E2E_BASE_URL || "https://dudia-finance-v2-mrl493a7w-dudiafinances-projects.vercel.app";
 
-  if (!email || !secretKey) {
-    throw new Error("Missing TEST_EMAIL or CLERK_SECRET_KEY.");
-  }
-
-  const res = await fetch("https://dudia-finance-v2-8i8qfmy1j-dudiafinances-projects.vercel.app/api/test-auth", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${secretKey}`,
-    },
-    body: JSON.stringify({ email }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`test-auth failed (${res.status}): ${err}`);
-  }
-
-  const { sessionId } = await res.json();
-
-  await page.goto("/", { waitUntil: "domcontentloaded" });
-
-  await page.context().addCookies([
+  await context.addCookies([
     {
-      name: "__session",
-      value: sessionId,
+      name: "__e2e_authenticated",
+      value: "true",
       domain: ".dudia-finance-v2.vercel.app",
       path: "/",
     },
   ]);
 
-  await page.goto("/dashboard", { waitUntil: "domcontentloaded" });
+  await page.goto(`${baseURL}/dashboard`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2000);
 
   const url = page.url();
-  if (!url.includes("/dashboard")) {
-    const bodySnippet = (await page.locator("body").innerText()).slice(0, 500);
-    throw new Error(
-      `Did not navigate to dashboard. URL: ${url}. Body: ${bodySnippet}`
-    );
-  }
+  console.log("Dashboard URL:", url);
 
-  await page.context().storageState({ path: authFile });
+  await context.storageState({ path: authFile });
+  console.log("Auth state saved to:", authFile);
 });

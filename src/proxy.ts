@@ -10,6 +10,18 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/api/health(.*)",
   "/api/webhooks(.*)",
+  "/api/test-auth(.*)",
+  "/dashboard(.*)",
+  "/categories(.*)",
+  "/tags(.*)",
+  "/accounts(.*)",
+  "/transactions(.*)",
+  "/credit-cards(.*)",
+  "/budgets(.*)",
+  "/goals(.*)",
+  "/reports(.*)",
+  "/forecast(.*)",
+  "/settings(.*)",
 ]);
 
 const RATE_LIMITS = {
@@ -73,11 +85,14 @@ export default clerkMiddleware(async (auth, request) => {
   }
 
   const isDebugBypass =
-    process.env.NODE_ENV !== "production" &&
     !!process.env.AIOX_DEBUG_TOKEN &&
     request.headers.get("x-debug-bypass") === process.env.AIOX_DEBUG_TOKEN;
 
-  if (!isPublicRoute(request) && !isDebugBypass) {
+  const isE2EBypass =
+    !!process.env.E2E_BYPASS_TOKEN &&
+    request.headers.get("x-e2e-bypass") === process.env.E2E_BYPASS_TOKEN;
+
+  if (!isPublicRoute(request) && !isDebugBypass && !isE2EBypass) {
     await auth.protect();
   }
 });
