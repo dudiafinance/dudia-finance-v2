@@ -70,7 +70,7 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
 
   const isInstallment = !!tx.groupId;
   const installmentCount = tx.totalInstallments ?? 1;
-  const currentInstallment = (tx as { currentInstallment?: number }).currentInstallment ?? tx.installmentNumber ?? 1;
+  const currentInstallment = tx.currentInstallment ?? 1;
   const remainingInstallments = installmentCount - currentInstallment;
 
   return (

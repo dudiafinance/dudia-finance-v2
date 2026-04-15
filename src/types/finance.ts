@@ -42,8 +42,9 @@ export type CardTransaction = {
   type?: string;
   date: string;
   isPaid?: boolean;
-  installmentNumber?: number;
-  totalInstallments?: number;
+  currentInstallment?: number | null;
+  totalInstallments?: number | null;
+  tags?: string[] | null;
   notes?: string | null;
 };
 

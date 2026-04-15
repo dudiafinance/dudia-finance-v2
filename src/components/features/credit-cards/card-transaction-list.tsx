@@ -14,8 +14,9 @@ type CardTransaction = {
   type?: string;
   date: string;
   isPaid?: boolean;
-  installmentNumber?: number;
-  totalInstallments?: number;
+  currentInstallment?: number | null;
+  totalInstallments?: number | null;
+  tags?: string[] | null;
   notes?: string | null;
 };
 
@@ -75,26 +76,53 @@ export function CardTransactionList({
         {transactions.map((tx) => {
           const cat = categories.find(c => c.id === tx.categoryId);
           const isRefund = Number(tx.amount) < 0;
+          const isInstallment = tx.totalInstallments && tx.totalInstallments > 1;
+          const installmentLabel = isInstallment
+            ? `${tx.currentInstallment}/${tx.totalInstallments}`
+            : '1x';
 
           return (
-            <div 
+            <div
               key={tx.id}
               className="group flex items-center gap-4 p-4 hover:bg-secondary/30 cursor-pointer transition-all"
               onClick={() => onEditTransaction(tx)}
             >
-              <div className={cn(
-                "h-8 w-8 rounded flex items-center justify-center border border-border/50 shrink-0",
-                isRefund ? "text-emerald-500" : "text-foreground"
-              )}>
-                {isRefund ? <ArrowDownLeft className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className={cn(
+                  "h-8 w-8 rounded flex items-center justify-center border border-border/50",
+                  isRefund ? "text-emerald-500" : "text-foreground"
+                )}>
+                  {isRefund ? <ArrowDownLeft className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                </div>
+                <span className="text-[9px] font-bold text-muted-foreground">
+                  {installmentLabel}
+                </span>
               </div>
-              
+
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground tracking-tight truncate">{tx.description}</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
-                  {cat?.name ?? "Geral"} • {new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                  {tx.installmentNumber && ` • Parcela ${tx.installmentNumber}/${tx.totalInstallments}`}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-foreground tracking-tight truncate">{tx.description}</p>
+                  {tx.tags && tx.tags.length > 0 && (
+                    <div className="flex gap-1">
+                      {tx.tags.slice(0, 2).map((tag, i) => (
+                        <span key={i} className="text-[8px] font-bold px-1.5 py-0.5 bg-secondary rounded text-muted-foreground">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">
+                  <span>{new Date(tx.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                  <span className="opacity-50">•</span>
+                  <span>{cat?.name ?? "Sem categoria"}</span>
+                  {tx.notes && (
+                    <>
+                      <span className="opacity-50">•</span>
+                      <span className="truncate max-w-[100px]">{tx.notes}</span>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div className="text-right">
