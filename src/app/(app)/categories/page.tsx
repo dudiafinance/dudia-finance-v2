@@ -204,7 +204,11 @@ export default function CategoriesPage() {
       const res = await fetch("/api/categories/seed", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        toast(data.error ?? "Erro ao criar categorias", "error");
+        if (data.error?.includes("já possui categorias")) {
+          toast(`${data.count} categorias já cadastradas`, "warning");
+        } else {
+          toast(data.error ?? "Erro ao criar categorias", "error");
+        }
         return;
       }
       toast(`${data.count} categorias criadas com sucesso!`);

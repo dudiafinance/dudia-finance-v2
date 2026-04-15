@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select } from "@/components/ui/form-field";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Button } from "@/components/ui/button";
+import { TagInput } from "@/components/ui/tag-input";
 import { motion } from "framer-motion";
 import { useCategories, useCreateCardTransaction } from "@/hooks/use-api";
 import { formatCurrency } from "@/lib/utils";
@@ -17,9 +18,10 @@ interface LaunchTxModalProps {
   selectedCard?: CreditCard | null;
   currentMonth: number;
   currentYear: number;
+  onSaveAndContinue?: () => void;
 }
 
-export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear }: LaunchTxModalProps) {
+export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, currentYear, onSaveAndContinue }: LaunchTxModalProps) {
   const [form, setForm] = useState({
     description: "", amount: "", type: "purchase", date: new Date().toISOString().split('T')[0],
     categoryId: "", launchType: "single", totalInstallments: "2", startInstallment: "1", isPending: false,
@@ -45,15 +47,46 @@ export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, curre
     return n * p;
   }, [form.amount, form.totalInstallments, form.amountMode]);
 
-  const handleSubmit = () => {
-    const isRefund = form.type === 'refund';
-    const amountVal = Math.abs(calculatedTotal) * (isRefund ? -1 : 1);
-    
+  const handleSubmit = (continueMode = false) => {
+    const amountVal = calculatedTotal;
+
     createTx.mutate({
       ...form,
       amount: amountVal,
       categoryId: form.categoryId || undefined,
-    } as unknown as Parameters<typeof createTx.mutate>[0], { onSuccess: onClose });
+    } as unknown as Parameters<typeof createTx.mutate>[0], {
+      onSuccess: () => {
+        if (continueMode && onSaveAndContinue) {
+          setForm((f) => ({
+            ...f,
+            description: "",
+            amount: "",
+            categoryId: "",
+          }));
+          onSaveAndContinue();
+        } else {
+          onClose();
+        }
+      }
+    });
+  };
+
+  const resetForm = () => {
+    setForm({
+      description: "",
+      amount: "",
+      type: "purchase",
+      date: new Date().toISOString().split('T')[0],
+      categoryId: "",
+      launchType: "single",
+      totalInstallments: "2",
+      startInstallment: "1",
+      isPending: false,
+      invoiceMonth: currentMonth,
+      invoiceYear: currentYear,
+      amountMode: "total",
+      tags: [],
+    });
   };
 
   return (
@@ -167,6 +200,16 @@ export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, curre
                 </button>
               </div>
             </Field>
+
+            <Field label="Tags de Identificação">
+              <TagInput
+                value={form.tags}
+                onChange={(tags) => setForm(p => ({ ...p, tags }))}
+                suggestions={expenseCategories.flatMap((c) => c.tags ?? [] as string[])}
+                className="text-xs"
+                placeholder="Pressione Enter..."
+              />
+            </Field>
           </div>
         </div>
 
@@ -191,7 +234,17 @@ export function LaunchTxModal({ open, onClose, selectedCard, currentMonth, curre
 
         <div className="flex gap-4 pt-6 border-t border-border/50">
           <Button variant="ghost" onClick={onClose} className="flex-1 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Cancelar</Button>
-          <Button onClick={handleSubmit} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
+          {onSaveAndContinue && (
+            <Button
+              variant="secondary"
+              onClick={() => handleSubmit(true)}
+              className="flex-[1] text-[10px] font-bold uppercase tracking-widest py-6 shadow-precision"
+              disabled={!form.description || !form.amount || createTx.isPending}
+            >
+              {createTx.isPending ? "Salvando..." : "Salvar + Novo"}
+            </Button>
+          )}
+          <Button onClick={() => handleSubmit(false)} className="flex-[2] text-[11px] font-bold uppercase tracking-widest py-6 shadow-precision"
             disabled={!form.description || !form.amount || createTx.isPending}>
             {createTx.isPending ? "Salvando..." : "Efetivar Lançamento"}
           </Button>

@@ -95,7 +95,8 @@ export const goalSchema = goalBaseSchema.refine((data) => {
 
 export const cardTransactionSchema = z.object({
   description: z.string().min(1, "Descrição obrigatória").max(255),
-  amount: z.coerce.number().positive("Valor deve ser positivo"),
+  amount: z.coerce.number().refine((v) => v !== 0, { message: "Valor não pode ser zero" }),
+  type: z.enum(["purchase", "refund"]).optional().default("purchase"),
   date: z.string().min(1, "Data obrigatória"),
   categoryId: z.string().uuid().optional().nullable(),
   tags: z.array(z.string()).default([]),

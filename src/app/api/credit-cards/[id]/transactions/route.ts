@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserId } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { cardTransactions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { cardTransactionSchema } from "@/lib/validations";
 import { FinancialEngine } from "@/lib/services/financial-engine";
 import { logger } from "@/lib/utils/logger";
@@ -19,7 +19,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     let conditions = and(
       eq(cardTransactions.cardId, cardId),
-      eq(cardTransactions.userId, userId)
+      eq(cardTransactions.userId, userId),
+      isNull(cardTransactions.deletedAt)
     );
 
     if (month && year) {
@@ -27,7 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         eq(cardTransactions.cardId, cardId),
         eq(cardTransactions.userId, userId),
         eq(cardTransactions.invoiceMonth, Number(month)),
-        eq(cardTransactions.invoiceYear, Number(year))
+        eq(cardTransactions.invoiceYear, Number(year)),
+        isNull(cardTransactions.deletedAt)
       );
     }
 
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const {
       description,
       amount,
+      type,
       date,
       categoryId,
       tags,
@@ -72,6 +75,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       isPending,
     } = parsed.data;
 
+    const isRefund = type === "refund";
+    const signedAmount = isRefund ? Math.abs(amount) * -1 : Math.abs(amount);
+
     const results = await db.transaction(async (tx) => {
       const txResults = [];
 
@@ -81,8 +87,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           userId,
           categoryId: categoryId ?? null,
           description,
-          amount: String(amount),
-          totalAmount: String(amount),
+          amount: String(signedAmount),
+          totalAmount: String(signedAmount),
           date,
           invoiceMonth,
           invoiceYear,
@@ -95,12 +101,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       } else if (launchType === "installment") {
         const n = totalInstallments ?? 1;
         const start = startInstallment;
-        
-        const amountInCents = Math.round(amount * 100);
+
+        const amountInCents = Math.round(Math.abs(signedAmount) * 100);
         const baseCents = Math.floor(amountInCents / n);
-        // Remainder from integer division — assigned to the FIRST installment of the batch
-        // so each subsequent installment has a clean equal value
-        const remainder = amountInCents - n * baseCents; // equivalent to amountInCents % n
+        const remainder = amountInCents - n * baseCents;
         const groupId = crypto.randomUUID();
 
         let m = invoiceMonth;
@@ -108,14 +112,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
         for (let i = start; i <= n; i++) {
           const installmentCents = i === start ? baseCents + remainder : baseCents;
-          const installmentAmount = installmentCents / 100;
+          const installmentAmount = (signedAmount < 0 ? -1 : 1) * (installmentCents / 100);
           const row = await FinancialEngine.addCardTransaction({
             cardId,
             userId,
             categoryId: categoryId ?? null,
             description: `${description} (${i}/${n})`,
             amount: String(installmentAmount.toFixed(2)),
-            totalAmount: String(amount),
+            totalAmount: String(signedAmount),
             date,
             invoiceMonth: m,
             invoiceYear: y,
@@ -143,8 +147,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             userId,
             categoryId: categoryId ?? null,
             description,
-            amount: String(amount),
-            totalAmount: String(amount),
+            amount: String(signedAmount),
+            totalAmount: String(signedAmount),
             date,
             invoiceMonth: m,
             invoiceYear: y,

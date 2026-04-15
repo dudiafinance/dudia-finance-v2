@@ -266,12 +266,13 @@ export default function CreditCardsPage() {
         onDelete={(id: string) => setDeleteCardId(id)}
       />
 
-      <LaunchTxModal 
-        open={isLaunchModalOpen} 
+      <LaunchTxModal
+        open={isLaunchModalOpen}
         onClose={() => setIsLaunchModalOpen(false)}
         selectedCard={selectedCard}
         currentMonth={currentMonth}
         currentYear={currentYear}
+        onSaveAndContinue={() => {}}
       />
 
       <PayInvoiceModal 

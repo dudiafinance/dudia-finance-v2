@@ -60,6 +60,7 @@ interface TransactionFormProps {
   userCurrency: string;
   onClose: () => void;
   onSaved: () => void;
+  onSaveAndContinue?: () => void;
 }
 
 const emptyForm = (defaultAccountId = ""): FormData => ({
@@ -101,6 +102,7 @@ export function TransactionForm({
   userCurrency,
   onClose,
   onSaved,
+  onSaveAndContinue,
 }: TransactionFormProps) {
   const { toast } = useToast();
 
@@ -151,7 +153,7 @@ export function TransactionForm({
     return Object.keys(e).length === 0;
   };
 
-  const save = async () => {
+  const save = async (continueMode = false) => {
     if (!validate()) return;
     const formPayload: Record<string, unknown> = {
       type: form.type,
@@ -175,11 +177,16 @@ export function TransactionForm({
       if (editingTransaction) {
         await updateTransaction.mutateAsync({ id: editingTransaction.id, ...formPayload });
         toast("Transação atualizada!");
+        onSaved();
       } else {
         await createTransaction.mutateAsync(formPayload);
         toast("Transação criada!");
+        if (continueMode && onSaveAndContinue) {
+          onSaveAndContinue();
+        } else {
+          onSaved();
+        }
       }
-      onSaved();
     } catch (e) {
       toast(e instanceof Error ? e.message : "Erro ao salvar", "error");
     }
@@ -361,8 +368,18 @@ export function TransactionForm({
           <Button variant="ghost" onClick={onClose} className="flex-1 text-muted-foreground font-bold uppercase text-[11px] tracking-widest">
             Cancelar
           </Button>
-          <Button 
-            onClick={save} 
+          {!editingTransaction && onSaveAndContinue && (
+            <Button
+              variant="secondary"
+              onClick={() => save(true)}
+              className="flex-[1] font-bold uppercase text-[10px] tracking-widest py-6"
+              disabled={createTransaction.isPending || updateTransaction.isPending}
+            >
+              {createTransaction.isPending ? "Salvando..." : "Salvar + Novo"}
+            </Button>
+          )}
+          <Button
+            onClick={() => save(false)}
             className="flex-[2] font-bold uppercase text-[11px] tracking-widest py-6"
             disabled={createTransaction.isPending || updateTransaction.isPending}
           >

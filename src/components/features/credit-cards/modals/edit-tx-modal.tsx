@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Trash2, Info } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Field, Input, Select } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
@@ -21,26 +21,31 @@ type EditTxForm = { description: string; amount: string; categoryId: string; inv
 export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModalProps) {
   const [form, setForm] = useState<EditTxForm>({ description: "", amount: "", categoryId: "", invoiceMonth: 1, invoiceYear: 2024 });
   const [updateGroup, setUpdateGroup] = useState(false);
+  const originalRef = useRef({ month: 0, year: 0 });
   const updateTx = useUpdateCardTransaction(card?.id || "");
   const { data: categories = [] } = useCategories();
 
-  const initializeForm = useCallback(() => {
+  useEffect(() => {
     if (tx && open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm({
-        description: tx.description, 
-        amount: String(Math.abs(Number(tx.amount))), 
+        description: tx.description,
+        amount: String(Math.abs(Number(tx.amount))),
         categoryId: tx.categoryId || "",
         invoiceMonth: tx.invoiceMonth,
         invoiceYear: tx.invoiceYear
       });
+      originalRef.current = { month: tx.invoiceMonth, year: tx.invoiceYear };
       setUpdateGroup(false);
     }
   }, [tx, open]);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    initializeForm();
-  }, [initializeForm]);
+  const handleMonthYearChange = (month: number, year: number) => {
+    setForm((p) => ({ ...p, invoiceMonth: month, invoiceYear: year }));
+    if (tx?.groupId && (month !== originalRef.current.month || year !== originalRef.current.year)) {
+      setUpdateGroup(true);
+    }
+  };
 
   const handleUpdate = () => {
     if (!tx) return;
@@ -63,9 +68,26 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
 
   if (!tx) return null;
 
+  const isInstallment = !!tx.groupId;
+  const installmentCount = tx.totalInstallments ?? 1;
+  const currentInstallment = (tx as { currentInstallment?: number }).currentInstallment ?? tx.installmentNumber ?? 1;
+  const remainingInstallments = installmentCount - currentInstallment;
+
   return (
     <Modal open={open} onClose={onClose} title="Editar Lançamento" size="md">
       <div className="space-y-8 pt-4">
+        {isInstallment && (
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+            <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />
+            <div className="text-[11px] text-blue-400">
+              <span className="font-bold">Parcela {currentInstallment}/{installmentCount}</span>
+              {remainingInstallments > 0 && (
+                <span> · {remainingInstallments} parcela{remainingInstallments > 1 ? "s" : ""} restante{remainingInstallments > 1 ? "s" : ""} após esta</span>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           <div className="space-y-6">
             <Field label="Descrição">
@@ -89,24 +111,37 @@ export function EditTxModal({ open, onClose, tx, card, onDeleteTx }: EditTxModal
 
             <Field label="Fatura de Referência">
               <div className="grid grid-cols-2 gap-4">
-                <Select value={form.invoiceMonth} onChange={e => setForm((p) => ({...p, invoiceMonth: Number(e.target.value)}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground">
+                <Select
+                  value={form.invoiceMonth}
+                  onChange={e => handleMonthYearChange(Number(e.target.value), form.invoiceYear)}
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground"
+                >
                   {["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map((name, i) => (
                     <option key={name} value={i + 1}>{name}</option>
                   ))}
                 </Select>
-                <Input type="number" value={form.invoiceYear} onChange={e => setForm((p) => ({...p, invoiceYear: Number(e.target.value)}))} className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
+                <Input type="number" value={form.invoiceYear}
+                  onChange={e => handleMonthYearChange(form.invoiceMonth, Number(e.target.value))}
+                  className="h-10 text-sm border-0 border-b border-border rounded-none bg-transparent px-0 focus-visible:ring-0 focus-visible:border-foreground" />
               </div>
             </Field>
           </div>
         </div>
 
-        {tx.groupId && (
-          <label className="flex items-center gap-3 p-4 rounded-lg bg-secondary/50 border border-border shadow-precision cursor-pointer transition-colors hover:bg-secondary">
+        {isInstallment && (
+          <label className="flex items-start gap-3 p-4 rounded-lg bg-secondary/50 border border-border shadow-precision cursor-pointer transition-colors hover:bg-secondary">
             <input type="checkbox" checked={updateGroup} onChange={e => setUpdateGroup(e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-700 text-foreground focus:ring-zinc-500" />
-            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground">
-              Aplicar em todas as parcelas seguintes
-            </span>
+              className="w-4 h-4 mt-0.5 rounded border-zinc-700 text-foreground focus:ring-zinc-500" />
+            <div className="flex-1">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-foreground block">
+                Aplicar em todas as parcelas seguintes
+              </span>
+              {updateGroup && remainingInstallments > 0 && (
+                <span className="text-[10px] text-muted-foreground mt-1 block">
+                  {remainingInstallments} parcela{remainingInstallments > 1 ? "s" : ""} também será{remainingInstallments === 1 ? "" : "ão"} atualizada{remainingInstallments === 1 ? "da" : "s"}
+                </span>
+              )}
+            </div>
           </label>
         )}
 

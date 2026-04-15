@@ -144,6 +144,10 @@ export default function TransactionsPage() {
     resetPagination();
   };
 
+  const handleSaveAndContinue = () => {
+    resetPagination();
+  };
+
   const handleCloseModal = () => {
     setModalOpen(false);
     setEditingTransaction(null);
@@ -258,6 +262,7 @@ export default function TransactionsPage() {
           userCurrency={userCurrency}
           onClose={handleCloseModal}
           onSaved={handleSaved}
+          onSaveAndContinue={handleSaveAndContinue}
         />
       </Modal>
     </div>
